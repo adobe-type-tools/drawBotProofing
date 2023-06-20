@@ -1,4 +1,4 @@
-# DrawBot-based font- and UFO proofing scripts
+# DrawBot scripts for proofing fonts and/or UFOs.
 
 ## Prerequisites
 
@@ -22,14 +22,9 @@ You're now ready to run the scripts!
 
 ### `makeReadme.py`
 
-Create the README.md for this repository.
+Create/update the README.md file for this repository.
 
     python makeReadme.py > README.md
-
-For this process to work, scripts must have the
-`if __name__ == '__main__':` statement in them,
-which is typical for modules.
-
 
 ----
 

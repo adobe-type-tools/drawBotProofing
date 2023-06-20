@@ -6,22 +6,41 @@
 # it.
 
 '''
-Create the README.md for this repository.
+Create/update the README.md file for this repository.
 
     python makeReadme.py > README.md
-
-For this process to work, scripts must have the
-`if __name__ == '__main__':` statement in them,
-which is typical for modules.
 
 '''
 
 import ast
 import os
-import importlib
+
+
+def make_doc_snippet(file_name):
+    '''
+    Read the doc string of a Python script, and return it in markdown format.
+    If an image file (corresponding to the script name) exists in an _images
+    folder, add a reference to that image.
+    '''
+    doc_snippet = None
+    base_name, suffix = os.path.splitext(file_name)
+    image_file = f'_images/{base_name}.png'
+
+    if suffix == '.py':
+        body = ast.parse(''.join(open(file_name)))
+        docstring = ast.get_docstring(body)
+
+        if docstring:
+            doc_snippet = f'### `{file_name}`\n\n{docstring}\n'
+            if os.path.exists(image_file):
+                doc_snippet += f'\n![{file_name}]({image_file})\n'
+            doc_snippet += '\n----\n'
+
+    return doc_snippet
+
 
 header = '''\
-# DrawBot-based font- and UFO proofing scripts
+# DrawBot scripts for proofing fonts and/or UFOs.
 
 ## Prerequisites
 
@@ -49,30 +68,21 @@ footer = '''
 
 - "en_10k.txt" is based on [en_50k.txt](https://github.com/hermitdave/FrequencyWords/blob/525f9b560de45753a5ea01069454e72e9aa541c6/content/2016/en/en_50k.txt) from the [FrequencyWords](https://github.com/hermitdave/FrequencyWords) project, Copyright (c) 2016 Hermit Dave
 - fonts included in this distribution are subject to the SIL Open Font License, Copyright 2016-2023 Adobe.
+
 '''
 
-ignore = ['__init__.py']
 
 if __name__ == '__main__':
 
-    print(header)
+    output = []
+    output.append(header)
 
     for file_name in sorted(os.listdir('.')):
-        if file_name not in ignore:
-            base_name, suffix = os.path.splitext(file_name)
-            if suffix == '.py':
-                try:
-                    module = importlib.import_module(base_name)
-                    docstring = module.__doc__
+        doc_snippet = make_doc_snippet(file_name)
+        if doc_snippet:
+            output.append(doc_snippet)
 
-                except ModuleNotFoundError:
-                    body = ast.parse(''.join(open(file_name)))
-                    docstring = '\n' + ast.get_docstring(body) + '\n'
+    output.append(footer)
 
-                if docstring:
-                    print(f'### `{file_name}`')
-                    print(docstring)
-                    print('----')
-                    print()
-
-    print(footer)
+    with open('README.md', 'w') as readme_blob:
+        readme_blob.write('\n'.join(output))
