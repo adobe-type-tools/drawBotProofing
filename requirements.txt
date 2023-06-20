@@ -1,0 +1,5 @@
+defcon
+git+https://github.com/typemytype/drawbot
+fonttools
+fontParts
+unicodedataplus
