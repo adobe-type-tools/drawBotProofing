@@ -96,7 +96,7 @@ Input: folder containing UFO or font files, individual fonts or UFOs.
 
 Create/update the README.md file for this repository.
 
-    python makeReadme.py > README.md
+    python3 makeReadme.py
 
 ----
 
