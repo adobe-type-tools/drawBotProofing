@@ -49,6 +49,26 @@ Create/update the README.md file for this repository.
 
 ----
 
+### `textProof.py`
+
+Creates example paragraphs corresponding to a given character set.
+Either prints a single page with random subset of the charset, or consumes
+the full charset systematically, to create a multipage document.
+
+Known bug:
+line spacing may become inconsistent (this is a macOS limitation caused by
+the vertical metrics in a given fallback font.)
+
+Input: folder containing fonts, or single font file.
+
+![textProof.py](_images/textProof_1.png)
+
+![textProof.py](_images/textProof_2.png)
+
+![textProof.py](_images/textProof_3.png)
+
+----
+
 
 ## Acknowledgements
 
