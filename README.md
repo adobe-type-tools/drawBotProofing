@@ -187,6 +187,34 @@ Input: folder containing fonts, or single font file.
 
 ----
 
+### `verticalMetricsComparisonProof.py`
+
+Creates pages with example characters to visualize the variation
+of vertical metrics across a typeface family.
+
+Input: folder containing font or UFO files.
+
+![verticalMetricsComparisonProof.py](_images/verticalMetricsComparisonProof.png)
+
+----
+
+### `verticalMetricsProof.py`
+
+Creates simple view which illustrates all vertical metrics
+set in the font metadata. Additionally, tallest and lowest glyphs are shown.
+
+Using the -n option, the number of extreme glyphs can be increased.
+
+Input: font file
+
+![verticalMetricsProof.py](_images/verticalMetricsProof_1.png)
+
+![verticalMetricsProof.py](_images/verticalMetricsProof_2.png)
+
+![verticalMetricsProof.py](_images/verticalMetricsProof_3.png)
+
+----
+
 ### `waterfallProof.py`
 
 Creates pages of example words for a list of fonts, arranged in waterfall-like
