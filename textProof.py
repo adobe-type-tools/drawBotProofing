@@ -30,7 +30,8 @@ import textwrap
 import drawBot as db
 
 from proofing_helpers import fontSorter
-from proofing_helpers.charsets import *
+from proofing_helpers import charsets as cs
+from proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
 from proofing_helpers.helpers import list_uni_names
 from proofing_helpers.files import (
     get_font_paths, chain_charset_texts, read_text_file, make_temp_font)
@@ -49,6 +50,8 @@ def get_options():
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
+
+    charset_choices = [name for name in dir(cs) if not name.startswith('_')]
 
     parser.add_argument(
         'input',
@@ -69,7 +72,8 @@ def get_options():
     parser.add_argument(
         '-c', '--charset',
         action='store',
-        default='AL3',
+        default='al3',
+        choices=charset_choices,
         help='character set')
 
     parser.add_argument(
@@ -89,6 +93,11 @@ def get_options():
         '-a', '--full',
         action='store_true',
         help='consume whole character set')
+
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='report information about the characters used')
 
     return parser.parse_args()
 
@@ -131,13 +140,13 @@ def message_with_charset(message, characters, wrap_length=70):
     )
 
 
-def analyze_missing(content_pick, raw_content, charset_name=al3):
+def analyze_missing(content_pick, raw_content, charset_name=cs.al3):
     '''
     Print out some stats about the chosen character set,
     which characters were used in the sample, etc.
     '''
     abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-    charset = eval(charset_name)
+    charset = eval(f'cs.{charset_name}')
     missing_abc = set(abc) - set(''.join(content_pick))
     missing_charset = set(charset) - set(''.join(content_pick))
     missing_cset_source = set(charset) - set(raw_content)
@@ -160,13 +169,13 @@ def analyze_missing(content_pick, raw_content, charset_name=al3):
 
 
 def make_proof(content, output_name, orig_fonts, fonts, fonts_sec=[], multipage=False):
+
     db.newDrawing()
     for f_index, font in enumerate(fonts):
         make_page(content, orig_fonts, fonts, fonts_sec, f_index, multipage)
 
     pdf_path = f'~/Desktop/{output_name}.pdf'
     db.saveImage(pdf_path)
-    db.uninstallFont(ADOBE_BLANK)
 
     db.endDrawing()
     print('saved to {}'.format(pdf_path))
@@ -185,7 +194,7 @@ def make_page(content, orig_fonts, fonts, fonts_sec, f_index=0, multipage=False)
 
     fs = db.FormattedString(
         fontSize=PT_SIZE,
-        # fallbackFont=ADOBE_BLANK,
+        fallbackFont=ADOBE_BLANK,
         openTypeFeatures=dict(
             liga=True,
             # onum=True,
@@ -206,10 +215,11 @@ def make_page(content, orig_fonts, fonts, fonts_sec, f_index=0, multipage=False)
             os.path.basename(fonts_sec[f_index]))
 
     for text_item in content:
+
         if text_item.italic and fonts_sec:
-            fs.append('%s' % text_item.text, font=fonts_sec[f_index])
+            fs.append(text_item.text, font=fonts_sec[f_index])
         else:
-            fs.append('%s' % text_item.text, font=fonts[f_index])
+            fs.append(text_item.text, font=fonts[f_index])
 
         if text_item.paragraph:
             fs.append('\n\n')
@@ -249,7 +259,7 @@ def make_page(content, orig_fonts, fonts, fonts_sec, f_index=0, multipage=False)
         else:
             new_start_index = 5
         remaining_content = content[new_start_index:]
-        make_page(remaining_content, fonts, fonts_sec, f_index, multipage=True)
+        make_page(remaining_content, orig_fonts, fonts, fonts_sec, f_index, multipage=True)
 
 
 def format_content(content_list, len_limit=None, capitalize=False):
@@ -286,9 +296,6 @@ if __name__ == '__main__':
     MARGIN = 12
 
     assets_path = os.path.dirname(__file__)
-    ADOBE_BLANK = db.installFont(
-        os.path.join(assets_path, '_fonts/AdobeBlank.otf'))
-    FONT_MONO = os.path.join(assets_path, '_fonts/SourceCodePro-Regular.otf')
 
     # A Letter page is 8.5 by 11 inches. 1 inch contains 72 dtp points.
     # Therefore, 11 * 72, divided by the chosen point size * 1.2 (which is the
@@ -315,7 +322,7 @@ if __name__ == '__main__':
         raw_content = read_text_file(text_file_name)
 
     try:
-        target_charset = eval(charset_name)
+        target_charset = eval(f'cs.{charset_name}')
     except NameError:
         sys.exit(f'Character set "{charset_name}" is not defined')
 
@@ -419,7 +426,8 @@ if __name__ == '__main__':
 
             make_proof(formatted_content, output_name, sorted_fonts, fonts, fonts_sec)
 
-        analyze_missing(content_pick, raw_content, charset_name)
+        if args.verbose:
+            analyze_missing(content_pick, raw_content, charset_name)
 
     else:
         print('No fonts found.')

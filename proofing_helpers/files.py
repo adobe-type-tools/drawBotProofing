@@ -89,7 +89,7 @@ def chain_charset_texts(cs_prefix='AL', cs_level=3):
     content_dir = Path(__file__).parents[1].joinpath('_content')
 
     for level in (range(max_charset_level, -1, -1)):
-        if level == 0:
+        if level == 0 and cs_prefix == 'AL':
             text_file_name = f'{content_dir}/ASCII.txt'
         else:
             text_file_name = f'{content_dir}/{cs_prefix.upper()}{level}.txt'
