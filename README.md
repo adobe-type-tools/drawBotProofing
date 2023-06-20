@@ -41,6 +41,22 @@ Input: one or more font files.
 
 ----
 
+### `glyphsetProof.py`
+
+Visualizes the complete glyphset of a font or UFO on a single page.
+The output is good to use with a diffing tool like `diff-pdf` in a later step.
+
+The glyphset can be filtered with a regular expression (for example,
+use `-r ".*dieresis"` to show all glyphs whose names end with -dieresis).
+
+Input: folder containing UFO or font files, individual fonts or UFOs.
+
+![glyphsetProof.py](_images/glyphsetProof_1.png)
+
+![glyphsetProof.py](_images/glyphsetProof_2.png)
+
+----
+
 ### `makeReadme.py`
 
 Create/update the README.md file for this repository.
