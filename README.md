@@ -56,6 +56,26 @@ Input: one or more font files.
 
 ----
 
+### `charsetProof.py`
+
+Visualizes a given (Adobe) character set.
+The default charset is AL-3. Code points not supported in the font at hand will
+be shown as a .notdef glyph (but are still present as text in the PDF file).
+
+More information on Adobe’s character sets:
+
+- [Latin](https://github.com/adobe-type-tools/adobe-latin-charsets)
+- [Cyrillic](https://github.com/adobe-type-tools/adobe-cyrillic-charsets)
+- [Greek](https://github.com/adobe-type-tools/adobe-greek-charsets)
+
+Input: font file(s) or folder of fonts.
+
+![charsetProof.py](_images/charsetProof_1.png)
+
+![charsetProof.py](_images/charsetProof_2.png)
+
+----
+
 ### `glyphsetProof.py`
 
 Visualizes the complete glyphset of a font or UFO on a single page.
