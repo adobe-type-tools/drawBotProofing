@@ -24,7 +24,10 @@ def make_doc_snippet(file_name):
     '''
     doc_snippet = None
     base_name, suffix = os.path.splitext(file_name)
-    image_file = f'_images/{base_name}.png'
+    # very simple way of looking for related images
+    image_files = sorted([
+        img for img in os.listdir('_images/') if img.startswith(base_name) and
+        img.endswith('.png')])
 
     if suffix == '.py':
         body = ast.parse(''.join(open(file_name)))
@@ -32,8 +35,9 @@ def make_doc_snippet(file_name):
 
         if docstring:
             doc_snippet = f'### `{file_name}`\n\n{docstring}\n'
-            if os.path.exists(image_file):
-                doc_snippet += f'\n![{file_name}]({image_file})\n'
+            if image_files:
+                for image_file in image_files:
+                    doc_snippet += f'\n![{file_name}](_images/{image_file})\n'
             doc_snippet += '\n----\n'
 
     return doc_snippet

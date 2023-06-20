@@ -20,6 +20,27 @@ You're now ready to run the scripts!
 ----
 
 
+### `alphabetProof.py`
+
+Creates example pages for:
+
+- general alphabet (upper- and lowercase)
+- spacing proofs
+- some sample words
+
+Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
+(`all`). Writing systems supported are `lat`, `grk`, `cyr`, and `figures`.
+
+Input: one or more font files.
+
+![alphabetProof.py](_images/alphabetProof_1.png)
+
+![alphabetProof.py](_images/alphabetProof_2.png)
+
+![alphabetProof.py](_images/alphabetProof_3.png)
+
+----
+
 ### `makeReadme.py`
 
 Create/update the README.md file for this repository.
