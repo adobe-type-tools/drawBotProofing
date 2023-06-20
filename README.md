@@ -74,6 +74,8 @@ Input: font file(s) or folder of fonts.
 
 ![charsetProof.py](_images/charsetProof_2.png)
 
+![charsetProof.py](_images/charsetProof_3.png)
+
 ----
 
 ### `glyphsetProof.py`

@@ -58,7 +58,7 @@ def get_args(args=None):
         '-s', '--spacer',
         action='store',
         default='',
-        help='spacing character'
+        help='spacing character (may need to be escaped with \\)'
     )
     parser.add_argument(
         '-c', '--charset',
