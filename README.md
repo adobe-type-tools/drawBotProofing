@@ -113,6 +113,36 @@ Input: font file(s) or folder of fonts.
 
 ----
 
+### `figureSpacingProofUFO.py`
+
+Simple script check figure spacing in UFOs (without kerning).
+For each figure suffix (such as .tosf), a new spacing page is made.
+
+Input: single UFO or folder containing UFO files.
+
+![figureSpacingProofUFO.py](_images/figureSpacingProofUFO.png)
+
+----
+
+### `glyphProofUFO.py`
+
+Creates PDF document which helps comparing glyphs of different weights
+to each other. Various modes are possible – the default is an
+[Autopsy](https://vimeo.com/116063612)-like showing of glyphs side-by-side.
+Other modes include `gradient`, `single`, `overlay`.
+
+Input: folder with UFO files or individual UFOs
+
+![glyphProofUFO.py](_images/glyphProofUFO_1.png)
+
+![glyphProofUFO.py](_images/glyphProofUFO_2.png)
+
+![glyphProofUFO.py](_images/glyphProofUFO_3.png)
+
+![glyphProofUFO.py](_images/glyphProofUFO_4.png)
+
+----
+
 ### `glyphsetProof.py`
 
 Visualizes the complete glyphset of a font or UFO on a single page.
