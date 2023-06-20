@@ -20,6 +20,21 @@ You're now ready to run the scripts!
 ----
 
 
+### `accentProof.py`
+
+Proof of all accents with a representation of all glyphs using that accent,
+and example words for each accent (both upper- and lowercase).
+Additionally, words with “merged” non-abc glyphs (such as æðøß) will be shown.
+
+This script is currently limited to AL-3, an extension to AL-4 and beyond is
+thinkable.
+
+Input: single font or folder containing font files.
+
+![accentProof.py](_images/accentProof.png)
+
+----
+
 ### `alphabetProof.py`
 
 Creates example pages for:
