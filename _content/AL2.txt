@@ -1,0 +1,60 @@
+A lozenge (◊), often referred to as a diamond, is a form of rhombus. The definition of lozenge is not strictly fixed, and it is sometimes used simply as a synonym (from the French losange) for rhombus. Most often, though, lozenge refers to a thin rhombus—a rhombus with acute angles of less than 45°. The lozenge shape is often used in parquetry and as decoration on ceramics, silverware and textiles. It also features in heraldry and playing cards.
+Alt-J (stylised as alt-J, or ∆) is an English indie rock band formed in 2007 in Leeds, by Joe Newman (guitar/lead vocals), Thom Sonny Green (drums), Gus Unger-Hamilton (keyboards/vocals) and Gwil Sainsbury (guitar/bass).
+Another combination of "≈" and "=", which is used to indicate isomorphism or congruence.
+Being an irrational number, π cannot be expressed as a common fraction (equivalently, its decimal representation never ends and never settles into a permanently repeating pattern).
+CCR5 Δ32 is a 32-base-pair deletion that introduces a premature stop codon into the CCR5 receptor locus, resulting in a nonfunctional receptor. CCR5 is required for M-tropic HIV-1 virus entry. Individuals homozygous for CCR5 Δ32 do not express functional CCR5 receptors on their cell surfaces and are resistant to HIV-1 infection, despite multiple high-risk exposures.
+Ce ℓ cursif serait néanmoins utilisé dans certains pays comme symbole du litre. Dans cette utilisation, il permet d'éviter la confusion avec le chiffre 1, tout comme le permet l'emploi de la lettre L majuscule.
+Connected with the energy states of the atom's electrons are four quantum numbers: n, ℓ, mℓ, and ms.
+Dans toute la suite de ce Memoire, dz & ∂z désigneront ou deux differences partielles de z, dont une par rapport a x, l'autre par rapport a y, ou bien dz sera une différentielle totale, & ∂z une difference partielle.
+Delta-v (literally "change in velocity"), symbolised as ∆v and pronounced delta-vee, as used in spacecraft flight dynamics, is a measure of the impulse per unit of spacecraft mass that is needed to perform a maneuver such as launch from, or landing on a planet or moon, or in-space orbital maneuver.
+Example: what is ∫cos(x) dx ?
+Find the curve such that when a point falls along this curve the vertical component of its velocity is constant. Later the younger Bernoulli brother, Johann, reduced the problem to the simple differential equation dy · √y = dx ·√a, and then “integrated” to obtain 2/3y√y = x√a, which is a semicubical parabola. To see the details of how Johann Bernoulli presented this problem in lectures to his pupil L’Hospital in 1691-1692 see Die erste Integralrechnung, Ostwald’s Klassiker, no. 194 (1914), pp. 142-143.
+For example, ∏6n=1n=1*2*3*4*5*6=720
+Historically, some document editing software applications have used the Symbol typeface to render the character Ω. Where the font is not supported, a W is displayed instead ("10 W" instead of "10 Ω", for instance). As W represents the watt, the SI unit of power, this can lead to confusion, making the use of the correct Unicode code point preferable.
+How much do you earn? Who do you serve? In Jonas Hassen Khemiri’s recent play ≈[Almost Equal To] we encounter a number of people who are colliding with the economy surrounding them.
+In category theory, a branch of mathematics, an ∞-groupoid is an abstract homotopical model for topological spaces.
+In some cases, the term "inequation" can be considered synonymous to the term "inequality", while in other cases, an inequation is reserved only for statements whose inequality relation is "not equal to" (≠).
+In the electronics industry it is common to use the character R instead of the Ω symbol, thus, a 10 Ω resistor may be represented as 10R. This is the British standard BS 1852 code. It is used in many instances where the value has a decimal place. For example, 5.6 Ω is listed as 5R6. This method avoids overlooking the decimal period, which may not be rendered reliably on components or when duplicating documents.
+In the same manuscript Leibniz wrote ∫ x2 = x3 /33 Leibniz also used the characteristic triangle in this manuscript, though both Pascal and Barrow had used it before him.
+Infinity symbol created by John Wallis in 1655 refers to things without any limit. Usually is used in mathematics or physics to express that some things have no limit. For example, set of natural numbers has no limit and could be expressed by infinity ∞ sign. Infinity is designated as the ∞ symbol because it was imagined as a special variation of ouroborus snake - an ancient symbol depicting a serpent or dragon eating its own tail.
+Mathematical notation uses a symbol that compactly represents summation of many similar terms: the summation symbol, ∑, an enlarged form of the upright capital Greek letter Sigma.
+Nach Eyring (siehe auch Theorie des Übergangszustandes) ist die Freie Aktivierungsenthalpie Δ‡G die bestimmende Größe für die Reaktionsgeschwindigkeit.
+Related to approximation of functions is the asymptotic value of a function, i.e. the value as one or more of a function's parameters becomes arbitrarily large. For example, the sum (k/2)+(k/4)+(k/8)+...(k/2^n) is asymptotically equal to k. Unfortunately no consistent notation is used throughout mathematics and some texts will use ≈ to mean approximately equal and ~ to mean asymptotically equal whereas other texts use the symbols the other way around.
+Root Letter, stylized as √Letter, is a 2016 visual novel adventure video game developed and published by Kadokawa Games for PlayStation 4, PlayStation Vita, Microsoft Windows, Android, and iOS.
+Several books devoted to π have been published, and record-setting calculations of the digits of π often result in news headlines. Attempts to memorize the value of π with increasing precision have led to records of over 70,000 digits.
+The SI unit of electrical resistivity is the ohm-meter (Ω∙m).
+The decimal representation of π truncated to 50 decimal places is π = 3.14159265358979323846264338327950288419716939937510
+The estimated sign, ℮, also referred to as the e-mark (unicode U+212E), is a mark that can be found on some pre-packed goods in Europe. The estimated sign indicates that the packaging fulfils European Union Directive 2009/34/EC.
+The estimated sign, ℮, also referred to as the e-mark or quantité estimée can be found on some prepacked products in Europe.
+The homotopy hypothesis states that ∞-groupoids are spaces.
+The imaginary unit is sometimes written √−1 in advanced mathematics contexts (as well as in less advanced popular texts).
+The infinity symbol (∞) is a mathematical symbol representing the concept of infinity. The symbol resembles a geometric figure called a lemniscate.
+The infinity symbol ∞ (sometimes called the lemniscate) is a mathematical symbol representing the concept of infinity.
+The litre (British and Commonwealth spelling) or liter (American spelling) (SI symbols L and l, other symbol used: ℓ) is a non-SI unit of volume.
+The mark looks like a stylised lowercase "e" and its shape, ℮, is precisely defined by an EU directive.
+The notation a ≠ b means that a is not equal to b, but does not say that one is greater than the other or even that they can be compared in size.
+The notation a ≤ b means that a is less than or equal to b (or, equivalently, at most b, or not greater than b).
+The notation a ≤ b means that a is less than or equal to b (or, equivalently, not greater than b, or at most b); "not greater than" can also be represented by the symbol for "greater than" bisected by a vertical line, "not."
+The notation a ≥ b means that a is greater than or equal to b (or, equivalently, at least b, or not less than b).
+The notation a ≥ b means that a is greater than or equal to b (or, equivalently, not less than b, or at least b),; "not less than" can also be represented by the symbol for "less than" bisected by a vertical line, "not."
+The ohm (symbol: Ω) is the SI derived unit of electrical resistance, named after German physicist Georg Simon Ohm.
+The origin of the root symbol √ is largely speculative.
+The product operator in mathematics, indicated with capital pi notation ∏ (in analogy to the use of the capital Sigma ∑ as summation symbol).
+The relations ≤ and ≥ are each other's converse, meaning that for any real numbers a and b:
+The same basic structure is used, with ∏, an enlarged form of the Greek capital letter Pi, replacing the ∑.
+The sign looks like a stylised lowercase "e" and its shape, ℮, is precisely defined by European Union Directive 2009/34/EC. It must be placed in the same field of vision as the nominal quantity.
+The symbol is encoded in Unicode at U+221E ∞ infinity (HTML: &#8734; &infin;) and in LaTeX as \infty.
+The symbol used to denote inequation (when items are not equal) is a slashed equals sign "≠" (U+2260). In LaTeX, this is done with the "\neq" command.
+The symbol used to denote partial derivatives is ∂. One of the first known uses of this symbol in mathematics is by Marquis de Condorcet from 1770, who used it for partial differences. The modern partial derivative notation is by Adrien-Marie Legendre (1786), though he later abandoned it; Carl Gustav Jacob Jacobi re-introduced the symbol in 1841.
+The ∫ symbol is very similar to, but not to be confused with, the letter "esh".
+This is the partial derivative of f with respect to x. Here ∂ is a rounded d called the partial derivative symbol. To distinguish it from the letter d, ∂ is sometimes pronounced "tho" or "partial".
+This marking is most often used to denote high-occupancy vehicle lanes or bus lanes, with accompanying signage reading "◊ HOV LANE" or "◊ BUS LANE" and giving the requirements for a vehicle to be accepted.
+Unfortunately no consistent notation is used throughout mathematics and some texts will use ≈ to mean approximately equal and ~ to mean asymptotically equal whereas other texts use the symbols the other way around.
+Utile erit scribi ∫ pro omn. ut ∫ l pro omn. l, id est summa ipsorum l. [It will be useful to write ∫ for omn., as ∫ I for omn. l, that is, the sum of these l’s.] A little later in the same manuscript he indicated that he was aware that he was creating a new field of mathematics when he wrote:
+Various online web sites provide π to many more digits. While the decimal representation of π has been computed to more than a trillion digits, elementary applications, such as estimating the circumference of a circle, will rarely require more than a dozen decimal places. For example, the decimal representation of π truncated to 11 decimal places is good enough to estimate the circumference of any circle that fits inside the Earth with an error of less than one millimetre, and the decimal representation of π truncated to 39 decimal places is sufficient to estimate the circumference of any circle that fits in the observable universe with precision comparable to the radius of a hydrogen atom.
+Where the font is not supported, a W is displayed instead ("10 W" instead of "10 Ω", for instance).
+a ≤ b and b ≥ a are equivalent.
+Ω was not part of the early (8th century BC) Greek alphabets. It was introduced in the late 7th century BC in the Ionian cities of Asia Minor to denote the long half-open.
+∂ is also used to denote the boundary operator on a chain complex in homological algebra.
+∆AIMON are an American electronic duo from San Diego, California, consisting of married couple Brant Showers and Nancy Lutz. The group's sound has been labelled as witch house.
+≈ [Almost Equal To] is a funny and brutal play that tries (and fails?) to give the audience a maximized entertainment value for every dollar invested. Premiered October 23, 2014 at the Royal Dramatic Theatre in Stockholm, was performed until spring 2016.
