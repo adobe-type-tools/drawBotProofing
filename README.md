@@ -78,6 +78,26 @@ Input: font file(s) or folder of fonts.
 
 ----
 
+### `comparisonProof.py`
+
+Create lines for a string of characters, set in all fonts that support it.
+The choice of fonts is either all installed fonts (no argument), or all fonts
+in a given folder tree. The font list can be filtered by supplying a regular
+expression.
+
+This proof helps solving the question:
+“How do other fonts deal with this weird glyph?”
+
+Slow.
+
+![comparisonProof.py](_images/comparisonProof_1.png)
+
+![comparisonProof.py](_images/comparisonProof_2.png)
+
+![comparisonProof.py](_images/comparisonProof_3.png)
+
+----
+
 ### `glyphsetProof.py`
 
 Visualizes the complete glyphset of a font or UFO on a single page.
