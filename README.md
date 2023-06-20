@@ -187,6 +187,24 @@ Input: folder containing fonts, or single font file.
 
 ----
 
+### `unicodeChartProof.py`
+
+Creates character charts similar to the Unicode.org charts for The Unicode
+Standard, but using the supplied font (and only the characters present in the
+font).
+
+Input: font file or folder containing font files
+
+CLI Inputs: see help
+
+![unicodeChartProof.py](_images/unicodeChartProof_1.png)
+
+![unicodeChartProof.py](_images/unicodeChartProof_2.png)
+
+![unicodeChartProof.py](_images/unicodeChartProof_3.png)
+
+----
+
 ### `verticalMetricsComparisonProof.py`
 
 Creates pages with example characters to visualize the variation
