@@ -171,7 +171,7 @@ def draw_metrics_page(f_info, page_width=5000):
     scale_factor = PT_SIZE / upm
     x_offset = MARGIN_L / scale_factor
     font_height = f_info.winAscent + f_info.winDescent
-    page_height = font_height * 1.33 * scale_factor
+    page_height = font_height * 1.4 * scale_factor
     db.newPage(page_width, page_height)
     baseline = db.height() / 3 / scale_factor
 
