@@ -9,6 +9,7 @@ import os
 import tempfile
 
 from fontTools import ttLib
+from fontTools.designspaceLib import DesignSpaceDocument
 from pathlib import Path
 
 
@@ -47,6 +48,7 @@ def get_ufo_paths(input_path, filter='font.ufo'):
     '''
     Search for UFO files (font.ufo files are filtered out).
     If a single UFO file is passed, that file will be returned.
+    If a designspace file is passed, paths of sources will be returned.
 
     '''
     ufo_paths = []
@@ -57,6 +59,11 @@ def get_ufo_paths(input_path, filter='font.ufo'):
             return [path]
         else:
             ufo_paths = list(path.rglob('*.ufo'))
+    elif path.suffix == '.designspace':
+        doc = DesignSpaceDocument.fromfile(path)
+        for source in doc.sources:
+            source_path = Path(source.path).resolve()
+            ufo_paths.append(source_path)
     return ufo_paths
 
 
