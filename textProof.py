@@ -7,12 +7,14 @@
 
 '''
 Creates example paragraphs corresponding to a given character set.
-Either prints a single page with random subset of the charset, or consumes
-the full charset systematically, to create a multipage document.
+Default mode is creating single-page PDF with a random subset of the requested
+charset, alternatively a full charset can be consumed systematically, to show
+as many characters as possible.
 
 Known bug:
-line spacing may become inconsistent (this is a macOS limitation caused by
-the vertical metrics in a given fallback font.)
+line spacing may become inconsistent if a character set beyond the font’s
+character support is requested (this is a macOS limitation caused by the
+vertical metrics in a given fallback font).
 
 Input: folder containing fonts, or single font file.
 
@@ -140,13 +142,12 @@ def message_with_charset(message, characters, wrap_length=70):
     )
 
 
-def analyze_missing(content_pick, raw_content, charset_name=cs.al3):
+def analyze_missing(content_pick, raw_content, charset):
     '''
-    Print out some stats about the chosen character set,
-    which characters were used in the sample, etc.
+    Report stats about the chosen character set, which characters were
+    used in the sample, etc.
     '''
     abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-    charset = eval(f'cs.{charset_name}')
     missing_abc = set(abc) - set(''.join(content_pick))
     missing_charset = set(charset) - set(''.join(content_pick))
     missing_cset_source = set(charset) - set(raw_content)
@@ -295,8 +296,6 @@ if __name__ == '__main__':
     PT_SIZE = args.pointsize
     MARGIN = 12
 
-    assets_path = os.path.dirname(__file__)
-
     # A Letter page is 8.5 by 11 inches. 1 inch contains 72 dtp points.
     # Therefore, 11 * 72, divided by the chosen point size * 1.2 (which is the
     # typical leading factor) results in the number of lines possible per page.
@@ -311,6 +310,7 @@ if __name__ == '__main__':
     req_chars = args.filter
     charset_name = args.charset.lower()
     charset_digit = re.match(r'..(\d)', charset_name)
+    charset = eval(f'cs.{charset_name}')
 
     if charset_digit:
         max_charset_level = int(charset_digit.group(1))
@@ -326,6 +326,7 @@ if __name__ == '__main__':
     except NameError:
         sys.exit(f'Character set "{charset_name}" is not defined')
 
+    content_chars = set(raw_content)
     content_list = raw_content.split('\n')
     random.shuffle(content_list)
     content_pick = []
@@ -357,23 +358,20 @@ if __name__ == '__main__':
             else:
                 sys.exit('invalid alternate input.')
         output_name += f' {charset_name} {args.pointsize}pt'
+
         if args.full:
             output_name += ' full'
             full_content = []
             paragraph, remaining_charset = consume_charset(
                 content_list, target_charset)
 
-            if charset_name == 'al2':
-                possible_remainder = 32
-            else:
-                possible_remainder = 13
-
             full_content.append(paragraph)
-            while len(remaining_charset) > possible_remainder:
-                # could not find example words for
-                # 13 characters in AL3,
-                # 32 characters in AL2, etc.
 
+            # Some characters are hard to find, so the source text might not
+            # contain all of the characters for the given charset.
+            acceptable_omissions = len(set(charset) - content_chars)
+
+            while len(remaining_charset) > acceptable_omissions:
                 paragraph, remaining_charset = consume_charset(
                     content_list, remaining_charset)
                 full_content.append(paragraph)
@@ -381,10 +379,12 @@ if __name__ == '__main__':
             formatted_content = format_content(
                 full_content, capitalize=args.capitalize)
 
-            final_container = TextContainer(
-                ' '.join(target_charset), paragraph=True)
             formatted_content.append(TextContainer('\n', paragraph=True))
-            formatted_content.append(final_container)
+
+            # final_container = TextContainer(
+            #     ' '.join(target_charset), paragraph=True)
+            # formatted_content.append(final_container)
+
             make_proof(
                 formatted_content, output_name,
                 sorted_fonts, fonts, fonts_sec,
@@ -424,10 +424,11 @@ if __name__ == '__main__':
                 len_limit=glyphs_per_page,
                 capitalize=args.capitalize)
 
-            make_proof(formatted_content, output_name, sorted_fonts, fonts, fonts_sec)
+            make_proof(
+                formatted_content, output_name, sorted_fonts, fonts, fonts_sec)
 
         if args.verbose:
-            analyze_missing(content_pick, raw_content, charset_name)
+            analyze_missing(content_pick, raw_content, charset)
 
     else:
         print('No fonts found.')

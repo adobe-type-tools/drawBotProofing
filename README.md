@@ -170,12 +170,14 @@ Create/update the README.md file for this repository.
 ### `textProof.py`
 
 Creates example paragraphs corresponding to a given character set.
-Either prints a single page with random subset of the charset, or consumes
-the full charset systematically, to create a multipage document.
+Default mode is creating single-page PDF with a random subset of the requested
+charset, alternatively a full charset can be consumed systematically, to show
+as many characters as possible.
 
 Known bug:
-line spacing may become inconsistent (this is a macOS limitation caused by
-the vertical metrics in a given fallback font.)
+line spacing may become inconsistent if a character set beyond the font’s
+character support is requested (this is a macOS limitation caused by the
+vertical metrics in a given fallback font).
 
 Input: folder containing fonts, or single font file.
 
