@@ -72,6 +72,12 @@ def get_options(args=None, description=__doc__):
         help='number of extreme glyphs')
 
     parser.add_argument(
+        '-u', '--normalize_upm',
+        action='store_true',
+        default=False,
+        help='convert label values to 1000 UPM-equivalent')
+
+    parser.add_argument(
         '-s', '--sample_string',
         type=str,
         default='Hxbpg',
@@ -92,12 +98,12 @@ class FontInfo(object):
         self.capHeight = 0
         self.cap_H_width = 0
         self.sample_string = args.sample_string
+        self.parse_cmap()
         self.extract_vertical_metrics()
         self.extract_extreme_n_glyphs(n=args.num_extremes)
         self.extract_names()
         self.extract_widths()
         self.extract_upm()
-        self.parse_cmap()
         self.extract_cap_H_width()
         # sTypoAscender
         # sTypoDescender
@@ -166,7 +172,7 @@ class FontInfo(object):
         self.cap_H_width = self.advance_widths.get(cap_H_gname)
 
 
-def draw_metrics_page(f_info, page_width=5000):
+def draw_metrics_page(f_info, page_width=5000, normalize_upm=False):
     upm = f_info.upm
     glyph_names = get_glyph_names(f_info)
     scale_factor = PT_SIZE / upm
@@ -178,8 +184,8 @@ def draw_metrics_page(f_info, page_width=5000):
 
     line_labels = (
         ('os/2 winAscent', f_info.winAscent),
+        # winDescent is represented using a positive number, therefore * -1
         ('os/2 winDescent', f_info.winDescent * -1),
-        # winDescent is represented using a positive number
         ('os/2 typoAscender', f_info.ascender),
         ('os/2 typoDescender', f_info.descender),
 
@@ -242,11 +248,17 @@ def draw_metrics_page(f_info, page_width=5000):
                     db.stroke(None)
 
                 if 'winDescent' in value_name:
-                    label_value = str(y_value * -1)
+                    label_value = y_value * -1
                 else:
-                    label_value = str(y_value)
+                    label_value = y_value
+                if normalize_upm and f_info.upm != 1000:
+                    conversion_factor = 1000 / f_info.upm
+                    label_value_conv = f'{label_value * conversion_factor:.0f}'
+                    label = f'{value_name}: {label_value} ({label_value_conv})'
+                else:
+                    label = f'{value_name}: {label_value}'
                 db.text(
-                    f'{value_name}: {label_value}',
+                    label,
                     (-8 / scale_factor, label_baseline),
                     align='right')
                 previous_label_baseline = label_baseline
@@ -286,7 +298,7 @@ def process_font_path(font_path, args):
         print(f'{"":20s} lo {args.num_extremes}: {" ".join(fi.g_ymin)}')
         print(f'{"":20s} hi {args.num_extremes}: {" ".join(fi.g_ymax)}')
 
-    draw_metrics_page(fi, page_width)
+    draw_metrics_page(fi, page_width, args.normalize_upm)
 
 
 def finish_drawing(doc_name):
