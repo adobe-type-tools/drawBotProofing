@@ -127,7 +127,7 @@ def process_font_paths(font_paths, args):
         doc_name = f'comparison {family_name} ({extension[1:]})'
 
     page_width = sum(
-        [fi.advance_widths['H'] * PT_SIZE / fi.upm for fi in font_info_list]
+        [fi.cap_H_width * PT_SIZE / fi.upm for fi in font_info_list]
     ) + 2 * MARGIN
 
     for f_info in font_info_list:
