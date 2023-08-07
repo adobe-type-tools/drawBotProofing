@@ -212,18 +212,20 @@ def draw_metrics_page(f_info, page_width=5000):
             for glyph_name in glyph_names])
 
         with db.savedState():
-            for value_name, y_value in line_labels:
+            # no need to draw overlapping lines twice
+            for y_value in set([value for _, value in line_labels]):
                 db.stroke(0)
                 db.strokeWidth(1)
-                db.line((-20, y_value), (string_width, y_value))
+                db.line((-4 / scale_factor, y_value), (string_width, y_value))
+
         with db.savedState():
-            line_height = 50
+            line_height = 10 / scale_factor
             # keep track of previous value for avoiding label overlap
             previous_label_baseline = -10000
             used_baselines = [previous_label_baseline]
             for line_index, (value_name, y_value) in enumerate(line_labels):
                 db.font(FONT_MONO)
-                db.fontSize(30)
+                db.fontSize(6 / scale_factor)
                 db.fill(1, 0.186, 0.573)  # Strawberry
                 v_offset = 10
                 label_baseline = y_value + v_offset
@@ -234,7 +236,9 @@ def draw_metrics_page(f_info, page_width=5000):
                         label_baseline += line_height
                     db.stroke(0)
                     db.strokeWidth(1)
-                    db.line((-30, label_baseline), (-20, y_value))
+                    db.line(
+                        (-7 / scale_factor, label_baseline),
+                        (-4 / scale_factor, y_value))
                     db.stroke(None)
 
                 if 'winDescent' in value_name:
@@ -243,7 +247,7 @@ def draw_metrics_page(f_info, page_width=5000):
                     label_value = str(y_value)
                 db.text(
                     f'{value_name}: {label_value}',
-                    (-40, label_baseline),
+                    (-8 / scale_factor, label_baseline),
                     align='right')
                 previous_label_baseline = label_baseline
                 used_baselines.append(previous_label_baseline)
