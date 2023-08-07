@@ -104,6 +104,7 @@ class FontInfo(object):
         self.extract_widths()
         self.extract_upm()
         self.parse_cmap()
+        self.extract_cap_H_width()
         # sTypoAscender
         # sTypoDescender
         # sxHeight
@@ -164,6 +165,11 @@ class FontInfo(object):
         self.reverse_char_map = {
             gname: chr(c_index) for c_index, gname in self.char_map.items()
         }
+
+    def extract_cap_H_width(self):
+        # do not assume the glyph name for 'H' to be 'H'
+        cap_H_gname = self.char_map.get(ord('H'), '.notdef')
+        self.cap_H_width = self.advance_widths.get(cap_H_gname)
 
 
 def draw_metrics_page(f_info, page_width=5000):
