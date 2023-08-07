@@ -26,6 +26,7 @@ from fontTools.pens.boundsPen import BoundsPen
 from fontTools import ttLib
 
 from proofing_helpers.files import get_font_paths
+from proofing_helpers.globals import FONT_MONO
 from proofing_helpers.fontSorter import sort_fonts
 from proofing_helpers.names import get_ps_name, get_name_overlap
 
@@ -221,7 +222,7 @@ def draw_metrics_page(f_info, page_width=5000):
             previous_label_baseline = -10000
             used_baselines = [previous_label_baseline]
             for line_index, (value_name, y_value) in enumerate(line_labels):
-                db.font('InputMono-Light')
+                db.font(FONT_MONO)
                 db.fontSize(30)
                 db.fill(1, 0.186, 0.573)  # Strawberry
                 v_offset = 10
