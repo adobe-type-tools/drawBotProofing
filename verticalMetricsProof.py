@@ -21,10 +21,10 @@ import subprocess
 import sys
 
 import drawBot as db
-from fontTools.pens.cocoaPen import CocoaPen
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools import ttLib
 
+from proofing_helpers.drawing import draw_glyph
 from proofing_helpers.files import get_font_paths
 from proofing_helpers.globals import FONT_MONO
 from proofing_helpers.fontSorter import sort_fonts
@@ -38,12 +38,6 @@ if IN_UI:
 PT_SIZE = 200
 MARGIN = 20
 MARGIN_L = 6 * MARGIN
-
-
-def draw_glyph(glyph):
-    cpen = CocoaPen(glyph.glyphSet)
-    glyph.draw(cpen)
-    db.drawPath(cpen.path)
 
 
 def get_glyph_names(fi):

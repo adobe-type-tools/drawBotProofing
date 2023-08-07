@@ -27,9 +27,8 @@ import subprocess
 import defcon
 import drawBot as db
 
-from fontTools.pens.cocoaPen import CocoaPen
-
 from proofing_helpers import fontSorter
+from proofing_helpers.drawing import draw_glyph
 from proofing_helpers.files import get_ufo_paths
 from proofing_helpers.globals import FONT_MONO
 from proofing_helpers.stamps import timestamp
@@ -99,12 +98,6 @@ def get_options(args=None):
         help='folder to crawl')
 
     return parser.parse_args(args)
-
-
-def draw_glyph(glyph):
-    cpen = CocoaPen(glyph.getParent())
-    glyph.draw(cpen)
-    db.drawPath(cpen.path)
 
 
 def draw_anchors(glyph, size):
