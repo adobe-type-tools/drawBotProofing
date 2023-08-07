@@ -22,11 +22,11 @@ import drawBot as db
 import re
 import subprocess
 
-from fontTools.pens.cocoaPen import CocoaPen
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
 
 from pathlib import Path
+from proofing_helpers.drawing import draw_glyph
 from proofing_helpers.files import get_ufo_paths, get_font_paths
 from proofing_helpers.globals import FONT_MONO
 from proofing_helpers.names import get_ps_name
@@ -49,17 +49,6 @@ def get_args(args=None):
         help='regex for glyph set filtering')
 
     return parser.parse_args(args)
-
-
-def draw_glyph(glyph):
-    if isinstance(glyph, defcon.objects.glyph.Glyph):
-        # UFO
-        cpen = CocoaPen(glyph.getParent())
-    else:
-        # font
-        cpen = CocoaPen(glyph.glyphSet)
-    glyph.draw(cpen)
-    db.drawPath(cpen.path)
 
 
 def get_y_bounds(glyphset):
