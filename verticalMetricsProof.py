@@ -43,7 +43,7 @@ MARGIN_L = 6 * MARGIN
 def get_glyph_names(fi):
     # Some standard glyphs defining basic metrics,
     # as well as tallest and lowest glyphs.
-    glyph_names = list(fi.sample_string)
+    glyph_names = [fi.char_map.get(ord(char)) for char in fi.sample_string]
     glyph_names += fi.g_ymin
     glyph_names += fi.g_ymax
     return glyph_names
