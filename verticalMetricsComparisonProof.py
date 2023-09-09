@@ -16,7 +16,10 @@ Input: folder containing font or UFO files.
 import defcon
 import drawBot as db
 
-from verticalMetricsProof import *
+from verticalMetricsProof import (
+    MARGIN, PT_SIZE,
+    FontInfo,
+    finish_drawing, get_options)
 
 from proofing_helpers import fontSorter
 from proofing_helpers.files import get_font_paths, get_ufo_paths
