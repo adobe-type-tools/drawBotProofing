@@ -124,6 +124,9 @@ def ffi_supports_characters(characters, ffi):
 
 
 def font_path_to_ffi(font_path):
+    '''
+    Return a list of one (otf/ttf) or multiple (ttc) font file info objects.
+    '''
     ffi_objects = []
     if font_path.suffix == '.ttc':
         ttc_style_dict = get_ttc_styles(font_path)
@@ -180,8 +183,7 @@ def get_available_fonts(args):
                 font_path.suffix in suffixes and
                 font_path.name not in EXCLUDE_FONTS
             ):
-                ffi = FontFileInfo(font_path, ps_name)
-                available_fonts.append(ffi)
+                available_fonts.extend(font_path_to_ffi(font_path))
 
     return available_fonts
 
