@@ -40,12 +40,16 @@ MARGIN = 20
 MARGIN_L = 6 * MARGIN
 
 
-def get_glyph_names(fi):
-    # Some standard glyphs defining basic metrics,
-    # as well as tallest and lowest glyphs.
-    glyph_names = [fi.char_map.get(ord(char)) for char in fi.sample_string]
-    glyph_names += fi.g_ymin
-    glyph_names += fi.g_ymax
+def get_glyph_names(font_info):
+    '''
+    Collect some standard glyphs defining basic metrics,
+    as well as tallest and lowest glyphs.
+    '''
+    glyph_names = [
+        font_info.char_map.get(ord(char)) for
+        char in font_info.sample_string]
+    glyph_names += font_info.g_ymin
+    glyph_names += font_info.g_ymax
     return glyph_names
 
 
@@ -159,6 +163,11 @@ class FontInfo(object):
             g_name, w_record) in hmtx_table.metrics.items()
         }
 
+    def get_bounds(self, glyph_name):
+        pen = BoundsPen(self.glyph_set)
+        self.glyph_set[glyph_name].draw(pen)
+        return pen.bounds
+
     def parse_cmap(self):
         cmap_table = self.ttf['cmap']
         self.char_map = cmap_table.getBestCmap()
@@ -172,15 +181,42 @@ class FontInfo(object):
         self.cap_H_width = self.advance_widths.get(cap_H_gname)
 
 
-def draw_metrics_page(f_info, page_width=5000, normalize_upm=False):
+def get_string_bounds(f_info, glyph_names):
+    '''
+    Calculate the width and height of the string (including swashy letters,
+    which may extend to the right further than their advance width, and incl.
+    glyphs which may exceed any pre-set vertical metrics).
+    '''
+    insertion_point = 0
+    x_extent = []
+    # vertical metrics may exceed any outline bounds:
+    y_extent = [f_info.winDescent, f_info.winAscent]
+
+    for gn in glyph_names:
+        g_width = f_info.advance_widths.get(gn, 0)
+        x_min, y_min, x_max, y_max = f_info.get_bounds(gn)
+        x_extent.append(insertion_point + g_width)
+        x_extent.append(insertion_point + x_max)
+        insertion_point += g_width
+        y_extent.append(y_min)
+        y_extent.append(y_max)
+
+    return min(x_extent), min(y_extent), max(x_extent), max(y_extent)
+
+
+def draw_metrics_page(f_info, normalize_upm=False):
     upm = f_info.upm
     glyph_names = get_glyph_names(f_info)
     scale_factor = PT_SIZE / upm
     x_offset = MARGIN_L / scale_factor
-    font_height = f_info.winAscent + f_info.winDescent
-    page_height = font_height * 1.4 * scale_factor
+
+    x_min, y_min, x_max, y_max = get_string_bounds(f_info, glyph_names)
+    line_height = sum([abs(y_min), y_max])
+    baseline = abs(y_min) + 2 * MARGIN / scale_factor
+
+    page_width = x_max * PT_SIZE / f_info.upm + MARGIN_L + MARGIN
+    page_height = line_height * scale_factor + 4 * MARGIN
     db.newPage(page_width, page_height)
-    baseline = db.height() / 3 / scale_factor
 
     line_labels = (
         ('os/2 winAscent', f_info.winAscent),
@@ -212,17 +248,12 @@ def draw_metrics_page(f_info, page_width=5000, normalize_upm=False):
                 draw_glyph(glyph)
                 db.translate(glyph.width, 0)
 
-        string_width = sum([
-            # fallback value 0 is for whenever a glyph is not supported
-            f_info.advance_widths.get(glyph_name, 0)
-            for glyph_name in glyph_names])
-
         with db.savedState():
             # no need to draw overlapping lines twice
             for y_value in set([value for _, value in line_labels]):
                 db.stroke(0)
                 db.strokeWidth(1)
-                db.line((-4 / scale_factor, y_value), (string_width, y_value))
+                db.line((-4 / scale_factor, y_value), (x_max, y_value))
 
         with db.savedState():
             line_height = 10 / scale_factor
@@ -282,10 +313,6 @@ def draw_metrics_page(f_info, page_width=5000, normalize_upm=False):
 
 def process_font_path(font_path, args):
     fi = FontInfo(font_path, args)
-    glyph_names = get_glyph_names(fi)
-    page_width = sum(
-        [fi.advance_widths.get(gn, 0) * PT_SIZE / fi.upm for gn in glyph_names]
-    ) + MARGIN_L + MARGIN
 
     print('{:20s} {:>3d} 0 {:>3d} {:>3d} {:>3d}'.format(
         fi.styleName,
@@ -298,7 +325,7 @@ def process_font_path(font_path, args):
         print(f'{"":20s} lo {args.num_extremes}: {" ".join(fi.g_ymin)}')
         print(f'{"":20s} hi {args.num_extremes}: {" ".join(fi.g_ymax)}')
 
-    draw_metrics_page(fi, page_width, args.normalize_upm)
+    draw_metrics_page(fi, args.normalize_upm)
 
 
 def finish_drawing(doc_name):
@@ -321,15 +348,18 @@ if __name__ == '__main__':
         args = get_options()
 
     font_paths = get_font_paths(args.input_dir)
-    sorted_font_paths = sort_fonts(font_paths)
+    if font_paths:
+        sorted_font_paths = sort_fonts(font_paths)
 
-    for font_path in sorted_font_paths:
-        process_font_path(font_path, args)
+        for font_path in sorted_font_paths:
+            process_font_path(font_path, args)
 
-    if args.output_file_name:
-        doc_name = args.output_file_name
+        if args.output_file_name:
+            doc_name = args.output_file_name
+        else:
+            doc_name = get_name_overlap([p.name for p in sorted_font_paths])
+
+        if not IN_UI:
+            finish_drawing(doc_name)
     else:
-        doc_name = get_name_overlap([p.name for p in sorted_font_paths])
-
-    if not IN_UI:
-        finish_drawing(doc_name)
+        print('no fonts found')
