@@ -72,6 +72,7 @@ footer = '''
 
 - "en_10k.txt" is based on [en_50k.txt](https://github.com/hermitdave/FrequencyWords/blob/525f9b560de45753a5ea01069454e72e9aa541c6/content/2016/en/en_50k.txt) from the [FrequencyWords](https://github.com/hermitdave/FrequencyWords) project, Copyright (c) 2016 Hermit Dave
 - fonts included in this distribution are subject to the SIL Open Font License, Copyright 2016-2023 Adobe.
+- Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the United States and other countries.
 
 '''
 
