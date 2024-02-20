@@ -6,9 +6,8 @@
 # it.
 
 '''
-Creates character charts similar to the Unicode.org charts for The Unicode
-Standard, but using the supplied font (and only the characters present in the
-font).
+Creates character charts similar to those appearing in The Unicode® Standard,
+but using the supplied font (and only the characters present in the font).
 
 Input: font file or folder containing font files
 
