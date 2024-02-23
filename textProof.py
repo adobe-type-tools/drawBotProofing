@@ -142,7 +142,7 @@ def message_with_charset(message, characters, wrap_length=70):
     )
 
 
-def analyze_missing(content_pick, raw_content, charset):
+def analyze_missing(content_pick, content_list, charset):
     '''
     Report stats about the chosen character set, which characters were
     used in the sample, etc.
@@ -150,7 +150,7 @@ def analyze_missing(content_pick, raw_content, charset):
     abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     missing_abc = set(abc) - set(''.join(content_pick))
     missing_charset = set(charset) - set(''.join(content_pick))
-    missing_cset_source = set(charset) - set(raw_content)
+    missing_cset_source = set(charset) - set(''.join(content_list))
 
     message_with_charset(charset_name.upper(), charset)
 
@@ -229,26 +229,18 @@ def make_page(content, orig_fonts, fonts, fonts_sec, f_index=0, multipage=False)
 
     fs_footer = db.FormattedString(
         '{} | {} | {} pt'.format(
-            timestamp(readable=True),
-            font_file_string,
-            PT_SIZE
-        ),
+            timestamp(readable=True), font_file_string, PT_SIZE),
         font=FONT_MONO,
         fontSize=6,
     )
 
     overflow = db.textBox(
         fs, (
-            6 * MARGIN,
-            5 * MARGIN,
-            db.width() - 9 * MARGIN,
-            db.height() - 7 * MARGIN
+            6 * MARGIN, 5 * MARGIN,
+            db.width() - 9 * MARGIN, db.height() - 7 * MARGIN
         )
     )
-    db.textBox(
-        fs_footer,
-        (6 * MARGIN, 0, db.width(), 3 * MARGIN)
-    )
+    db.textBox(fs_footer, (6 * MARGIN, 0, db.width(), 3 * MARGIN))
 
     if overflow and multipage:
         overflowing_item = [
@@ -279,7 +271,6 @@ def format_content(content_list, len_limit=None, capitalize=False):
                 t_container.paragraph = True
             if random.random() < 0.6:
                 t_container.italic = True
-            content_pick.append(chunk)
             formatted_content.append(t_container)
 
         if len_limit is not None and total_length >= len_limit:
@@ -325,6 +316,37 @@ def filter_paragraphs(content_list, req_chars):
     return content_list
 
 
+def get_content_list(charset_name):
+    '''
+    Chain external text files based on a given (validated) charset name,
+    split lines into a list, shuffle, and return
+    '''
+
+    charset_has_level = re.match(r'..(\d)', charset_name)
+
+    if charset_has_level:
+        charset_prefix = charset_name[:2]
+        max_charset_level = int(charset_has_level.group(1))
+        raw_content = chain_charset_texts(charset_prefix, max_charset_level)
+
+    else:
+        # abc charset, does not have a level
+        text_file_name = f'_content/{charset_name.upper()}.txt'
+        raw_content = read_text_file(text_file_name)
+
+    content_list = raw_content.split('\n')
+    random.shuffle(content_list)
+    return content_list
+
+
+def validate_charset(charset_name):
+    try:
+        target_charset = eval(f'cs.{charset_name.lower()}')
+    except NameError:
+        sys.exit(f'Character set "{charset_name}" is not defined')
+    return target_charset
+
+
 if __name__ == '__main__':
 
     args = get_options()
@@ -341,33 +363,12 @@ if __name__ == '__main__':
     # Similar calculation, and simplified assumption for an average glyph to be
     # 250 units wide.
     glyphs_per_line = (8.5 * 72) / (250 / 1000 * PT_SIZE)
-
     glyphs_per_page = int(round(lines_per_page * glyphs_per_line))
 
-    req_chars = args.filter
-    charset_name = args.charset.lower()
-    charset_digit = re.match(r'..(\d)', charset_name)
-    charset = eval(f'cs.{charset_name}')
-
-    if charset_digit:
-        max_charset_level = int(charset_digit.group(1))
-        charset_prefix = charset_name[:2]
-        raw_content = chain_charset_texts(charset_prefix, max_charset_level)
-
-    else:
-        text_file_name = f'_content/{charset_name.upper()}.txt'
-        raw_content = read_text_file(text_file_name)
-
-    try:
-        target_charset = eval(f'cs.{charset_name}')
-    except NameError:
-        sys.exit(f'Character set "{charset_name}" is not defined')
-
-    content_chars = set(raw_content)
-    content_list = raw_content.split('\n')
-    random.shuffle(content_list)
-    content_pick = []
     output_name = 'text proof'
+    charset_name = args.charset
+    charset = validate_charset(charset_name)
+    content_list = get_content_list(charset_name)
 
     input_fonts = []
     for item in args.input:
@@ -400,13 +401,14 @@ if __name__ == '__main__':
             output_name += ' full'
             full_content = []
             paragraph, remaining_charset = consume_charset(
-                content_list, target_charset)
+                content_list, charset)
 
             full_content.append(paragraph)
 
             # Some characters are hard to find, so the source text might not
             # contain all of the characters for the given charset.
-            acceptable_omissions = len(set(charset) - content_chars)
+            acceptable_omissions = len(
+                set(charset) - set(''.join(content_list)))
 
             while len(remaining_charset) > acceptable_omissions:
                 paragraph, remaining_charset = consume_charset(
@@ -428,8 +430,8 @@ if __name__ == '__main__':
                 multipage=True)
 
         else:
-            if req_chars:
-                content_list = filter_paragraphs(content_list, req_chars)
+            if args.filter:
+                content_list = filter_paragraphs(content_list, args.filter)
 
             formatted_content = format_content(
                 content_list,
@@ -440,7 +442,8 @@ if __name__ == '__main__':
                 formatted_content, output_name, sorted_fonts, fonts, fonts_sec)
 
         if args.verbose:
-            analyze_missing(content_pick, raw_content, charset)
+            content_pick = [fc.text for fc in formatted_content]
+            analyze_missing(content_pick, content_list, charset)
 
     else:
         print('No fonts found.')
