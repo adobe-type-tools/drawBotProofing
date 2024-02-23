@@ -288,6 +288,43 @@ def format_content(content_list, len_limit=None, capitalize=False):
     return formatted_content
 
 
+def filter_paragraphs(content_list, req_chars):
+    '''
+    find paragraph(s) containing all or (at least) one required character
+    '''
+    paragraphs_containing_all = [
+        p for p in content_list if set(p) >= set(req_chars)
+    ]
+    if paragraphs_containing_all:
+        # paragraph(s) containing all characters has been found
+        req_paragraph = random.choice(paragraphs_containing_all)
+        num_paragraphs = len(paragraphs_containing_all)
+        content_list.insert(0, req_paragraph)
+        print(f'required paragraph ({req_chars} -- {num_paragraphs} found):')
+        print('\n'.join(textwrap.wrap(req_paragraph, 70)))
+        print()
+
+    else:
+        for c_index, char in enumerate(req_chars):
+            # paragraphs for individual characters have been found
+            paragraphs_containing_one = [
+                p for p in content_list if char in p]
+            if paragraphs_containing_one:
+                req_paragraph = random.choice(
+                    paragraphs_containing_one)
+                content_list.insert(
+                    c_index, '[{}] {}'.format(char, req_paragraph))
+                print(f'required paragraph ({char}):')
+                print('\n'.join(textwrap.wrap(req_paragraph, 70)))
+                print()
+
+            else:
+                # nothing has been found for that character
+                print(f'no paragraph found for ({char})')
+
+    return content_list
+
+
 if __name__ == '__main__':
 
     args = get_options()
@@ -392,32 +429,7 @@ if __name__ == '__main__':
 
         else:
             if req_chars:
-                all_chars_paragraphs = [
-                    p for p in content_list if set(p) >= set(req_chars)
-                ]
-                if all_chars_paragraphs:
-                    req_paragraph = random.choice(all_chars_paragraphs)
-                    content_list.insert(0, req_paragraph)
-                    print(u'required paragraph ({} -- {} found):'.format(
-                        req_chars, len(all_chars_paragraphs)))
-                    print('\n'.join(textwrap.wrap(req_paragraph, 70)))
-                    print()
-
-                else:
-                    for c_index, char in enumerate(req_chars):
-                        found_paragraphs = [
-                            p for p in content_list if char in p]
-                        if found_paragraphs:
-                            req_paragraph = random.choice(found_paragraphs)
-                            print(u'required paragraph ({}):'.format(char))
-                            print('\n'.join(textwrap.wrap(req_paragraph, 70)))
-                            print()
-                            content_list.insert(
-                                c_index,
-                                '[{}] {}'.format(char, req_paragraph))
-                        else:
-                            print(
-                                'no paragraph available for ({})'.format(char))
+                content_list = filter_paragraphs(content_list, req_chars)
 
             formatted_content = format_content(
                 content_list,
