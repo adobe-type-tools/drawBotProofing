@@ -20,16 +20,18 @@ Input: folder containing fonts, or single font file.
 
 '''
 
-import os
 import re
 import sys
 
 import argparse
+import itertools
 import random
 import subprocess
 import textwrap
 
 import drawBot as db
+from fontTools.ttLib import TTFont
+from pathlib import Path
 
 from proofing_helpers import fontSorter
 from proofing_helpers import charsets as cs
@@ -38,6 +40,10 @@ from proofing_helpers.helpers import list_uni_names
 from proofing_helpers.files import (
     get_font_paths, chain_charset_texts, read_text_file, make_temp_font)
 from proofing_helpers.stamps import timestamp
+
+
+DOC_SIZE = 'Letter'
+MARGIN = 12
 
 
 class TextContainer(object):
@@ -56,20 +62,15 @@ def get_options():
     charset_choices = [name for name in dir(cs) if not name.startswith('_')]
 
     parser.add_argument(
-        'input',
+        '-f', '--fonts',
         nargs='+',
         help='font file or folder')
 
     parser.add_argument(
-        '-s', '--sec',
-        metavar='FONT',
+        '-s', '--secondary_fonts',
+        nargs='+',
+        default=[],
         help='secondary font file or folder')
-
-    parser.add_argument(
-        '-f', '--filter',
-        action='store',
-        metavar='ABC',
-        help='required characters')
 
     parser.add_argument(
         '-c', '--charset',
@@ -79,13 +80,19 @@ def get_options():
         help='character set')
 
     parser.add_argument(
+        '--filter',
+        action='store',
+        metavar='ABC',
+        help='required characters')
+
+    parser.add_argument(
         '--capitalize',
         action='store_true',
         default=False,
         help='capitalize output')
 
     parser.add_argument(
-        '-p', '--pointsize',
+        '-p', '--pt_size',
         action='store',
         default=10,
         type=int,
@@ -118,7 +125,8 @@ def merge_chunks(chunks, chunk_length=5):
 
 def consume_charset(content_list, charset):
     '''
-    tries to consume a character set with example words
+    Keep collecting paragraphs until every character of a given charset has
+    been used.
     '''
     character = random.choice(list(charset))
     found_paragraphs = [p for p in content_list if character in p]
@@ -133,13 +141,8 @@ def consume_charset(content_list, charset):
 
 
 def message_with_charset(message, characters, wrap_length=70):
-    print('{} ({}):\n{}\n'.format(
-        message,
-        len(characters),
-        '\n'.join(
-            textwrap.wrap(' '.join(sorted(characters)), wrap_length))
-    )
-    )
+    chars = '\n'.join(textwrap.wrap(' '.join(sorted(characters)), wrap_length))
+    print(f'{message} ({len(characters)}):\n{chars}\n')
 
 
 def analyze_missing(content_pick, content_list, charset):
@@ -169,21 +172,30 @@ def analyze_missing(content_pick, content_list, charset):
         list_uni_names(missing_cset_source)
 
 
-def make_proof(content, output_name, orig_fonts, fonts, fonts_sec=[], multipage=False):
+def make_proof(content, fonts_pri, fonts_sec, pt_size, output_name, multipage=False):
 
     db.newDrawing()
-    for f_index, font in enumerate(fonts):
-        make_page(content, orig_fonts, fonts, fonts_sec, f_index, multipage)
 
-    pdf_path = f'~/Desktop/{output_name}.pdf'
+    if fonts_sec:
+        font_pairs = list(itertools.product(fonts_pri, fonts_sec))
+        num_combinations = len(font_pairs)
+        if num_combinations > 20:
+            print(f'proofing {num_combinations} font combinations …')
+        for font_pri, font_sec in font_pairs:
+            make_page(content, font_pri, font_sec, pt_size, multipage)
+    else:
+        for font in fonts_pri:
+            make_page(content, font, None, pt_size, multipage)
+
+    pdf_path = Path(f'~/Desktop/{output_name}.pdf')
     db.saveImage(pdf_path)
 
     db.endDrawing()
-    print('saved to {}'.format(pdf_path))
-    subprocess.call(['open', os.path.expanduser(pdf_path)])
+    print(f'saved to {pdf_path}')
+    subprocess.call(['open', pdf_path.expanduser()])
 
 
-def make_page(content, orig_fonts, fonts, fonts_sec, f_index=0, multipage=False):
+def make_page(content, font_pri, font_sec, pt_size, multipage=False):
 
     db.newPage(DOC_SIZE)
     if charset_name == 'abc':
@@ -194,7 +206,7 @@ def make_page(content, orig_fonts, fonts, fonts_sec, f_index=0, multipage=False)
         db.hyphenation(True)
 
     fs = db.FormattedString(
-        fontSize=PT_SIZE,
+        fontSize=pt_size,
         fallbackFont=ADOBE_BLANK,
         openTypeFeatures=dict(
             liga=True,
@@ -204,32 +216,25 @@ def make_page(content, orig_fonts, fonts, fonts_sec, f_index=0, multipage=False)
         ),
     )
 
-    font_file_string = os.path.basename(orig_fonts[f_index])  # use original filename, not temp
-    # make sure primary and secondary font lists have even length
-    if fonts_sec:
-        while len(fonts_sec) < len(fonts):
-            fonts_sec.append(fonts_sec[-1])
-
-        while len(fonts) < len(fonts_sec):
-            fonts.append(fonts[-1])
-        font_file_string += ' + {}'.format(
-            os.path.basename(fonts_sec[f_index]))
-
     for text_item in content:
-
-        if text_item.italic and fonts_sec:
-            fs.append(text_item.text, font=fonts_sec[f_index])
+        if text_item.italic and font_sec:
+            tmp_font_sec = temp_fonts[font_sec]
+            fs.append(text_item.text, font=tmp_font_sec)
         else:
-            fs.append(text_item.text, font=fonts[f_index])
+            tmp_font_pri = temp_fonts[font_pri]
+            fs.append(text_item.text, font=tmp_font_pri)
 
         if text_item.paragraph:
             fs.append('\n\n')
         else:
             fs.append(' ')
 
+    footer_label = font_pri.name
+    if font_sec:
+        footer_label += f' + {font_sec.name}'
+
     fs_footer = db.FormattedString(
-        '{} | {} | {} pt'.format(
-            timestamp(readable=True), font_file_string, PT_SIZE),
+        f'{timestamp(readable=True)} | {footer_label} | {pt_size} pt',
         font=FONT_MONO,
         fontSize=6,
     )
@@ -238,21 +243,23 @@ def make_page(content, orig_fonts, fonts, fonts_sec, f_index=0, multipage=False)
         fs, (
             6 * MARGIN, 5 * MARGIN,
             db.width() - 9 * MARGIN, db.height() - 7 * MARGIN
-        )
-    )
+        ))
     db.textBox(fs_footer, (6 * MARGIN, 0, db.width(), 3 * MARGIN))
 
     if overflow and multipage:
         overflowing_item = [
             (index, item) for (index, item) in list(enumerate(content)) if (
+                # xxx
                 # 10 is a totally random number
                 str(overflow[:10]) in item.text)]
         if overflowing_item:
             new_start_index = overflowing_item[0][0]
         else:
+            # xxx
             new_start_index = 5
         remaining_content = content[new_start_index:]
-        make_page(remaining_content, orig_fonts, fonts, fonts_sec, f_index, multipage=True)
+        make_page(
+            remaining_content, font_pri, font_sec, pt_size, multipage=True)
 
 
 def format_content(content_list, len_limit=None, capitalize=False):
@@ -287,11 +294,12 @@ def filter_paragraphs(content_list, req_chars):
         p for p in content_list if set(p) >= set(req_chars)
     ]
     if paragraphs_containing_all:
-        # paragraph(s) containing all characters has been found
+        # paragraph(s) containing all characters have been found
         req_paragraph = random.choice(paragraphs_containing_all)
         num_paragraphs = len(paragraphs_containing_all)
         content_list.insert(0, req_paragraph)
-        print(f'required paragraph ({req_chars} -- {num_paragraphs} found):')
+
+        print(f'matching paragraph ({req_chars} -- {num_paragraphs} found):')
         print('\n'.join(textwrap.wrap(req_paragraph, 70)))
         print()
 
@@ -303,9 +311,8 @@ def filter_paragraphs(content_list, req_chars):
             if paragraphs_containing_one:
                 req_paragraph = random.choice(
                     paragraphs_containing_one)
-                content_list.insert(
-                    c_index, '[{}] {}'.format(char, req_paragraph))
-                print(f'required paragraph ({char}):')
+                content_list.insert(c_index, f'[{char}] {req_paragraph}')
+                print(f'matching paragraph ({char}):')
                 print('\n'.join(textwrap.wrap(req_paragraph, 70)))
                 print()
 
@@ -347,103 +354,112 @@ def validate_charset(charset_name):
     return target_charset
 
 
-if __name__ == '__main__':
+def get_glyphs_per_page(font, pt_size):
 
-    args = get_options()
-
-    DOC_SIZE = 'Letter'
-    PT_SIZE = args.pointsize
-    MARGIN = 12
+    ttfont = TTFont(font)
+    avg_glyph_width = ttfont['OS/2'].xAvgCharWidth
+    upm = ttfont['head'].unitsPerEm
 
     # A Letter page is 8.5 by 11 inches. 1 inch contains 72 dtp points.
     # Therefore, 11 * 72, divided by the chosen point size * 1.2 (which is the
     # typical leading factor) results in the number of lines possible per page.
-    lines_per_page = (11 * 72) / (PT_SIZE * 1.2)
-
-    # Similar calculation, and simplified assumption for an average glyph to be
-    # 250 units wide.
-    glyphs_per_line = (8.5 * 72) / (250 / 1000 * PT_SIZE)
+    lines_per_page = (11 * 72) / (pt_size * 1.2)
+    glyphs_per_line = (8.5 * 72) / (avg_glyph_width / upm * pt_size)
     glyphs_per_page = int(round(lines_per_page * glyphs_per_line))
 
+    return glyphs_per_page
+
+
+def make_output_name(path_pri, path_sec, cs_name, pt, full=False):
+
+    # both path_pri and seco
     output_name = 'text proof'
+    output_name += f' {path_pri.stem}'
+    if path_sec:
+        if path_sec.is_file():
+            output_name += ' vs'
+        output_name += f' {path_sec.stem}'
+
+    output_name += f' {cs_name} {pt}pt'
+
+    if full:
+        output_name += ' full'
+
+    return output_name
+
+
+def make_formatted_content(
+    content_list, charset, len_limit=None,
+    char_filter=None, capitalize=False, full=False
+):
+    if full:
+        # Some characters are hard to find, so the source text might not
+        # contain all of the characters for the given charset.
+        acceptable_omissions = len(
+            set(charset) - set(''.join(content_list)))
+
+        full_content = []
+        remaining_charset = charset
+
+        while len(remaining_charset) > acceptable_omissions:
+            paragraph, remaining_charset = consume_charset(
+                content_list, remaining_charset)
+            full_content.append(paragraph)
+
+        formatted_content = format_content(
+            full_content, capitalize=args.capitalize)
+        # formatted_content.append(TextContainer('\n', paragraph=True))
+
+    else:
+        if char_filter:
+            content_list = filter_paragraphs(content_list, char_filter)
+
+        formatted_content = format_content(
+            content_list, len_limit, args.capitalize)
+
+    return formatted_content
+
+
+if __name__ == '__main__':
+
+    args = get_options()
+
     charset_name = args.charset
     charset = validate_charset(charset_name)
     content_list = get_content_list(charset_name)
 
-    input_fonts = []
-    for item in args.input:
-        if os.path.isdir(item):
-            input_fonts.extend(get_font_paths(item))
-        else:
-            input_fonts.append(item)
-            base_name = os.path.splitext(os.path.basename(args.input[0]))[0]
-            output_name += f' {base_name}'
+    temp_fonts = {}
+    fonts_pri = []
+    for i, font in enumerate(args.fonts):
+        path_pri = Path(font)
+        fonts_pri.extend(get_font_paths(path_pri))
+    fonts_pri = fontSorter.sort_fonts(fonts_pri, alternate_italics=True)
 
-    sorted_fonts = fontSorter.sort_fonts(
-        input_fonts, alternate_italics=True)
-    fonts = [make_temp_font(i, font) for i, font in enumerate(sorted_fonts)]
+    fonts_sec = []
+    path_sec = ''
+    for i, font in enumerate(args.secondary_fonts):
+        path_sec = Path(font)
+        fonts_sec.extend(get_font_paths(path_sec))
+    fonts_sec = fontSorter.sort_fonts(fonts_sec, alternate_italics=True)
 
-    if fonts:
-        fonts_sec = []
-        if args.sec:
-            if os.path.isdir(args.sec):
-                output_name += f' {os.path.split(args.sec)[-1]}'
-                fonts_sec = get_font_paths(args.sec)
-            elif os.path.isfile(args.sec) and os.path.exists(args.sec):
-                base_name = os.path.splitext(os.path.basename(args.sec))[0]
-                output_name += f' vs {base_name}'
-                fonts_sec = [args.sec]
-            else:
-                sys.exit('invalid alternate input.')
-        output_name += f' {charset_name} {args.pointsize}pt'
+    for i, font in enumerate(fonts_pri + fonts_sec):
+        temp_fonts[font] = make_temp_font(i, font)
 
-        if args.full:
-            output_name += ' full'
-            full_content = []
-            paragraph, remaining_charset = consume_charset(
-                content_list, charset)
+    output_name = make_output_name(
+        path_pri, path_sec, charset_name, args.pt_size, args.full)
 
-            full_content.append(paragraph)
+    # xxx this is not completely representative of the # of chars/
+    # page, but arguably better than the previous solution
+    len_limit = get_glyphs_per_page(fonts_pri[0], args.pt_size)
 
-            # Some characters are hard to find, so the source text might not
-            # contain all of the characters for the given charset.
-            acceptable_omissions = len(
-                set(charset) - set(''.join(content_list)))
+    formatted_content = make_formatted_content(
+        content_list, charset, len_limit,
+        args.filter, args.capitalize, args.full)
 
-            while len(remaining_charset) > acceptable_omissions:
-                paragraph, remaining_charset = consume_charset(
-                    content_list, remaining_charset)
-                full_content.append(paragraph)
+    make_proof(
+        formatted_content, fonts_pri, fonts_sec,
+        args.pt_size, output_name, multipage=args.full)
 
-            formatted_content = format_content(
-                full_content, capitalize=args.capitalize)
-
-            formatted_content.append(TextContainer('\n', paragraph=True))
-
-            # final_container = TextContainer(
-            #     ' '.join(target_charset), paragraph=True)
-            # formatted_content.append(final_container)
-
-            make_proof(
-                formatted_content, output_name,
-                sorted_fonts, fonts, fonts_sec,
-                multipage=True)
-
-        else:
-            if args.filter:
-                content_list = filter_paragraphs(content_list, args.filter)
-
-            formatted_content = format_content(
-                content_list,
-                len_limit=glyphs_per_page,
-                capitalize=args.capitalize)
-
-            make_proof(
-                formatted_content, output_name, sorted_fonts, fonts, fonts_sec)
-
-        if args.verbose:
-            content_pick = [fc.text for fc in formatted_content]
-            analyze_missing(content_pick, content_list, charset)
-
-    else:
-        print('No fonts found.')
+    if args.verbose:
+        content_pick = [fc.text for fc in formatted_content]
+        analyze_missing(content_pick, content_list, charset)
