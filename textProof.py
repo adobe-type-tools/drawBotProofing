@@ -53,10 +53,18 @@ class TextContainer(object):
         self.paragraph = paragraph
 
 
+class RawDescriptionAndDefaultsFormatter(
+    # https://stackoverflow.com/a/18462760
+    argparse.ArgumentDefaultsHelpFormatter,
+    argparse.RawDescriptionHelpFormatter
+):
+    pass
+
+
 def get_options():
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=RawDescriptionAndDefaultsFormatter
     )
 
     charset_choices = [name for name in dir(cs) if not name.startswith('_')]
