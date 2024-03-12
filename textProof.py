@@ -182,10 +182,12 @@ def make_proof(content, fonts_pri, fonts_sec, pt_size, output_name, multipage=Fa
         if num_combinations > 20:
             print(f'proofing {num_combinations} font combinations …')
         for font_pri, font_sec in font_pairs:
-            make_page(content, font_pri, font_sec, pt_size, multipage)
+            fs = make_formatted_string(content, font_pri, font_sec, pt_size)
+            make_page(fs, font_pri, font_sec, pt_size, multipage)
     else:
         for font in fonts_pri:
-            make_page(content, font, None, pt_size, multipage)
+            fs = make_formatted_string(content, font, None, pt_size)
+            make_page(fs, font, None, pt_size, multipage)
 
     pdf_path = Path(f'~/Desktop/{output_name}.pdf')
     db.saveImage(pdf_path)
@@ -195,16 +197,10 @@ def make_proof(content, fonts_pri, fonts_sec, pt_size, output_name, multipage=Fa
     subprocess.call(['open', pdf_path.expanduser()])
 
 
-def make_page(content, font_pri, font_sec, pt_size, multipage=False):
-
-    db.newPage(DOC_SIZE)
-    if charset_name == 'abc':
-        # We do not want any non-ABC characters (such as the hyphen)
-        # in an ABC-only proof
-        db.hyphenation(False)
-    else:
-        db.hyphenation(True)
-
+def make_formatted_string(content, font_pri, font_sec, pt_size):
+    '''
+    make a formatted string which has different kinds of fonts/formatting
+    '''
     fs = db.FormattedString(
         fontSize=pt_size,
         fallbackFont=ADOBE_BLANK,
@@ -228,6 +224,18 @@ def make_page(content, font_pri, font_sec, pt_size, multipage=False):
             fs.append('\n\n')
         else:
             fs.append(' ')
+    return fs
+
+
+def make_page(fs, font_pri, font_sec, pt_size, multipage=False):
+
+    db.newPage(DOC_SIZE)
+    if charset_name == 'abc':
+        # We do not want any non-ABC characters (such as the hyphen)
+        # in an ABC-only proof
+        db.hyphenation(False)
+    else:
+        db.hyphenation(True)
 
     footer_label = font_pri.name
     if font_sec:
@@ -239,27 +247,19 @@ def make_page(content, font_pri, font_sec, pt_size, multipage=False):
         fontSize=6,
     )
 
-    overflow = db.textBox(
+    fs_overflow = db.textBox(
         fs, (
             6 * MARGIN, 5 * MARGIN,
             db.width() - 9 * MARGIN, db.height() - 7 * MARGIN
         ))
     db.textBox(fs_footer, (6 * MARGIN, 0, db.width(), 3 * MARGIN))
 
-    if overflow and multipage:
-        overflowing_item = [
-            (index, item) for (index, item) in list(enumerate(content)) if (
-                # xxx
-                # 10 is a totally random number
-                str(overflow[:10]) in item.text)]
-        if overflowing_item:
-            new_start_index = overflowing_item[0][0]
-        else:
-            # xxx
-            new_start_index = 5
-        remaining_content = content[new_start_index:]
+    if fs_overflow and multipage:
         make_page(
-            remaining_content, font_pri, font_sec, pt_size, multipage=True)
+            fs_overflow, font_pri, font_sec, pt_size, multipage)
+
+    else:
+        return fs_overflow
 
 
 def format_content(content_list, len_limit=None, capitalize=False):
@@ -389,8 +389,8 @@ def make_output_name(path_pri, path_sec, cs_name, pt, full=False):
 
 
 def make_formatted_content(
-    content_list, charset, len_limit=None,
-    char_filter=None, capitalize=False, full=False
+    content_list, charset,
+    len_limit=None, char_filter=None, capitalize=False, full=False
 ):
     if full:
         # Some characters are hard to find, so the source text might not
@@ -406,16 +406,13 @@ def make_formatted_content(
                 content_list, remaining_charset)
             full_content.append(paragraph)
 
-        formatted_content = format_content(
-            full_content, capitalize=args.capitalize)
-        # formatted_content.append(TextContainer('\n', paragraph=True))
+        formatted_content = format_content(full_content, capitalize)
 
     else:
         if char_filter:
             content_list = filter_paragraphs(content_list, char_filter)
 
-        formatted_content = format_content(
-            content_list, len_limit, args.capitalize)
+        formatted_content = format_content(content_list, len_limit, capitalize)
 
     return formatted_content
 
@@ -442,19 +439,23 @@ if __name__ == '__main__':
         fonts_sec.extend(get_font_paths(path_sec))
     fonts_sec = fontSorter.sort_fonts(fonts_sec, alternate_italics=True)
 
+    gpp_count = 0
     for i, font in enumerate(fonts_pri + fonts_sec):
+        # make temporary fonts, and calculate how many glyphs of the given
+        # font may fit on a page
         temp_fonts[font] = make_temp_font(i, font)
+        gpp_count += get_glyphs_per_page(font, args.pt_size)
 
     output_name = make_output_name(
         path_pri, path_sec, charset_name, args.pt_size, args.full)
 
-    # xxx this is not completely representative of the # of chars/
-    # page, but arguably better than the previous solution
-    len_limit = get_glyphs_per_page(fonts_pri[0], args.pt_size)
+    # This is not completely representative of the # of glyphs/page,
+    # but it is a useful approximation.
+    len_limit = gpp_count / (len(fonts_pri) + len(fonts_sec))
 
     formatted_content = make_formatted_content(
-        content_list, charset, len_limit,
-        args.filter, args.capitalize, args.full)
+        content_list, charset,
+        len_limit, args.filter, args.capitalize, args.full)
 
     make_proof(
         formatted_content, fonts_pri, fonts_sec,
