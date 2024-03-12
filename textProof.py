@@ -378,12 +378,19 @@ def get_glyphs_per_page(font, pt_size):
     return glyphs_per_page
 
 
-def make_output_name(path_pri, path_sec, cs_name, pt, full=False):
-
-    # both path_pri and seco
-    output_name = 'text proof'
-    output_name += f' {path_pri.stem}'
-    if path_sec:
+def make_output_name(fonts_pri, fonts_sec, cs_name, pt, full):
+    '''
+    Make an output filename based on the input fonts.
+    Not completely exhaustive. There could be a lot of combinations, so
+    this is erring on simplicity rather than overkill.
+    '''
+    path_pri = Path(fonts_pri[0])
+    # include the primary font- or folder name
+    output_name = f'text proof {path_pri.stem}'
+    if fonts_sec:
+        # include the secondary font- or folder name, if it exists.
+        # further fonts or folders are ignored.
+        path_sec = Path(fonts_sec[0])
         if path_sec.is_file():
             output_name += ' vs'
         output_name += f' {path_sec.stem}'
@@ -425,6 +432,14 @@ def make_formatted_content(
     return formatted_content
 
 
+def get_fonts(input_paths):
+    fonts = []
+    for i, path_name in enumerate(input_paths):
+        fonts.extend(get_font_paths(Path(path_name)))
+    fonts = fontSorter.sort_fonts(fonts, alternate_italics=True)
+    return fonts
+
+
 if __name__ == '__main__':
 
     args = get_options()
@@ -433,29 +448,16 @@ if __name__ == '__main__':
     charset = validate_charset(charset_name)
     content_list = get_content_list(charset_name)
 
-    temp_fonts = {}
-    fonts_pri = []
-    for i, font in enumerate(args.fonts):
-        path_pri = Path(font)
-        fonts_pri.extend(get_font_paths(path_pri))
-    fonts_pri = fontSorter.sort_fonts(fonts_pri, alternate_italics=True)
-
-    fonts_sec = []
-    path_sec = ''
-    for i, font in enumerate(args.secondary_fonts):
-        path_sec = Path(font)
-        fonts_sec.extend(get_font_paths(path_sec))
-    fonts_sec = fontSorter.sort_fonts(fonts_sec, alternate_italics=True)
+    fonts_pri = get_fonts(args.fonts)
+    fonts_sec = get_fonts(args.secondary_fonts)
 
     gpp_count = 0
+    temp_fonts = {}
     for i, font in enumerate(fonts_pri + fonts_sec):
-        # make temporary fonts, and calculate how many glyphs of the given
+        # Make temporary fonts, and calculate how many glyphs of the given
         # font may fit on a page
         temp_fonts[font] = make_temp_font(i, font)
         gpp_count += get_glyphs_per_page(font, args.pt_size)
-
-    output_name = make_output_name(
-        path_pri, path_sec, charset_name, args.pt_size, args.full)
 
     # This is not completely representative of the # of glyphs/page,
     # but it is a useful approximation.
@@ -464,6 +466,10 @@ if __name__ == '__main__':
     formatted_content = make_formatted_content(
         content_list, charset,
         len_limit, args.filter, args.capitalize, args.full)
+
+    output_name = make_output_name(
+        args.fonts, args.secondary_fonts,
+        charset_name, args.pt_size, args.full)
 
     make_proof(
         formatted_content, fonts_pri, fonts_sec,
