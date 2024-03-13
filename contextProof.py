@@ -63,6 +63,12 @@ def get_options():
         type=int,
         help='max example words/page')
 
+    parser.add_argument(
+        '-k', '--kerning_off',
+        default=False,
+        action='store_true',
+        help='switch off kerning')
+
     group = parser.add_mutually_exclusive_group(required=True)
 
     group.add_argument(
@@ -132,13 +138,20 @@ def make_proof(args, content, font_paths, output_path):
 
     base_names = [os.path.basename(font) for font in font_paths]
 
+    if args.kerning_off:
+        kerning_flag = ' (no kerning) '
+        fea_dict = {'kern': False}
+    else:
+        kerning_flag = ' '
+        fea_dict = {}
+
     for font_index, font in enumerate(font_paths):
         font_name = base_names[font_index]
         db.newPage('LetterLandscape')
 
         stamp = db.FormattedString(
-            '{} | {}'.format(
-                font_name,
+            '{}{}| {}'.format(
+                font_name, kerning_flag,
                 timestamp(readable=True)),
             font=FONT_MONO,
             fontSize=8,
@@ -150,6 +163,7 @@ def make_proof(args, content, font_paths, output_path):
             font=font,
             fontSize=args.point_size,
             fallbackFont=ADOBE_BLANK,
+            openTypeFeatures=fea_dict,
         )
         db.textBox(fs, (
             MARGIN, MARGIN,
