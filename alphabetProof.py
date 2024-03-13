@@ -31,6 +31,14 @@ from proofing_helpers.files import get_font_paths, make_temp_font
 from proofing_helpers.fontSorter import sort_fonts
 
 
+class RawDescriptionAndDefaultsFormatter(
+    # https://stackoverflow.com/a/18462760
+    argparse.ArgumentDefaultsHelpFormatter,
+    argparse.RawDescriptionHelpFormatter
+):
+    pass
+
+
 def get_options():
 
     mode_choices = ['proof', 'spacing', 'sample', 'all']
@@ -38,7 +46,7 @@ def get_options():
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=RawDescriptionAndDefaultsFormatter
     )
 
     parser.add_argument(
@@ -46,14 +54,14 @@ def get_options():
         action='store',
         default='proof',
         choices=mode_choices,
-        help=f'mode')
+        help='mode')
 
     parser.add_argument(
         '-w', '--writing_system',
         action='store',
         default='lat',
         choices=ws_choices,
-        help=f'writing system')
+        help='writing system')
 
     parser.add_argument(
         '-s', '--string',
@@ -67,6 +75,12 @@ def get_options():
         action='store',
         type=int,
         help='font size')
+
+    parser.add_argument(
+        '-k', '--kerning_off',
+        default=False,
+        action='store_true',
+        help='switch off kerning')
 
     parser.add_argument(
         '-d', '--date',
@@ -166,7 +180,10 @@ def make_proof(args, input_paths, output_path):
 
     for page in proof_text:
 
-        # feature_dict = {}
+        feature_dict = {'kern': not args.kerning_off}
+        # undocumented feature -- it is possible to add feature tags
+        # to the input text files. Not sure how useful.
+        #
         # if page.startswith('#'):  # features
         #     page_lines = page.splitlines()
         #     feature_line = page_lines[0].strip('#').strip()
@@ -178,24 +195,19 @@ def make_proof(args, input_paths, output_path):
             font_name = base_names[font_index]
             db.newPage('LetterLandscape')
 
-            stamp = db.FormattedString(
-                '{} | {}'.format(
-                    font_name,
-                    timestamp(readable=True)),
+            fs_stamp = db.FormattedString(
+                f'{font_name}',
                 font=FONT_MONO,
                 fontSize=10,
                 align='right')
+            if args.kerning_off:
+                fs_stamp += ' | no kerning'
+            fs_stamp += f' | {timestamp(readable=True)}'
 
-            db.textBox(stamp, (0, MARGIN, db.width() - MARGIN, 20))
+            db.textBox(fs_stamp, (0, MARGIN, db.width() - MARGIN, 20))
             y_offset = db.height() - MARGIN - args.point_size
             for line in page.split('\n'):
-                if line.startswith('#'):
-                    features = line.split()[0].strip('#').split(',')
-                    line = ' '.join(line.split()[1:])
-                    feature_dict = {
-                        feature_name: True for feature_name in features}
-                else:
-                    feature_dict = {}
+
                 fs = db.FormattedString(
                     line,
                     font=font,

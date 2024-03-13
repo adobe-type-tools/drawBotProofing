@@ -107,6 +107,12 @@ def get_options():
         help='point size for sample')
 
     parser.add_argument(
+        '-k', '--kerning_off',
+        default=False,
+        action='store_true',
+        help='switch off kerning')
+
+    parser.add_argument(
         '-a', '--full',
         action='store_true',
         help='consume whole character set')
@@ -180,9 +186,18 @@ def analyze_missing(content_pick, content_list, charset):
         list_uni_names(missing_cset_source)
 
 
-def make_proof(content, fonts_pri, fonts_sec, pt_size, output_name, multipage=False):
+def make_proof(content, fonts_pri, fonts_sec, args, output_name):
 
     db.newDrawing()
+
+    fea_dict = {
+        'liga': True,
+        # 'onum': True,
+        # 'pnum': True,
+        # 'tnum': True,
+    }
+    if args.kerning_off:
+        fea_dict['kern'] = False
 
     if fonts_sec:
         font_pairs = list(itertools.product(fonts_pri, fonts_sec))
@@ -190,12 +205,14 @@ def make_proof(content, fonts_pri, fonts_sec, pt_size, output_name, multipage=Fa
         if num_combinations > 20:
             print(f'proofing {num_combinations} font combinations …')
         for font_pri, font_sec in font_pairs:
-            fs = make_formatted_string(content, font_pri, font_sec, pt_size)
-            make_page(fs, font_pri, font_sec, pt_size, multipage)
+            fs = make_formatted_string(
+                content, font_pri, font_sec, args.pt_size, fea_dict)
+            make_page(fs, font_pri, font_sec, args)
     else:
         for font in fonts_pri:
-            fs = make_formatted_string(content, font, None, pt_size)
-            make_page(fs, font, None, pt_size, multipage)
+            fs = make_formatted_string(
+                content, font, None, args.pt_size, fea_dict)
+            make_page(fs, font, None, args)
 
     pdf_path = Path(f'~/Desktop/{output_name}.pdf')
     db.saveImage(pdf_path)
@@ -205,19 +222,14 @@ def make_proof(content, fonts_pri, fonts_sec, pt_size, output_name, multipage=Fa
     subprocess.call(['open', pdf_path.expanduser()])
 
 
-def make_formatted_string(content, font_pri, font_sec, pt_size):
+def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict):
     '''
     make a formatted string which has different kinds of fonts/formatting
     '''
     fs = db.FormattedString(
         fontSize=pt_size,
         fallbackFont=ADOBE_BLANK,
-        openTypeFeatures=dict(
-            liga=True,
-            # onum=True,
-            # pnum=True,
-            # tnum=True,
-        ),
+        openTypeFeatures=fea_dict,
     )
 
     for text_item in content:
@@ -235,7 +247,7 @@ def make_formatted_string(content, font_pri, font_sec, pt_size):
     return fs
 
 
-def make_page(fs, font_pri, font_sec, pt_size, multipage=False):
+def make_page(fs, font_pri, font_sec, args):
 
     db.newPage(DOC_SIZE)
     if charset_name == 'abc':
@@ -245,12 +257,15 @@ def make_page(fs, font_pri, font_sec, pt_size, multipage=False):
     else:
         db.hyphenation(True)
 
-    footer_label = font_pri.name
+    footer_label = f'{timestamp(readable=True)} | {font_pri.name}'
     if font_sec:
         footer_label += f' + {font_sec.name}'
+    footer_label += f' | {args.pt_size} pt'
+    if args.kerning_off:
+        footer_label += ' (no kerning)'
 
     fs_footer = db.FormattedString(
-        f'{timestamp(readable=True)} | {footer_label} | {pt_size} pt',
+        footer_label,
         font=FONT_MONO,
         fontSize=6,
     )
@@ -262,9 +277,9 @@ def make_page(fs, font_pri, font_sec, pt_size, multipage=False):
         ))
     db.textBox(fs_footer, (6 * MARGIN, 0, db.width(), 3 * MARGIN))
 
-    if fs_overflow and multipage:
+    if fs_overflow and args.full:
         make_page(
-            fs_overflow, font_pri, font_sec, pt_size, multipage)
+            fs_overflow, font_pri, font_sec, args)
 
     else:
         return fs_overflow
@@ -471,9 +486,7 @@ if __name__ == '__main__':
         args.fonts, args.secondary_fonts,
         charset_name, args.pt_size, args.full)
 
-    make_proof(
-        formatted_content, fonts_pri, fonts_sec,
-        args.pt_size, output_name, multipage=args.full)
+    make_proof(formatted_content, fonts_pri, fonts_sec, args, output_name)
 
     if args.verbose:
         content_pick = [fc.text for fc in formatted_content]
