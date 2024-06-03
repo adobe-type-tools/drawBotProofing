@@ -97,6 +97,12 @@ def get_options(args=None):
         help='color strokes in overlay mode')
 
     parser.add_argument(
+        '-l', '--columns',
+        required=False,
+        type=int,
+        help='override automatic number of columns'
+    )
+    parser.add_argument(
         'd',
         action='store',
         metavar='FOLDER',
@@ -345,9 +351,9 @@ def make_proof_page(args, box_width, box_height, glyph_name, font_list):
     '''
     Default mode, in which glyphs are set side-by-side.
     '''
-    bpl = get_max_boxes_per_line(args, font_list)
-    lines = math.ceil(len(font_list) / bpl)
-    page_width = BOX_WIDTH * bpl
+    columns = get_columns(args, font_list)
+    lines = math.ceil(len(font_list) / columns)
+    page_width = BOX_WIDTH * columns
     page_height = BOX_HEIGHT * lines
 
     uni_dict = make_uni_dict(font_list)
@@ -389,7 +395,7 @@ def make_proof_page(args, box_width, box_height, glyph_name, font_list):
         x_offset = 0
         anchor_list = []
         anchor_dict = {}
-        max_anchors_per_line = bpl
+        max_anchors_per_line = columns
         for font in font_list:
             num_glyphs += 1
             db.fill(0)
@@ -450,7 +456,7 @@ def make_proof_page(args, box_width, box_height, glyph_name, font_list):
             #     textBox(stylename_stamp, (footer_rect))
 
             x_offset += BOX_WIDTH
-            if num_glyphs % bpl == 0:
+            if num_glyphs % columns == 0:
                 current_line += 1
                 x_offset = 0
 
@@ -487,24 +493,27 @@ def make_proof_page(args, box_width, box_height, glyph_name, font_list):
                     db.drawPath()
 
 
-def get_max_boxes_per_line(args, font_list):
-    # if args.boxes:
-    #     return args.boxes
+def get_columns(args, font_list):
+    if args.columns:
+        # column number has been overridden manually
+        return args.columns
+
+    # calculation based on number of fonts provided
     if len(font_list) <= 5:
         return len(font_list)
     else:
         if len(font_list) in [i ** 2 for i in range(3, 7)]:
-            bpl = int(math.sqrt(len(font_list)))
+            columns = int(math.sqrt(len(font_list)))
 
         else:
             if len(font_list) >= 6:
-                bpl = len(font_list) // 2
+                columns = len(font_list) // 2
             elif len(font_list) >= 12:  # 12
-                bpl = len(font_list) // 3
+                columns = len(font_list) // 3
             else:  # 32
-                bpl = len(font_list) // 4
+                columns = len(font_list) // 4
 
-    return bpl
+    return columns
 
 
 def make_output_path(args, family_name, output_mode, matches):
@@ -655,9 +664,9 @@ def main(test_args=None):
 
         else:
             # default
-            bpl = get_max_boxes_per_line(args, font_list)
-            lines = math.ceil(len(font_list) / bpl)
-            page_width = BOX_WIDTH * bpl
+            columns = get_columns(args, font_list)
+            lines = math.ceil(len(font_list) / columns)
+            page_width = BOX_WIDTH * columns
             page_height = BOX_HEIGHT * lines
             output_mode = 'glyph proof'
             if len(glyph_list) > 1:
