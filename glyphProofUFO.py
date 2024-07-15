@@ -520,6 +520,8 @@ def make_output_path(args, family_name, output_mode, matches):
     '''
     Make output path based on the options chosen.
     '''
+    if family_name is None:
+        family_name = 'no family name'
     name_chunks = [output_mode, family_name]
 
     # if args.date:
