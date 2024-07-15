@@ -21,11 +21,13 @@ Slow.
 import argparse
 import drawBot as db
 import logging
+import multiprocessing
 import re
 import subprocess
 import CoreText
 
 from fontTools import ttLib
+from itertools import repeat
 from pathlib import Path
 
 from proofing_helpers.globals import ADOBE_BLANK, FONT_MONO
@@ -61,6 +63,16 @@ def get_installed_font_path(ps_name):
             ctFont, CoreText.kCTFontURLAttribute)
         font_path = url.path()
         return Path(font_path)
+
+
+def path_for_ps_name(ps_name):
+    if ps_name.startswith('.'):
+        # don't even try to look at system UI fonts: they don't
+        # work (sub to Times New Roman) and attempting to access
+        # causes an ugly warning message to be emitted.
+        pass
+    font_path = get_installed_font_path(ps_name)
+    return font_path
 
 
 def filter_fonts_by_regex(fonts, regex):
@@ -114,13 +126,14 @@ def get_cmap(font_path, ttc_arg=0):
         return {}
 
 
-def ffi_supports_characters(characters, ffi):
+def supports_characters(ffi, chars):
+    support = False
     cmap = get_cmap(ffi.path, ffi.font_number)
 
-    if cmap and set([ord(char) for char in characters]) <= cmap.keys():
-        return True
-    else:
-        return False
+    if cmap and set([ord(char) for char in chars]) <= cmap.keys():
+        support = True
+
+    return ffi, support
 
 
 def font_path_to_ffi(font_path):
@@ -149,7 +162,6 @@ def get_available_fonts(args):
     font number (if applicable).
     '''
     available_fonts = []
-    suffixes = ['.ttf', '.otf', '.ttc']
     if args.input_path:
         input_path = Path(args.input_path)
         if input_path.is_dir():  # find fonts in input_path
@@ -159,7 +171,6 @@ def get_available_fonts(args):
 
             for font_path in font_paths:
                 if (
-                    font_path.suffix in suffixes and
                     font_path.parent.name != 'AFE' and
                     # The AFE folder contains weird fonts w/o outlines
                     font_path.stem not in EXCLUDE_FONTS
@@ -172,18 +183,9 @@ def get_available_fonts(args):
             print(f'{args.input_path} seems to be invalid.')
 
     else:  # use installed fonts
-        for ps_name in db.installedFonts():
-            if ps_name.startswith('.'):
-                # don't even try to look at system UI fonts: they don't
-                # work (sub to Times New Roman) and attempting to access
-                # causes an ugly warning message to be emitted.
-                continue
-            font_path = get_installed_font_path(ps_name)
-            if (
-                font_path.suffix in suffixes and
-                font_path.name not in EXCLUDE_FONTS
-            ):
-                available_fonts.extend(font_path_to_ffi(font_path))
+        pool = multiprocessing.Pool()
+        font_paths = pool.map(path_for_ps_name, db.installedFonts())
+        available_fonts = sum(pool.map(font_path_to_ffi, font_paths), [])
 
     return available_fonts
 
@@ -195,15 +197,15 @@ def collect_font_objects(args):
         available_fonts = filter_fonts_by_regex(available_fonts, args.regex)
 
     # filtering for character support
-    applicable_fonts = [
-        ffi for ffi in available_fonts if
-        ffi_supports_characters(args.characters, ffi)]
+    pool = multiprocessing.Pool()
+    support_map = pool.starmap(
+        supports_characters, zip(available_fonts, repeat(args.characters)))
+    filtered_fonts = [ffi for (ffi, support) in support_map if support is True]
 
     # simple sorting by PS name -- this is imperfect but makes sense for
     # installed fonts, or when a deep folder tree is parsed.
     return sorted(
-        applicable_fonts,
-        key=lambda fo: (fo.ps_name, fo.font_number, fo.suffix))
+        filtered_fonts, key=lambda fo: (fo.ps_name, fo.font_number, fo.suffix))
 
 
 def make_pdf_name(args):
