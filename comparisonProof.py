@@ -304,10 +304,7 @@ def get_options(args=None):
 
     parser.add_argument(
         '--pagesize',
-        choices=[
-            "10x14", "A0", "A1", "A2", "A3", "A4", "A4Small", "A5", "B4", "B5",
-            "Executive", "Folio", "Ledger", "Legal", "Letter", "LetterSmall",
-            "Quarto", "Statement", "Tabloid"],
+        choices=[size for size in db.sizes() if "Landscape" not in size],
         default="Letter",
         help='page size'
     )
