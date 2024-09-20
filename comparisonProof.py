@@ -242,16 +242,17 @@ def make_document(args, formatted_strings):
     margin = int(args.pt)
     line_number = 0
     line_height = int(args.pt) * 1.2
+    pagespec = f'{args.pagesize}{"Landscape" if args.landscape else ""}'
 
     db.newDrawing()
-    db.newPage('Letter')
+    db.newPage(pagespec)
     for fs in formatted_strings:
         line_number += 1
         current_baseline = (db.height() - margin - line_height * line_number)
         db.text(fs, (margin, current_baseline))
 
         if line_number * line_height + 4 * margin >= db.height():
-            db.newPage('Letter')
+            db.newPage(pagespec)
             line_number = 0
 
     pdf_name = make_pdf_name(args)
@@ -300,6 +301,18 @@ def get_options(args=None):
         action='store',
         metavar='FOLDER',
         help='folder to crawl (default is using all installed fonts)')
+
+    parser.add_argument(
+        '--pagesize',
+        choices=[size for size in db.sizes() if "Landscape" not in size],
+        default="Letter",
+        help='page size'
+    )
+    parser.add_argument(
+        '--landscape',
+        default=False,
+        action='store_true',
+        help='landscape orientation (default is portrait)')
 
     return parser.parse_args(args)
 
