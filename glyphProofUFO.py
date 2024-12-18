@@ -88,8 +88,14 @@ def get_options(args=None):
         choices=['single', 'overlay', 'gradient'],
         default='default',
         required=False,
-        help='alternate output modes'
-    )
+        help='alternate output modes')
+
+    parser.add_argument(
+        '--stroke_colors',
+        action='store_true',
+        default=False,
+        help='color strokes in overlay mode')
+
     parser.add_argument(
         'd',
         action='store',
@@ -209,18 +215,22 @@ def make_single_glyph_page(args, page_width, page_height, font, glyph_name):
             draw_anchors(glyph, 30)
 
 
-def make_overlay_glyph_page(args, page_width, page_height, font_list, glyph_name):
+def make_overlay_glyph_page(
+    args, page_width, page_height, font_list, stroke_colors, glyph_name
+):
     '''
     A page with all glyphs of the same name overlaid (in outlines).
     '''
     stamp = u'%s' % glyph_name
     db.newPage(page_width, page_height)
-    for font in font_list:
+
+    for i, font in enumerate(font_list):
+        stroke_color = stroke_colors[i]
         if glyph_name in font.keys():
             glyph = font[glyph_name]
             with db.savedState():
                 db.fill(None)
-                db.stroke(0)
+                db.stroke(*stroke_color)
                 db.strokeWidth(0.5)
                 x_offset = (db.width() - glyph.width) // 2
                 y_offset = 250
@@ -616,10 +626,23 @@ def main(test_args=None):
             page_height = page_width = 1200
             output_mode = 'overlay proof'
             if len(glyph_list) > 1:
+                # do not make a cover for a single-page proof
                 make_cover(page_width, page_height, font_list, margin)
+
+            if args.stroke_colors:
+                # strokes are colorful
+                stroke_colors = []
+                for font in font_list:
+                    hue = random.choice(range(256)) / 255
+                    stroke_colors.append(colorsys.hls_to_rgb(hue, 0.5, 1))
+            else:
+                # all strokes are black
+                stroke_colors = [(0, 0, 0, 1) for f in font_list]
+
             for glyph_name in glyph_list:
                 make_overlay_glyph_page(
-                    args, page_width, page_height, font_list, glyph_name)
+                    args, page_width, page_height,
+                    font_list, stroke_colors, glyph_name)
 
         elif args.mode == 'gradient':
             page_width = BOX_WIDTH * len(font_list)
