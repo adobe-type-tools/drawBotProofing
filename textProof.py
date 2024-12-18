@@ -16,7 +16,8 @@ line spacing may become inconsistent if a character set beyond the font’s
 character support is requested (this is a macOS limitation caused by the
 vertical metrics in a given fallback font).
 
-Input: folder containing fonts, or single font file.
+Input: folder containing fonts, or single font file. Optionally, secondary
+font(s) can be specified (for mixing Roman and Italic, for example).
 
 '''
 
@@ -70,15 +71,10 @@ def get_options():
     charset_choices = [name for name in dir(cs) if not name.startswith('_')]
 
     parser.add_argument(
-        '-f', '--fonts',
+        'fonts',
         nargs='+',
+        metavar='FONT',
         help='font file or folder')
-
-    parser.add_argument(
-        '-s', '--secondary_fonts',
-        nargs='+',
-        default=[],
-        help='secondary font file or folder')
 
     parser.add_argument(
         '-c', '--charset',
@@ -121,6 +117,13 @@ def get_options():
         '-v', '--verbose',
         action='store_true',
         help='report information about the characters used')
+
+    parser.add_argument(
+        '-s', '--secondary_fonts',
+        nargs='+',
+        metavar='FONT',
+        default=[],
+        help='secondary font file or folder')
 
     return parser.parse_args()
 
