@@ -179,7 +179,8 @@ line spacing may become inconsistent if a character set beyond the font’s
 character support is requested (this is a macOS limitation caused by the
 vertical metrics in a given fallback font).
 
-Input: folder containing fonts, or single font file.
+Input: folder containing fonts, or single font file. Optionally, secondary
+font(s) can be specified (for mixing Roman and Italic, for example).
 
 ![textProof.py](_images/textProof_1.png)
 
