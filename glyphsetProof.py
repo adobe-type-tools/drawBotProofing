@@ -167,7 +167,16 @@ def make_glyphset_pdf(args, input_file):
     db.newDrawing()
     if input_file.suffix == '.ufo':
         f = defcon.Font(input_file)
-        complete_glyph_order = f.glyphOrder
+        glyph_order = f.glyphOrder
+        all_glyphs = f.keys()
+        if set(glyph_order) == set(all_glyphs):
+            complete_glyph_order = glyph_order
+        else:
+            # additional glyphs could be
+            # - all glyphs (in case public.glyphOrder is empty)
+            # - any glyphs not mentioned in public.glyphOrder
+            additional_glyphs = set(all_glyphs) - set(glyph_order)
+            complete_glyph_order = glyph_order + sorted(additional_glyphs)
     else:
         f = TTFont(input_file)
         complete_glyph_order = f.getGlyphOrder()
