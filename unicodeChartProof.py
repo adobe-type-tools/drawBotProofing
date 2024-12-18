@@ -25,7 +25,13 @@ import sys
 
 import drawBot as db
 from fontTools.ttLib import TTFont
-import unicodedataplus
+try:
+    import unicodedataplus
+except ModuleNotFoundError:
+    sys.exit(
+        'This extension requires the unicodedataplus module.\n'
+        'https://pypi.org/project/unicodedataplus/'
+    )
 
 from proofing_helpers.files import get_font_paths
 from proofing_helpers.fontSorter import sort_fonts
@@ -40,7 +46,7 @@ def get_options(args=None, description=__doc__):
     parser = argparse.ArgumentParser(
         description=description,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        )
+    )
 
     parser.add_argument(
         'input_dir',
