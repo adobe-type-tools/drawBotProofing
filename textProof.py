@@ -37,6 +37,7 @@ from pathlib import Path
 from proofing_helpers import fontSorter
 from proofing_helpers import charsets as cs
 from proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
+from proofing_helpers.fonts import get_default_instance
 from proofing_helpers.helpers import list_uni_names
 from proofing_helpers.files import (
     get_font_paths, chain_charset_texts, read_text_file, make_temp_font)
@@ -238,10 +239,12 @@ def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict):
     for text_item in content:
         if text_item.italic and font_sec:
             tmp_font_sec = temp_fonts[font_sec]
-            fs.append(text_item.text, font=tmp_font_sec)
+            instance = get_default_instance(tmp_font_sec)
+            fs.append(text_item.text, font=tmp_font_sec, fontVariations=instance)
         else:
             tmp_font_pri = temp_fonts[font_pri]
-            fs.append(text_item.text, font=tmp_font_pri)
+            instance = get_default_instance(tmp_font_pri)
+            fs.append(text_item.text, font=tmp_font_pri, fontVariations=instance)
 
         if text_item.paragraph:
             fs.append('\n\n')

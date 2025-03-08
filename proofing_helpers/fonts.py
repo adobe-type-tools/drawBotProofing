@@ -36,3 +36,16 @@ def make_temp_font(file_index, font_file):
                 langID=name_entry.langID)
     font.save(tmp_font_file)
     return(tmp_font_file)
+
+
+def get_default_instance(font_file):
+    tf = ttLib.TTFont(font_file)
+    fvar = tf.get('fvar', None)
+    if fvar:
+        instance = {}
+        for axis in fvar.axes:
+            instance[axis.axisTag] = axis.defaultValue
+        return instance
+
+    else:
+        return
