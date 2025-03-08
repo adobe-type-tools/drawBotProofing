@@ -108,11 +108,10 @@ def make_proof_text(available_gnames, suffix=''):
     figures = [figure + suffix for figure in basic_figures]
     output = []
 
-    # brittle
-    if suffix == '' and 'zero.slash' in available_gnames:
-        figures.insert(0, 'zero.slash')
-    if suffix == '.lf' and 'zero.lfslash' in available_gnames:
-        figures.insert(0, 'zero.lfslash')
+    if 'zero.slash' + suffix in available_gnames:
+        figures.insert(0, 'zero.slash' + suffix)
+    elif 'zero' + suffix + '.slash' in available_gnames:
+        figures.insert(0, 'zero' + suffix + '.slash')
 
     for line in chunks(figures, 4):
         joined_line = [spacer] + list(joinit(line, spacer)) + [spacer]
@@ -166,8 +165,8 @@ if __name__ == '__main__':
             gn.split('.')[0] == 'three'])
 
         if args.suffixes is None:
-            suffixes = [''] + sorted(
-                ['.' + gn.split('.')[-1] for gn in figure_variants])
+            suffixes = [''] + sorted([
+                '.' + '.'.join(gn.split('.')[1:]) for gn in figure_variants])
 
             print('figure suffixes found:')
             for suffix in suffixes:
