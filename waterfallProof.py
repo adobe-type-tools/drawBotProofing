@@ -51,6 +51,24 @@ def get_options():
         type=int,
         help='point size')
 
+    parser.add_argument(
+        '-k', '--kerning_off',
+        default=False,
+        action='store_true',
+        help='switch off kerning')
+
+    parser.add_argument(
+        '--onum',
+        default=False,
+        action='store_true',
+        help='old-style figures')
+
+    parser.add_argument(
+        '--pnum',
+        default=False,
+        action='store_true',
+        help='proportional figures')
+
     return parser.parse_args()
 
 
@@ -76,6 +94,13 @@ if __name__ == '__main__':
 
     # Create a new page for each word in the vertical content text file:
     for line in v_content.split('\n'):
+
+        feature_dict = {
+            'kern': not args.kerning_off,
+            'onum': args.onum,
+            'pnum': args.pnum,
+        }
+
         db.newPage('Legal')
         top_line = db.height() - PT_SIZE - MARGIN
         offset = top_line
@@ -85,10 +110,7 @@ if __name__ == '__main__':
                 line,
                 font=font,
                 fontSize=PT_SIZE,
-                openTypeFeatures=dict(
-                    onum=True,
-                    pnum=True,
-                ),
+                openTypeFeatures=feature_dict,
             )
 
             db.text(fs, (MARGIN, offset))
