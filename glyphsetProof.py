@@ -22,9 +22,7 @@ import drawBot as db
 import re
 import subprocess
 
-from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
-
 from pathlib import Path
 from proofing_helpers.drawing import draw_glyph
 from proofing_helpers.files import get_ufo_paths, get_font_paths
@@ -55,23 +53,6 @@ def get_args(args=None):
         help='draw a stroke around glyph boxes')
 
     return parser.parse_args(args)
-
-
-def get_y_bounds(glyphset):
-    '''
-    get vertical metrics for a fonttools font
-
-    XXX this may leads to differently-scaled fonts within the
-    same family, since not all necessarily have the same bounding box.
-    '''
-    y_bounds = []
-    bpen = BoundsPen(glyphset)
-    for gname, glyph in glyphset.items():
-        glyph.draw(bpen)
-        _, y_bot, _, y_top = bpen.bounds
-        y_bounds.append(y_bot)
-        y_bounds.append(y_top)
-    return min(y_bounds), max(y_bounds)
 
 
 def draw_glyph_box(g, origin, box_width, box_height, upm, scale=1):
