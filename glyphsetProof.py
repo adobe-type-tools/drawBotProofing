@@ -12,7 +12,7 @@ The output is good to use with a diffing tool like `diff-pdf` in a later step.
 The glyphset can be filtered with a regular expression (for example,
 use `-r ".*dieresis"` to show all glyphs whose names end with -dieresis).
 
-Input: folder containing UFO or font files, individual fonts or UFOs.
+Input: folder containing UFO or font files, or individual font- or UFO files.
 
 '''
 
@@ -47,6 +47,13 @@ def get_args(args=None):
         help='regex for glyph set filtering')
 
     parser.add_argument(
+        '-c', '--columns',
+        action='store',
+        default=12,
+        type=int,
+        help='glyphs per line')
+
+    parser.add_argument(
         '-s', '--stroke',
         action='store_true',
         default=False,
@@ -56,6 +63,9 @@ def get_args(args=None):
 
 
 def draw_glyph_box(g, origin, box_width, box_height, upm, scale=1):
+    '''
+    draw a glyph in a box, somewhere on the page
+    '''
     x, y = origin
     f_height = upm
     f_descender = upm / 3 / scale
@@ -70,35 +80,20 @@ def draw_glyph_box(g, origin, box_width, box_height, upm, scale=1):
         draw_glyph(g)
 
 
-def draw_glyphset_page(f, glyph_list, stroke=False):
+def draw_glyphset_page(f, glyph_list, columns=12, stroke=False):
+
     doc_width = db.sizes()['TabloidLandscape'][0]
     margin = 10
-    whitespace_bottom = margin * 10
-    glyphs_per_line = 12
 
-    dflt_box_width = (doc_width - 2 * margin) / glyphs_per_line
+    dflt_box_width = (doc_width - 2 * margin) / columns
     dflt_box_height = dflt_box_width
+    margin_bottom = dflt_box_height + margin
 
     scale = .66
     scale_factor = dflt_box_height / 1000 * scale
 
-    # xxx this does not deal with double- or triple-wide glyphs
-    lines = len(glyph_list) // glyphs_per_line
-    doc_height = lines * dflt_box_height + 2 * margin + whitespace_bottom
-
     box_x = margin
-    box_y = doc_height - margin
-    db.newPage(doc_width, doc_height)
-
-    time_stamp = db.FormattedString(
-        '{}'.format(timestamp(readable=True)),
-        font=FONT_MONO,
-        fontSize=10,
-        align='right')
-
-    text_margin = 2 * margin
-    db.textBox(
-        time_stamp, (text_margin, margin, doc_width - 2 * text_margin, 20))
+    box_y = -margin
 
     if isinstance(f, TTFont):
         glyph_container = f.getGlyphSet()
@@ -109,6 +104,9 @@ def draw_glyphset_page(f, glyph_list, stroke=False):
     if not upm:
         upm = 1000
 
+    # keep track of how many boxes we’ll need
+    # (mainly, to calculate how tall the sample should be)
+    boxes = []
     box_y -= dflt_box_height
     for g_index, gname in enumerate(glyph_list):
         box_width = dflt_box_width
@@ -129,6 +127,29 @@ def draw_glyphset_page(f, glyph_list, stroke=False):
             box_y -= box_height
 
         origin = (box_x, box_y)
+        boxes.append((origin, box_width, box_height))
+        box_x += box_width
+
+    last_box_origin = boxes[-1][0]
+    doc_height = abs(last_box_origin[1]) + margin_bottom
+    db.newPage(doc_width, doc_height)
+
+    time_stamp = db.FormattedString(
+        '{}'.format(timestamp(readable=True)),
+        font=FONT_MONO,
+        fontSize=10,
+        align='right')
+
+    text_margin = 2 * margin
+    db.textBox(
+        time_stamp, (text_margin, margin, doc_width - 2 * text_margin, 20))
+
+    for g_index, gname in enumerate(glyph_list):
+        glyph = glyph_container[gname]
+        box = boxes[g_index]
+        # origin relative to top of document
+        origin_relative, box_width, box_height = box
+        origin = origin_relative[0], doc_height + origin_relative[1]
 
         # draw boxes
         if stroke:
@@ -139,7 +160,6 @@ def draw_glyphset_page(f, glyph_list, stroke=False):
                 db.rect(*origin, box_width, box_height)
 
         draw_glyph_box(glyph, origin, box_width, box_height, upm, scale)
-        box_x += box_width
 
 
 def filter_glyph_list(regex_string, glyph_list):
@@ -196,7 +216,7 @@ def make_glyphset_pdf(args, input_file):
     output_name = make_output_name(input_file, args)
     output_path = Path(f'~/Desktop/{output_name}').expanduser()
 
-    draw_glyphset_page(f, glyph_list, args.stroke)
+    draw_glyphset_page(f, glyph_list, args.columns, args.stroke)
     db.saveImage(output_path)
     db.endDrawing()
     subprocess.call(['open', output_path])
