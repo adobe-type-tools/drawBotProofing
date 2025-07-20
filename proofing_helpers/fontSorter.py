@@ -32,9 +32,9 @@ width_names = [
     ['normal'],
     ['semiextended', 'semiext'],
     ['extended'],
+    ['expanded'],
     ['wide'],
     ['xwide'],
-    ['expanded'],
 ]
 weight_names = [
     'hair',
