@@ -26,9 +26,9 @@ import subprocess
 
 import drawBot as db
 
-from proofing_helpers.stamps import timestamp
-from proofing_helpers.files import get_font_paths, make_temp_font
-from proofing_helpers.fontSorter import sort_fonts
+from .proofing_helpers.stamps import timestamp
+from .proofing_helpers.files import get_font_paths, make_temp_font
+from .proofing_helpers.fontSorter import sort_fonts
 
 
 class RawDescriptionAndDefaultsFormatter(
@@ -278,7 +278,13 @@ def make_output_name(args):
     return ' '.join(name_chunks) + '.pdf'
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
 
     args = get_options()
     input_paths = get_input_paths(args.input)

@@ -27,11 +27,11 @@ import subprocess
 import defcon
 import drawBot as db
 
-from proofing_helpers import fontSorter
-from proofing_helpers.drawing import draw_glyph
-from proofing_helpers.files import get_ufo_paths
-from proofing_helpers.globals import FONT_MONO
-from proofing_helpers.stamps import timestamp
+from .proofing_helpers import fontSorter
+from .proofing_helpers.drawing import draw_glyph
+from .proofing_helpers.files import get_ufo_paths
+from .proofing_helpers.globals import FONT_MONO
+from .proofing_helpers.stamps import timestamp
 
 
 # general measurements
@@ -685,5 +685,11 @@ def main(test_args=None):
         db.endDrawing()
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
     main()

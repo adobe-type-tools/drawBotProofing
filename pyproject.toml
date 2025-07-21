@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drawbot-proofing"
+version = "1.0.0"
+description = "A collection of font proofing tools using DrawBot"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Adobe", email = "opensource@adobe.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing :: Fonts",
+    "Topic :: Multimedia :: Graphics",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "defcon",
+    "drawbot @ git+https://github.com/typemytype/drawbot",
+    "fonttools",
+    "fontParts",
+    "unicodedataplus",
+]
+
+[project.urls]
+Homepage = "https://github.com/adobe-type-tools/drawBotProofing"
+Repository = "https://github.com/adobe-type-tools/drawBotProofing"
+Issues = "https://github.com/adobe-type-tools/drawBotProofing/issues"
+
+[project.scripts]
+# Font proofing tools
+text-proof = "drawbot_proofing.textProof:main"
+alphabet-proof = "drawbot_proofing.alphabetProof:main"
+charset-proof = "drawbot_proofing.charsetProof:main"
+comparison-proof = "drawbot_proofing.comparisonProof:main"
+context-proof = "drawbot_proofing.contextProof:main"
+glyph-proof-ufo = "drawbot_proofing.glyphProofUFO:main"
+glyphset-proof = "drawbot_proofing.glyphsetProof:main"
+unicode-chart-proof = "drawbot_proofing.unicodeChartProof:main"
+vertical-metrics-proof = "drawbot_proofing.verticalMetricsProof:main"
+vertical-metrics-comparison-proof = "drawbot_proofing.verticalMetricsComparisonProof:main"
+waterfall-proof = "drawbot_proofing.waterfallProof:main"
+accent-proof = "drawbot_proofing.accentProof:main"
+figure-spacing-proof-ufo = "drawbot_proofing.figureSpacingProofUFO:main"
+overlay-font-proof = "drawbot_proofing.overlayFontProof:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["drawbot_proofing*"]
+
+[tool.setuptools.package-data]
+"drawbot_proofing" = ["_content/**/*", "_fonts/*"] 

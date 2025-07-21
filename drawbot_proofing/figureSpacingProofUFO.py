@@ -22,10 +22,10 @@ import drawBot as db
 
 from fontParts.fontshell import RFont
 
-from proofing_helpers.drawing import draw_glyph
-from proofing_helpers.files import get_ufo_paths
-from proofing_helpers.globals import FONT_MONO
-from proofing_helpers.stamps import timestamp
+from .proofing_helpers.drawing import draw_glyph
+from .proofing_helpers.files import get_ufo_paths
+from .proofing_helpers.globals import FONT_MONO
+from .proofing_helpers.stamps import timestamp
 
 
 def joinit(iterable, delimiter):
@@ -147,7 +147,13 @@ def get_options():
     return parser.parse_args()
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
 
     args = get_options()
     ufos = get_ufo_paths(args.path)

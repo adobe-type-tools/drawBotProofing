@@ -33,8 +33,8 @@ except ModuleNotFoundError:
         'https://pypi.org/project/unicodedataplus/'
     )
 
-from proofing_helpers.files import get_font_paths
-from proofing_helpers.fontSorter import sort_fonts
+from .proofing_helpers.files import get_font_paths
+from .proofing_helpers.fontSorter import sort_fonts
 
 IN_UI = 'drawBot.ui' in sys.modules
 
@@ -335,7 +335,13 @@ def save_document(output_path):
     db.endDrawing()
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
     if IN_UI:
         file_or_folder = getFileOrFolder(allowsMultipleSelection=False)
         input_dir = str(file_or_folder[0])

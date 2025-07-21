@@ -24,11 +24,11 @@ import random
 import re
 
 from pathlib import Path
-from proofing_helpers import fontSorter
-from proofing_helpers.stamps import timestamp
-from proofing_helpers.files import (
+from .proofing_helpers import fontSorter
+from .proofing_helpers.stamps import timestamp
+from .proofing_helpers.files import (
     get_font_paths, chain_charset_texts)
-from proofing_helpers.globals import *
+from .proofing_helpers.globals import *
 
 DOC_SIZE = 'Letter'
 PT_SIZE = 20
@@ -253,5 +253,11 @@ def main(test_args=None):
         print('No fonts (OTF or TTF) found.')
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
     main()
