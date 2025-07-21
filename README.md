@@ -151,11 +151,13 @@ The output is good to use with a diffing tool like `diff-pdf` in a later step.
 The glyphset can be filtered with a regular expression (for example,
 use `-r ".*dieresis"` to show all glyphs whose names end with -dieresis).
 
-Input: folder containing UFO or font files, individual fonts or UFOs.
+Input: folder containing UFO or font files, or individual font- or UFO files.
 
 ![glyphsetProof.py](_images/glyphsetProof_1.png)
 
 ![glyphsetProof.py](_images/glyphsetProof_2.png)
+
+![glyphsetProof.py](_images/glyphsetProof_3.png)
 
 ----
 
@@ -169,18 +171,24 @@ Create/update the README.md file for this repository.
 
 ### `textProof.py`
 
-Creates example paragraphs corresponding to a given character set.
+Create example paragraphs corresponding to a given character set.
+
 Default mode is creating single-page PDF with a random subset of the requested
-charset, alternatively a full charset can be consumed systematically, to show
+charset. Optionally, a full charset can be consumed systematically, to show
 as many characters as possible.
+The alternative mode is using a text file as input, to achieve more predictable
+(and comparable) output. In text-mode, the output still is limited to a single
+page (no matter how long the text file may be).
 
 Known bug:
-line spacing may become inconsistent if a character set beyond the font’s
+Line spacing may become inconsistent if a character set beyond the font’s
 character support is requested (this is a macOS limitation caused by the
 vertical metrics in a given fallback font).
 
-Input: folder containing fonts, or single font file. Optionally, secondary
-font(s) can be specified (for mixing Roman and Italic, for example).
+Input:
+* choice of text file or charset name
+* single font file, or folder containing fonts
+* optional secondary font(s) (for mixing Roman/Italic, for example)
 
 ![textProof.py](_images/textProof_1.png)
 
