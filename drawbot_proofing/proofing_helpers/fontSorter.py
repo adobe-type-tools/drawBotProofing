@@ -9,7 +9,12 @@ import re
 
 from itertools import chain
 from pathlib import Path
-from .names import get_ps_name
+try:
+    # used as module
+    from .names import get_ps_name
+except ImportError:
+    # used directly
+    from names import get_ps_name
 
 opsz_names = [
     ['null'],
