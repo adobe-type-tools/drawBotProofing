@@ -219,11 +219,11 @@ def draw_metrics_page(f_info, normalize_upm=False):
     db.newPage(page_width, page_height)
 
     line_labels = (
-        ('os/2 winAscent', f_info.winAscent),
+        ('OS/2 winAscent', f_info.winAscent),
         # winDescent is represented using a positive number, therefore * -1
-        ('os/2 winDescent', f_info.winDescent * -1),
-        ('os/2 typoAscender', f_info.ascender),
-        ('os/2 typoDescender', f_info.descender),
+        ('OS/2 winDescent', f_info.winDescent * -1),
+        ('OS/2 typoAscender', f_info.ascender),
+        ('OS/2 typoDescender', f_info.descender),
 
         ('baseline', 0,),
         ('x-height', f_info.xHeight),
