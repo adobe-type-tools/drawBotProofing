@@ -253,11 +253,5 @@ def main(test_args=None):
         print('No fonts (OTF or TTF) found.')
 
 
-def main():
-    """Main entry point for this command."""
-
-
-
 if __name__ == '__main__':
-    main()
     main()

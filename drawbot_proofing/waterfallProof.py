@@ -73,12 +73,6 @@ def get_options():
 
 
 def main():
-    """Main entry point for this command."""
-
-
-
-if __name__ == '__main__':
-    main()
     args = get_options()
     if os.path.isdir(args.d):
         font_paths = get_font_paths(args.d)
@@ -142,3 +136,7 @@ if __name__ == '__main__':
     db.endDrawing()
     print(f'saved to {output_path}')
     subprocess.call(['open', os.path.expanduser(output_path)])
+
+
+if __name__ == '__main__':
+    main()

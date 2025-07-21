@@ -336,12 +336,6 @@ def save_document(output_path):
 
 
 def main():
-    """Main entry point for this command."""
-
-
-
-if __name__ == '__main__':
-    main()
     if IN_UI:
         file_or_folder = getFileOrFolder(allowsMultipleSelection=False)
         input_dir = str(file_or_folder[0])
@@ -358,4 +352,8 @@ if __name__ == '__main__':
 
         if not IN_UI:
             out_name = args.output_file_name or font_path.parent / f'{font_path.stem}_chart.pdf'
-            save_document(out_name)
+        save_document(out_name)
+
+
+if __name__ == '__main__':
+    main()

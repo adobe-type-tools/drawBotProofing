@@ -148,13 +148,6 @@ def get_options():
 
 
 def main():
-    """Main entry point for this command."""
-
-
-
-if __name__ == '__main__':
-    main()
-
     args = get_options()
     ufos = get_ufo_paths(args.path)
     ufos.sort()
@@ -196,3 +189,7 @@ if __name__ == '__main__':
 
     else:
         print(f'no UFOs found in {args.path}')
+
+
+if __name__ == '__main__':
+    main()

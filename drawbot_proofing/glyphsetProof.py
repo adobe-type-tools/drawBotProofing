@@ -114,8 +114,7 @@ def draw_glyphset_page(f, glyph_list, columns=12, stroke=False):
 
         glyph = glyph_container[gname]
 
-        if glyph.width * scale_factor > box_width * .8:
-
+        if (glyph.width / upm) * 1000 * scale_factor > box_width * .9:
             wide_box = box_width * 2
             while glyph.width * scale_factor >= wide_box:
                 wide_box += box_width
@@ -235,11 +234,5 @@ def main(test_args=None):
         make_glyphset_pdf(args, input_file)
 
 
-def main():
-    """Main entry point for this command."""
-
-
-
 if __name__ == '__main__':
-    main()
     main()

@@ -16,7 +16,7 @@ Input: folder containing font or UFO files.
 import defcon
 import drawBot as db
 
-from verticalMetricsProof import (
+from .verticalMetricsProof import (
     MARGIN, PT_SIZE,
     FontInfo,
     finish_drawing, get_options)
@@ -194,12 +194,6 @@ def process_ufo_paths(ufo_paths, args):
 
 
 def main():
-    """Main entry point for this command."""
-
-
-
-if __name__ == '__main__':
-    main()
     args = get_options(description=__doc__)
     font_paths = get_font_paths(args.input_dir)
     ufo_paths = get_ufo_paths(args.input_dir)
@@ -212,3 +206,7 @@ if __name__ == '__main__':
 
     else:
         print('no fonts or UFOs found')
+
+
+if __name__ == '__main__':
+    main()
