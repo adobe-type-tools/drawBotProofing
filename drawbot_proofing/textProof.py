@@ -180,17 +180,18 @@ def message_with_charset(message, characters, wrap_length=70):
     print(f'{message} ({len(characters)}):\n{chars}\n')
 
 
-def analyze_missing(content_pick, content_list, charset):
+def analyze_missing(content_pick, content_list, charset_name):
     '''
     Report stats about the chosen character set, which characters were
     used in the sample, etc.
     '''
     abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+    chars = getattr(cs, charset_name)
     missing_abc = set(abc) - set(''.join(content_pick))
-    missing_charset = set(charset) - set(''.join(content_pick))
-    missing_cset_source = set(charset) - set(''.join(content_list))
+    missing_charset = set(chars) - set(''.join(content_pick))
+    missing_cset_source = set(chars) - set(''.join(content_list))
 
-    message_with_charset(charset_name.upper(), charset)
+    message_with_charset(charset_name.upper(), chars)
 
     if missing_abc:
         message_with_charset('missing alphabetic characters', missing_abc)
@@ -211,6 +212,11 @@ def make_proof(content, fonts_pri, fonts_sec, args, output_name):
 
     db.newDrawing()
 
+    # make temporary fonts
+    temp_fonts = {}
+    for i, font in enumerate(fonts_pri + fonts_sec):
+        temp_fonts[font] = make_temp_font(i, font)
+
     fea_dict = {
         'liga': True,
         # 'onum': True,
@@ -227,12 +233,12 @@ def make_proof(content, fonts_pri, fonts_sec, args, output_name):
             print(f'proofing {num_combinations} font combinations …')
         for font_pri, font_sec in font_pairs:
             fs = make_formatted_string(
-                content, font_pri, font_sec, args.pt_size, fea_dict)
+                content, font_pri, font_sec, args.pt_size, fea_dict, temp_fonts)
             make_page(fs, font_pri, font_sec, args)
     else:
         for font in fonts_pri:
             fs = make_formatted_string(
-                content, font, None, args.pt_size, fea_dict)
+                content, font, None, args.pt_size, fea_dict, temp_fonts)
             make_page(fs, font, None, args)
 
     pdf_path = Path(f'~/Desktop/{output_name}.pdf')
@@ -243,9 +249,9 @@ def make_proof(content, fonts_pri, fonts_sec, args, output_name):
     subprocess.call(['open', pdf_path.expanduser()])
 
 
-def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict):
+def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict, temp_fonts):
     '''
-    make a formatted string which has different kinds of fonts/formatting
+    A page-filling FormattedString, which uses different kinds of fonts/formatting
     '''
     fs = db.FormattedString(
         fontSize=pt_size,
@@ -505,11 +511,9 @@ def main():
     fonts_sec = get_fonts(args.secondary_fonts)
 
     gpp_count = 0
-    temp_fonts = {}
     for i, font in enumerate(fonts_pri + fonts_sec):
         # Make temporary fonts, and calculate how many glyphs of the given
         # font may fit on a page
-        temp_fonts[font] = make_temp_font(i, font)
         gpp_count += get_glyphs_per_page(font, args.pt_size)
 
     # This is not completely representative of the # of glyphs/page,
@@ -541,7 +545,7 @@ def main():
 
     if args.charset and args.verbose:
         content_pick = [fc.text for fc in formatted_content]
-        analyze_missing(content_pick, content_list, charset)
+        analyze_missing(content_pick, content_list, args.charset)
 
 
 if __name__ == '__main__':
