@@ -208,13 +208,13 @@ def analyze_missing(content_pick, content_list, charset_name):
         list_uni_names(missing_cset_source)
 
 
-def make_proof(content, fonts_pri, fonts_sec, args, output_name):
+def make_proof(content, fonts_a, fonts_b, args, output_name):
 
     db.newDrawing()
 
     # make temporary fonts
     temp_fonts = {}
-    for i, font in enumerate(fonts_pri + fonts_sec):
+    for i, font in enumerate(fonts_a + fonts_b):
         temp_fonts[font] = make_temp_font(i, font)
 
     fea_dict = {
@@ -226,18 +226,18 @@ def make_proof(content, fonts_pri, fonts_sec, args, output_name):
     if args.kerning_off:
         fea_dict['kern'] = False
 
-    if fonts_sec:
-        font_pairs = list(itertools.product(fonts_pri, fonts_sec))
+    if fonts_b:
+        font_pairs = list(itertools.product(fonts_a, fonts_b))
         num_combinations = len(font_pairs)
         if num_combinations > 20:
             print(f'proofing {num_combinations} font combinations …')
-        for font_pri, font_sec in font_pairs:
-            fs = make_formatted_string(
-                content, font_pri, font_sec, args.pt_size, fea_dict, temp_fonts)
-            make_page(fs, font_pri, font_sec, args)
+        for font_a, font_b in font_pairs:
+            fs = make_page_content(
+                content, font_a, font_b, args.pt_size, fea_dict, temp_fonts)
+            make_page(fs, font_a, font_b, args)
     else:
-        for font in fonts_pri:
-            fs = make_formatted_string(
+        for font in fonts_a:
+            fs = make_page_content(
                 content, font, None, args.pt_size, fea_dict, temp_fonts)
             make_page(fs, font, None, args)
 
@@ -249,9 +249,10 @@ def make_proof(content, fonts_pri, fonts_sec, args, output_name):
     subprocess.call(['open', pdf_path.expanduser()])
 
 
-def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict, temp_fonts):
+def make_page_content(content, font_a, font_b, pt_size, fea_dict, temp_fonts):
     '''
-    A page-filling FormattedString, which uses different kinds of fonts/formatting
+    Page-filling FormattedString, which uses different kinds of fonts and
+    some natural-looking paragraphs.
     '''
     fs = db.FormattedString(
         fontSize=pt_size,
@@ -260,21 +261,21 @@ def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict, temp_f
     )
 
     for text_item in content:
-        if text_item.italic and font_sec:
-            tmp_font_sec = temp_fonts[font_sec]
-            instance = get_default_instance(tmp_font_sec)
+        if text_item.italic and font_b:
+            tmp_font_b = temp_fonts[font_b]
+            instance = get_default_instance(tmp_font_b)
             fs.append(
                 text_item.text,
-                font=tmp_font_sec,
+                font=tmp_font_b,
                 fallbackFont=ADOBE_NOTDEF,
                 fontVariations=instance
             )
         else:
-            tmp_font_pri = temp_fonts[font_pri]
-            instance = get_default_instance(tmp_font_pri)
+            tmp_font_a = temp_fonts[font_a]
+            instance = get_default_instance(tmp_font_a)
             fs.append(
                 text_item.text,
-                font=tmp_font_pri,
+                font=tmp_font_a,
                 fallbackFont=ADOBE_NOTDEF,
                 fontVariations=instance
             )
@@ -286,7 +287,7 @@ def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict, temp_f
     return fs
 
 
-def make_page(fs, font_pri, font_sec, args):
+def make_page(fs, font_a, font_b, args):
 
     db.newPage(DOC_SIZE)
     if args.charset == 'abc':
@@ -296,9 +297,9 @@ def make_page(fs, font_pri, font_sec, args):
     else:
         db.hyphenation(True)
 
-    footer_label = f'{timestamp(readable=True)} | {font_pri.name}'
-    if font_sec:
-        footer_label += f' + {font_sec.name}'
+    footer_label = f'{timestamp(readable=True)} | {font_a.name}'
+    if font_b:
+        footer_label += f' + {font_b.name}'
     footer_label += f' | {args.pt_size} pt'
     if args.kerning_off:
         footer_label += ' (no kerning)'
@@ -318,7 +319,7 @@ def make_page(fs, font_pri, font_sec, args):
 
     if fs_overflow and args.full:
         make_page(
-            fs_overflow, font_pri, font_sec, args)
+            fs_overflow, font_a, font_b, args)
 
     else:
         return fs_overflow
@@ -442,22 +443,22 @@ def get_glyphs_per_page(font, pt_size):
     return glyphs_per_page
 
 
-def make_output_name(fonts_pri, fonts_sec, cs_name, pt, full):
+def make_output_name(fonts_a, fonts_b, cs_name, pt, full):
     '''
     Make an output filename based on the input fonts.
     Not completely exhaustive. There could be a lot of combinations, so
     this is erring on simplicity rather than overkill.
     '''
-    path_pri = Path(fonts_pri[0])
+    path_a = Path(fonts_a[0])
     # include the primary font- or folder name
-    output_name = f'text proof {path_pri.stem}'
-    if fonts_sec:
+    output_name = f'text proof {path_a.stem}'
+    if fonts_b:
         # include the secondary font- or folder name, if it exists.
         # further fonts or folders are ignored.
-        path_sec = Path(fonts_sec[0])
-        if path_sec.is_file():
+        path_b = Path(fonts_b[0])
+        if path_b.is_file():
             output_name += ' vs'
-        output_name += f' {path_sec.stem}'
+        output_name += f' {path_b.stem}'
 
     output_name += f' {cs_name} {pt}pt'
 
@@ -507,18 +508,18 @@ def get_fonts(input_paths):
 def main():
     args = get_options()
 
-    fonts_pri = get_fonts(args.fonts)
-    fonts_sec = get_fonts(args.secondary_fonts)
+    fonts_a = get_fonts(args.fonts)
+    fonts_b = get_fonts(args.secondary_fonts)
 
     gpp_count = 0
-    for i, font in enumerate(fonts_pri + fonts_sec):
+    for i, font in enumerate(fonts_a + fonts_b):
         # Make temporary fonts, and calculate how many glyphs of the given
         # font may fit on a page
         gpp_count += get_glyphs_per_page(font, args.pt_size)
 
     # This is not completely representative of the # of glyphs/page,
     # but it is a useful approximation.
-    len_limit = gpp_count / (len(fonts_pri) + len(fonts_sec))
+    len_limit = gpp_count / (len(fonts_a) + len(fonts_b))
 
     if args.text_file:
         content_list = get_content_from_text_file(args.text_file)
@@ -541,7 +542,7 @@ def main():
     else:
         pass
 
-    make_proof(formatted_content, fonts_pri, fonts_sec, args, output_name)
+    make_proof(formatted_content, fonts_a, fonts_b, args, output_name)
 
     if args.charset and args.verbose:
         content_pick = [fc.text for fc in formatted_content]
