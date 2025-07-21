@@ -23,10 +23,10 @@ import subprocess
 
 import drawBot as db
 
-from proofing_helpers.files import get_font_paths
-from proofing_helpers.globals import *
-from proofing_helpers.fontSorter import sort_fonts
-from proofing_helpers.stamps import timestamp
+from .proofing_helpers.files import get_font_paths
+from .proofing_helpers.globals import *
+from .proofing_helpers.fontSorter import sort_fonts
+from .proofing_helpers.stamps import timestamp
 
 default_wl = Path(__file__).parent / "_content" / "en_10k.txt"
 
@@ -193,7 +193,13 @@ def make_output_path(args):
     return Path(f'~/Desktop/{output_name}.pdf').expanduser()
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
 
     args = get_options()
     output_path = make_output_path(args)

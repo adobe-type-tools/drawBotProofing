@@ -21,10 +21,10 @@ from verticalMetricsProof import (
     FontInfo,
     finish_drawing, get_options)
 
-from proofing_helpers import fontSorter
-from proofing_helpers.files import get_font_paths, get_ufo_paths
-from proofing_helpers.drawing import draw_glyph
-from proofing_helpers.globals import FONT_MONO
+from .proofing_helpers import fontSorter
+from .proofing_helpers.files import get_font_paths, get_ufo_paths
+from .proofing_helpers.drawing import draw_glyph
+from .proofing_helpers.globals import FONT_MONO
 
 
 EXAMPLE_CHARS = list('Hnxphlg')
@@ -193,7 +193,13 @@ def process_ufo_paths(ufo_paths, args):
     finish_drawing(doc_name)
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
     args = get_options(description=__doc__)
     font_paths = get_font_paths(args.input_dir)
     ufo_paths = get_ufo_paths(args.input_dir)

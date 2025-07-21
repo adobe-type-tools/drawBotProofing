@@ -30,8 +30,8 @@ from fontTools import ttLib
 from itertools import repeat
 from pathlib import Path
 
-from proofing_helpers.globals import ADOBE_BLANK, FONT_MONO
-from proofing_helpers.names import get_overlap_index, get_ps_name
+from .proofing_helpers.globals import ADOBE_BLANK, FONT_MONO
+from .proofing_helpers.names import get_overlap_index, get_ps_name
 
 logger = logging.getLogger('fontTools')
 logger.setLevel(level=logging.CRITICAL)
@@ -345,5 +345,11 @@ def main(test_args=None):
             print('No fonts found.')
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
     main()

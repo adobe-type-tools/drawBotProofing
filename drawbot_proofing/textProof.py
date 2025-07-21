@@ -40,14 +40,14 @@ import drawBot as db
 from fontTools.ttLib import TTFont
 from pathlib import Path
 
-from proofing_helpers import fontSorter
-from proofing_helpers import charsets as cs
-from proofing_helpers.globals import FONT_MONO, ADOBE_BLANK, ADOBE_NOTDEF
-from proofing_helpers.fonts import get_default_instance
-from proofing_helpers.helpers import list_uni_names
-from proofing_helpers.files import (
+from .proofing_helpers import fontSorter
+from .proofing_helpers import charsets as cs
+from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK, ADOBE_NOTDEF
+from .proofing_helpers.fonts import get_default_instance
+from .proofing_helpers.helpers import list_uni_names
+from .proofing_helpers.files import (
     get_font_paths, chain_charset_texts, read_text_file, make_temp_font)
-from proofing_helpers.stamps import timestamp
+from .proofing_helpers.stamps import timestamp
 
 
 DOC_SIZE = 'Letter'
@@ -498,8 +498,8 @@ def get_fonts(input_paths):
     return fonts
 
 
-if __name__ == '__main__':
-
+def main():
+    """Main entry point for the text-proof command."""
     args = get_options()
 
     fonts_pri = get_fonts(args.fonts)
@@ -543,3 +543,7 @@ if __name__ == '__main__':
     if args.charset and args.verbose:
         content_pick = [fc.text for fc in formatted_content]
         analyze_missing(content_pick, content_list, charset)
+
+
+if __name__ == '__main__':
+    main()

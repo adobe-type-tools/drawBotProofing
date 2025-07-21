@@ -25,10 +25,10 @@ import subprocess
 import drawBot as db
 
 from pathlib import Path
-from proofing_helpers import fontSorter, charsets
-from proofing_helpers.files import get_font_paths
-from proofing_helpers.globals import ADOBE_NOTDEF
-from proofing_helpers.names import get_name_overlap
+from .proofing_helpers import fontSorter, charsets
+from .proofing_helpers.files import get_font_paths
+from .proofing_helpers.globals import ADOBE_NOTDEF
+from .proofing_helpers.names import get_name_overlap
 
 
 def get_args(args=None):
@@ -132,5 +132,11 @@ def main(test_args=None):
         print('No fonts (OTF or TTF) found.')
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
     main()

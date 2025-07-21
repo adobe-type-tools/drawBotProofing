@@ -24,8 +24,8 @@ import sys
 
 import drawBot as db
 
-from proofing_helpers import fontSorter
-from proofing_helpers.files import get_font_paths, read_text_file
+from .proofing_helpers import fontSorter
+from .proofing_helpers.files import get_font_paths, read_text_file
 
 
 def get_options():
@@ -72,7 +72,13 @@ def get_options():
     return parser.parse_args()
 
 
+def main():
+    """Main entry point for this command."""
+
+
+
 if __name__ == '__main__':
+    main()
     args = get_options()
     if os.path.isdir(args.d):
         font_paths = get_font_paths(args.d)

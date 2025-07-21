@@ -1,0 +1,19 @@
+# Include content and font files
+recursive-include drawbot_proofing/_content *
+recursive-include drawbot_proofing/_fonts *
+
+# Include documentation and license files
+include README.md
+include LICENSE.md
+include CODE_OF_CONDUCT.md
+
+# Include requirements file for reference
+include requirements.txt
+
+# Exclude development and build files
+exclude fix_imports.py
+exclude makeReadme.py
+exclude textProof_mod.py
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .DS_Store 
