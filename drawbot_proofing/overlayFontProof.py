@@ -169,11 +169,10 @@ def get_style_name(font_path):
     style_name = f['name'].getDebugName(17)
     if not style_name:
         style_name = f['name'].getDebugName(2)
-    print(font_path, style_name)
     return style_name
 
 
-def collect_fonts_stylename(paths):
+def collect_font_pairs(paths):
     '''
     may drop fonts if a style name only exists on one side
     '''
@@ -184,14 +183,14 @@ def collect_fonts_stylename(paths):
     style_names_a = [get_style_name(f) for f in fonts_a_sorted]
     style_names_b = [get_style_name(f) for f in fonts_b]
 
-    font_pairs = []
+    font_pairs = {}
     for style_name in style_names_a:
         if style_name in style_names_b:
             index_a = style_names_a.index(style_name)
             index_b = style_names_b.index(style_name)
             font_a = fonts_a_sorted[index_a]
             font_b = fonts_b[index_b]
-            font_pairs.append((font_a, font_b))
+            font_pairs[style_name] = (font_a, font_b)
 
     return font_pairs
 
@@ -202,7 +201,17 @@ def main():
     txt = get_text()
 
     if all([p.is_dir() for p in paths]):
-        fonts = collect_fonts_stylename(paths)
+        font_pairs = collect_font_pairs(paths)
+        fonts = font_pairs.values()
+
+        print('font pairs found:')
+        for style_name, font_pair in font_pairs.items():
+            font_a, font_b = font_pair
+            print(style_name)
+            print(f'\t{font_a.name}')
+            print(f'\t{font_b.name}')
+            print()
+
         pdf_name = f'overlay_fonts {" vs ".join(p.name for p in paths)}.pdf'
 
         for font_pair in fonts:
