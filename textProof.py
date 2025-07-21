@@ -6,18 +6,24 @@
 # it.
 
 '''
-Creates example paragraphs corresponding to a given character set.
+Create example paragraphs corresponding to a given character set.
+
 Default mode is creating single-page PDF with a random subset of the requested
-charset, alternatively a full charset can be consumed systematically, to show
+charset. Optionally, a full charset can be consumed systematically, to show
 as many characters as possible.
+The alternative mode is using a text file as input, to achieve more predictable
+(and comparable) output. In text-mode, the output still is limited to a single
+page (no matter how long the text file may be).
 
 Known bug:
-line spacing may become inconsistent if a character set beyond the font’s
+Line spacing may become inconsistent if a character set beyond the font’s
 character support is requested (this is a macOS limitation caused by the
 vertical metrics in a given fallback font).
 
-Input: folder containing fonts, or single font file. Optionally, secondary
-font(s) can be specified (for mixing Roman and Italic, for example).
+Input:
+* choice of text file or charset name
+* single font file, or folder containing fonts
+* optional secondary font(s) (for mixing Roman/Italic, for example)
 
 '''
 
@@ -36,7 +42,7 @@ from pathlib import Path
 
 from proofing_helpers import fontSorter
 from proofing_helpers import charsets as cs
-from proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
+from proofing_helpers.globals import FONT_MONO, ADOBE_BLANK, ADOBE_NOTDEF
 from proofing_helpers.fonts import get_default_instance
 from proofing_helpers.helpers import list_uni_names
 from proofing_helpers.files import (
@@ -72,17 +78,28 @@ def get_options():
     charset_choices = [name for name in dir(cs) if not name.startswith('_')]
 
     parser.add_argument(
-        'fonts',
+        '-f', '--fonts',
         nargs='+',
+        required=True,
         metavar='FONT',
         help='font file or folder')
 
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    # either choose a charset, or reproduce a text file
+    group.add_argument(
         '-c', '--charset',
         action='store',
         default='al3',
         choices=charset_choices,
-        help='character set')
+        type=str.lower,
+        help='character set (for randomized text)')
+
+    group.add_argument(
+        '-t', '--text_file',
+        action='store',
+        metavar='TXT',
+        help='text file (for predictable text)')
 
     parser.add_argument(
         '--filter',
@@ -240,11 +257,21 @@ def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict):
         if text_item.italic and font_sec:
             tmp_font_sec = temp_fonts[font_sec]
             instance = get_default_instance(tmp_font_sec)
-            fs.append(text_item.text, font=tmp_font_sec, fontVariations=instance)
+            fs.append(
+                text_item.text,
+                font=tmp_font_sec,
+                fallbackFont=ADOBE_NOTDEF,
+                fontVariations=instance
+            )
         else:
             tmp_font_pri = temp_fonts[font_pri]
             instance = get_default_instance(tmp_font_pri)
-            fs.append(text_item.text, font=tmp_font_pri, fontVariations=instance)
+            fs.append(
+                text_item.text,
+                font=tmp_font_pri,
+                fallbackFont=ADOBE_NOTDEF,
+                fontVariations=instance
+            )
 
         if text_item.paragraph:
             fs.append('\n\n')
@@ -256,7 +283,7 @@ def make_formatted_string(content, font_pri, font_sec, pt_size, fea_dict):
 def make_page(fs, font_pri, font_sec, args):
 
     db.newPage(DOC_SIZE)
-    if charset_name == 'abc':
+    if args.charset == 'abc':
         # We do not want any non-ABC characters (such as the hyphen)
         # in an ABC-only proof
         db.hyphenation(False)
@@ -352,7 +379,7 @@ def filter_paragraphs(content_list, req_chars):
     return content_list
 
 
-def get_content_list(charset_name):
+def get_content_from_charset(charset_name):
     '''
     Chain external text files based on a given (validated) charset name,
     split lines into a list, shuffle, and return
@@ -372,6 +399,16 @@ def get_content_list(charset_name):
 
     content_list = raw_content.split('\n')
     random.shuffle(content_list)
+    return content_list
+
+
+def get_content_from_text_file(text_file):
+    '''
+    Read text file and return as a list
+    '''
+
+    raw_content = read_text_file(text_file)
+    content_list = raw_content.split('\n')
     return content_list
 
 
@@ -465,10 +502,6 @@ if __name__ == '__main__':
 
     args = get_options()
 
-    charset_name = args.charset
-    charset = validate_charset(charset_name)
-    content_list = get_content_list(charset_name)
-
     fonts_pri = get_fonts(args.fonts)
     fonts_sec = get_fonts(args.secondary_fonts)
 
@@ -484,16 +517,29 @@ if __name__ == '__main__':
     # but it is a useful approximation.
     len_limit = gpp_count / (len(fonts_pri) + len(fonts_sec))
 
-    formatted_content = make_formatted_content(
-        content_list, charset,
-        len_limit, args.filter, args.capitalize, args.full)
+    if args.text_file:
+        content_list = get_content_from_text_file(args.text_file)
+        output_name = make_output_name(
+            args.fonts, args.secondary_fonts,
+            'text file', args.pt_size, args.full)
+        formatted_content = format_content(content_list, len_limit, False)
 
-    output_name = make_output_name(
-        args.fonts, args.secondary_fonts,
-        charset_name, args.pt_size, args.full)
+    elif args.charset:
+        charset_name = args.charset
+        charset = validate_charset(charset_name)
+        content_list = get_content_from_charset(charset_name)
+        output_name = make_output_name(
+            args.fonts, args.secondary_fonts,
+            charset_name, args.pt_size, args.full)
+        formatted_content = make_formatted_content(
+            content_list, charset,
+            len_limit, args.filter, args.capitalize, args.full)
+
+    else:
+        pass
 
     make_proof(formatted_content, fonts_pri, fonts_sec, args, output_name)
 
-    if args.verbose:
+    if args.charset and args.verbose:
         content_pick = [fc.text for fc in formatted_content]
         analyze_missing(content_pick, content_list, charset)

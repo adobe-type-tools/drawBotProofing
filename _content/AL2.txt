@@ -1,4 +1,5 @@
 A lozenge (◊), often referred to as a diamond, is a form of rhombus. The definition of lozenge is not strictly fixed, and it is sometimes used simply as a synonym (from the French losange) for rhombus. Most often, though, lozenge refers to a thin rhombus—a rhombus with acute angles of less than 45°. The lozenge shape is often used in parquetry and as decoration on ceramics, silverware and textiles. It also features in heraldry and playing cards.
+a ≤ b and b ≥ a are equivalent.
 Alt-J (stylised as alt-J, or ∆) is an English indie rock band formed in 2007 in Leeds, by Joe Newman (guitar/lead vocals), Thom Sonny Green (drums), Gus Unger-Hamilton (keyboards/vocals) and Gwil Sainsbury (guitar/bass).
 Another combination of "≈" and "=", which is used to indicate isomorphism or congruence.
 Being an irrational number, π cannot be expressed as a common fraction (equivalently, its decimal representation never ends and never settles into a permanently repeating pattern).
@@ -22,7 +23,6 @@ Nach Eyring (siehe auch Theorie des Übergangszustandes) ist die Freie Aktivieru
 Related to approximation of functions is the asymptotic value of a function, i.e. the value as one or more of a function's parameters becomes arbitrarily large. For example, the sum (k/2)+(k/4)+(k/8)+...(k/2^n) is asymptotically equal to k. Unfortunately no consistent notation is used throughout mathematics and some texts will use ≈ to mean approximately equal and ~ to mean asymptotically equal whereas other texts use the symbols the other way around.
 Root Letter, stylized as √Letter, is a 2016 visual novel adventure video game developed and published by Kadokawa Games for PlayStation 4, PlayStation Vita, Microsoft Windows, Android, and iOS.
 Several books devoted to π have been published, and record-setting calculations of the digits of π often result in news headlines. Attempts to memorize the value of π with increasing precision have led to records of over 70,000 digits.
-The SI unit of electrical resistivity is the ohm-meter (Ω∙m).
 The decimal representation of π truncated to 50 decimal places is π = 3.14159265358979323846264338327950288419716939937510
 The estimated sign, ℮, also referred to as the e-mark (unicode U+212E), is a mark that can be found on some pre-packed goods in Europe. The estimated sign indicates that the packaging fulfils European Union Directive 2009/34/EC.
 The estimated sign, ℮, also referred to as the e-mark or quantité estimée can be found on some prepacked products in Europe.
@@ -34,14 +34,14 @@ The litre (British and Commonwealth spelling) or liter (American spelling) (SI s
 The mark looks like a stylised lowercase "e" and its shape, ℮, is precisely defined by an EU directive.
 The notation a ≠ b means that a is not equal to b, but does not say that one is greater than the other or even that they can be compared in size.
 The notation a ≤ b means that a is less than or equal to b (or, equivalently, at most b, or not greater than b).
-The notation a ≤ b means that a is less than or equal to b (or, equivalently, not greater than b, or at most b); "not greater than" can also be represented by the symbol for "greater than" bisected by a vertical line, "not."
 The notation a ≥ b means that a is greater than or equal to b (or, equivalently, at least b, or not less than b).
-The notation a ≥ b means that a is greater than or equal to b (or, equivalently, not less than b, or at least b),; "not less than" can also be represented by the symbol for "less than" bisected by a vertical line, "not."
 The ohm (symbol: Ω) is the SI derived unit of electrical resistance, named after German physicist Georg Simon Ohm.
 The origin of the root symbol √ is largely speculative.
+The partial derivative is denoted by the symbol ∂, which replaces the roman letter d used to denote a full derivative.
 The product operator in mathematics, indicated with capital pi notation ∏ (in analogy to the use of the capital Sigma ∑ as summation symbol).
 The relations ≤ and ≥ are each other's converse, meaning that for any real numbers a and b:
 The same basic structure is used, with ∏, an enlarged form of the Greek capital letter Pi, replacing the ∑.
+The SI unit of electrical resistivity is the ohm-meter (Ω∙m).
 The sign looks like a stylised lowercase "e" and its shape, ℮, is precisely defined by European Union Directive 2009/34/EC. It must be placed in the same field of vision as the nominal quantity.
 The symbol is encoded in Unicode at U+221E ∞ infinity (HTML: &#8734; &infin;) and in LaTeX as \infty.
 The symbol used to denote inequation (when items are not equal) is a slashed equals sign "≠" (U+2260). In LaTeX, this is done with the "\neq" command.
@@ -53,7 +53,6 @@ Unfortunately no consistent notation is used throughout mathematics and some tex
 Utile erit scribi ∫ pro omn. ut ∫ l pro omn. l, id est summa ipsorum l. [It will be useful to write ∫ for omn., as ∫ I for omn. l, that is, the sum of these l’s.] A little later in the same manuscript he indicated that he was aware that he was creating a new field of mathematics when he wrote:
 Various online web sites provide π to many more digits. While the decimal representation of π has been computed to more than a trillion digits, elementary applications, such as estimating the circumference of a circle, will rarely require more than a dozen decimal places. For example, the decimal representation of π truncated to 11 decimal places is good enough to estimate the circumference of any circle that fits inside the Earth with an error of less than one millimetre, and the decimal representation of π truncated to 39 decimal places is sufficient to estimate the circumference of any circle that fits in the observable universe with precision comparable to the radius of a hydrogen atom.
 Where the font is not supported, a W is displayed instead ("10 W" instead of "10 Ω", for instance).
-a ≤ b and b ≥ a are equivalent.
 Ω was not part of the early (8th century BC) Greek alphabets. It was introduced in the late 7th century BC in the Ionian cities of Asia Minor to denote the long half-open.
 ∂ is also used to denote the boundary operator on a chain complex in homological algebra.
 ∆AIMON are an American electronic duo from San Diego, California, consisting of married couple Brant Showers and Nancy Lutz. The group's sound has been labelled as witch house.
