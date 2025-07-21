@@ -685,11 +685,5 @@ def main(test_args=None):
         db.endDrawing()
 
 
-def main():
-    """Main entry point for this command."""
-
-
-
 if __name__ == '__main__':
-    main()
     main()

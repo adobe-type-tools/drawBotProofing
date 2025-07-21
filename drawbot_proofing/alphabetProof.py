@@ -243,15 +243,15 @@ def make_proof_text(mode, writing_system, custom_string=None):
     return proof_text
 
 
-def get_input_paths(input):
+def get_input_paths(input_args):
     '''
     Find if the input argument is a folder or a/multiple file(s).
     Return either just the file, or get font paths within folders.
 
     '''
-    if len(args.input) == 1 and os.path.isdir(input[-1]):
-        return sort_fonts(get_font_paths(input[-1]), True)
-    return input
+    if len(input_args) == 1 and os.path.isdir(input_args[-1]):
+        return sort_fonts(get_font_paths(input_args[-1]), True)
+    return input_args
 
 
 def make_output_name(args):
@@ -279,13 +279,6 @@ def make_output_name(args):
 
 
 def main():
-    """Main entry point for this command."""
-
-
-
-if __name__ == '__main__':
-    main()
-
     args = get_options()
     input_paths = get_input_paths(args.input)
     output_path = (os.path.join(
@@ -293,3 +286,7 @@ if __name__ == '__main__':
         make_output_name(args)))
     make_proof(args, input_paths, output_path)
     subprocess.call(['open', output_path])
+
+
+if __name__ == '__main__':
+    main()

@@ -57,6 +57,7 @@ def get_args(args=None):
     parser.add_argument(
         '-s', '--spacer',
         action='store',
+        metavar='CHR',
         default='',
         help=r'spacing character (may need to be escaped with \)'
     )
@@ -65,7 +66,8 @@ def get_args(args=None):
         action='store',
         default='AL3',
         # choices=available_charsets,  # ugly
-        help=f'character set ({", ".join(available_charsets)})')
+        help=f'character set ({", ".join(available_charsets)})',
+    )
 
     return parser.parse_args(args)
 
@@ -83,6 +85,7 @@ def draw_charset_page(font_path, args):
     db.newPage('A4')
     top_line = db.height() - margin - line_height
     line_y = top_line
+
     while content:
         fs = db.FormattedString(
             content,
@@ -132,11 +135,5 @@ def main(test_args=None):
         print('No fonts (OTF or TTF) found.')
 
 
-def main():
-    """Main entry point for this command."""
-
-
-
 if __name__ == '__main__':
-    main()
     main()

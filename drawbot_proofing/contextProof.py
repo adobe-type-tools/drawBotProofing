@@ -194,13 +194,6 @@ def make_output_path(args):
 
 
 def main():
-    """Main entry point for this command."""
-
-
-
-if __name__ == '__main__':
-    main()
-
     args = get_options()
     output_path = make_output_path(args)
 
@@ -226,3 +219,7 @@ if __name__ == '__main__':
         make_proof(args, ' '.join(content[:limit]), input_paths, output_path)
     else:
         sys.exit(f'no words for {req_chars} found')
+
+
+if __name__ == '__main__':
+    main()

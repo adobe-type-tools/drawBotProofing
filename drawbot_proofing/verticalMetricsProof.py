@@ -338,12 +338,6 @@ def finish_drawing(doc_name):
 
 
 def main():
-    """Main entry point for this command."""
-
-
-
-if __name__ == '__main__':
-    main()
     if IN_UI:
         file_or_folder = getFileOrFolder(allowsMultipleSelection=False)
         input_dir = str(file_or_folder[0])
@@ -369,3 +363,7 @@ if __name__ == '__main__':
             finish_drawing(doc_name)
     else:
         print('no fonts found')
+
+
+if __name__ == '__main__':
+    main()

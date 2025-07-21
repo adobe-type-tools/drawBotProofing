@@ -499,7 +499,6 @@ def get_fonts(input_paths):
 
 
 def main():
-    """Main entry point for the text-proof command."""
     args = get_options()
 
     fonts_pri = get_fonts(args.fonts)
