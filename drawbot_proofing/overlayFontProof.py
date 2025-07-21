@@ -1,12 +1,14 @@
 from fontTools.ttLib import TTFont
 from pathlib import Path
-from .proofing_helpers.files import make_temp_font
-from .proofing_helpers.globals import FONT_MONO
 from random import choice
 
 import drawBot as db
 import argparse
 import subprocess
+
+from .proofing_helpers import fontSorter
+from .proofing_helpers.files import make_temp_font
+from .proofing_helpers.globals import FONT_MONO
 
 
 def get_args(default_args=None):
@@ -26,9 +28,9 @@ def get_args(default_args=None):
 
 
 def get_text(length=2000):
-    txt_file_english = (
-        '/Users/fg/Dropbox/scripts/text/languages/english.txt')
-    with open(txt_file_english, 'r', encoding='utf-8') as blob:
+
+    content_dir = Path(__file__).parent / '_content'
+    with open(content_dir / 'moby_dick.txt', 'r', encoding='utf-8') as blob:
         lines = blob.read().splitlines()
 
     txt = ''
@@ -38,58 +40,28 @@ def get_text(length=2000):
     return txt
 
 
-def make_comparison_page(txt, font_a, font_b):
-    margin = 20
-    color_a = (0, 0, 1, 1)
-    color_b = (1, 0, 0, 1)
-    db.newPage('A4')
-    db.blendMode('multiply')
-    uname_a = TTFont(font_a)['name'].getDebugName(3)
-    uname_b = TTFont(font_b)['name'].getDebugName(3)
+def get_ps_name(font):
+    return TTFont(font)['name'].getDebugName(6)
 
-    # text VF
-    fs_var = db.FormattedString(
-        txt,
-        font=font_a,
-        fontSize=16,
-        fill=color_a,
-    )
-    # text static
-    fs_static = db.FormattedString(
-        txt,
-        font=font_b,
-        fontSize=16,
-        fill=color_b,
-    )
-    text_box_bounds = (
-        margin, 2 * margin, db.width() - 2 * margin, db.height() - 3 * margin)
-    db.textBox(fs_var, text_box_bounds)
-    db.textBox(fs_static, text_box_bounds)
 
-    # description at bottom
-    fs_vf = db.FormattedString(
-        f'{uname_a}',
+def footer(name, color):
+    fs = db.FormattedString(
+        name,
         font=FONT_MONO,
         fontSize=10,
-        fill=color_a,
+        fill=color,
     )
-    fs_vs = db.FormattedString(
-        ' vs ',
-        font=FONT_MONO,
-        fontSize=10,
-        fill=0,
-    )
-    fs_static = db.FormattedString(
-        f'{uname_b}',
-        font=FONT_MONO,
-        fontSize=10,
-        fill=color_b,
-    )
-    fonts_compared = fs_vf + fs_vs + fs_static
-    db.text(fonts_compared, (margin, margin))
+    return fs
 
 
-def get_fs(font, txt, color):
+def footer_vs(name_a, name_b, color_a, color_b):
+    fs_color_a = footer(name_a, color_a)
+    fs_black = footer(' vs ', 0)
+    fs_color_b = footer(name_b, color_b)
+    return fs_color_a + fs_black + fs_color_b
+
+
+def content(font, txt, color):
     fs = db.FormattedString(
         txt,
         font=font,
@@ -99,105 +71,144 @@ def get_fs(font, txt, color):
     return fs
 
 
-def get_ps_name(font):
-    return TTFont(font)['name'].getDebugName(6)
-
-
-def make_comparison_pages(txt, fonts):
-    font_a, font_b = fonts
+def make_overlay_page(txt, font_a, font_b):
+    '''
+    single page:
+    font_a and font_b overlaid, setting the same text.
+    '''
     margin = 20
     color_a = (0, 0, 1, 1)
     color_b = (1, 0, 0, 1)
-    color_black = (0, 0, 0, 1)
 
     db.newPage('A4')
+    text_box_bounds = (
+        margin, 2 * margin, db.width() - 2 * margin, db.height() - 3 * margin)
+
+    db.blendMode('multiply')
     uname_a = TTFont(font_a)['name'].getDebugName(3)
     uname_b = TTFont(font_b)['name'].getDebugName(3)
+
+    content_a = content(font_a, txt, color_a)
+    content_b = content(font_b, txt, color_b)
+
+    db.textBox(content_a, text_box_bounds)
+    db.textBox(content_b, text_box_bounds)
+    db.text(footer_vs(uname_a, uname_b, color_a, color_b), (margin, margin))
+
+
+def make_comparison_pages(txt, fonts):
+    '''
+    three pages, all setting the same text:
+    font_a
+    font_b
+    font_a + font_b (overlaid)
+    '''
+    font_a, font_b = fonts
+    margin = 20
+
+    uname_a = TTFont(font_a)['name'].getDebugName(3)
+    uname_b = TTFont(font_b)['name'].getDebugName(3)
+
+    db.newPage('A4')
 
     text_box_bounds = (
         margin, 2 * margin, db.width() - 2 * margin, db.height() - 3 * margin)
 
-    fs_page_1 = get_fs(font_a, txt, color_black)
-    # description at bottom
-    footer_page_1 = db.FormattedString(
-        f'{uname_a}',
-        font=FONT_MONO,
-        fontSize=10,
-        fill=color_black,
-    )
-    db.textBox(fs_page_1, text_box_bounds)
+    content_page_1 = content(font_a, txt, 0)
+    footer_page_1 = footer(uname_a, 0)
+    db.textBox(content_page_1, text_box_bounds)
     db.text(footer_page_1, (margin, margin))
 
     db.newPage('A4')
-    fs_page_2 = get_fs(font_b, txt, color_black)
-    footer_page_2 = db.FormattedString(
-        f'{uname_b}',
-        font=FONT_MONO,
-        fontSize=10,
-        fill=color_black,
-    )
-    db.textBox(fs_page_2, text_box_bounds)
+    content_page_2 = content(font_b, txt, 0)
+    footer_page_2 = footer(uname_b, 0)
+    db.textBox(content_page_2, text_box_bounds)
     db.text(footer_page_2, (margin, margin))
 
-    db.newPage('A4')
-    db.blendMode('multiply')
-    fs_color_a = get_fs(font_a, txt, color_a)
-    fs_color_b = get_fs(font_b, txt, color_b)
-    db.textBox(fs_color_a, text_box_bounds)
-    db.textBox(fs_color_b, text_box_bounds)
-
-    # description at bottom
-    footer_color_a = db.FormattedString(
-        f'{uname_a}',
-        font=FONT_MONO,
-        fontSize=10,
-        fill=color_a,
-    )
-    footer_color_black = db.FormattedString(
-        ' vs ',
-        font=FONT_MONO,
-        fontSize=10,
-        fill=0,
-    )
-    footer_color_b = db.FormattedString(
-        f'{uname_b}',
-        font=FONT_MONO,
-        fontSize=10,
-        fill=color_b,
-    )
-    footer_page_3 = footer_color_a + footer_color_black + footer_color_b
-    db.text(footer_page_3, (margin, margin))
+    make_overlay_page(txt, font_a, font_b)
 
 
 def collect_fonts(paths):
-    from .proofing_helpers import fontSorter
-    otfs_a = paths[0].rglob('*.otf')
-    otfs_b = paths[1].rglob('*.otf')
-    otfs_a_sorted = fontSorter.sort_fonts(list(otfs_a))
+    '''
+    brittle. only seems to be possible to compare across versions
+    of the same family.
+    '''
+    fonts_a = paths[0].rglob('*.[ot]tf')
+    fonts_b = paths[1].rglob('*.[ot]tf')
 
-    otfs_sorted = {otf.name: [otf] for otf in otfs_a_sorted}
-    for otf in otfs_b:
-        if otf.name in otfs_sorted.keys():
-            otfs_sorted[otf.name].append(otf)
+    fonts_a_sorted = fontSorter.sort_fonts(list(fonts_a))
+    fonts_sorted = {font.name: [font] for font in fonts_a_sorted}
+    for font in fonts_b:
+        if font.name in fonts_sorted.keys():
+            fonts_sorted[font.name].append(font)
 
-    font_pairs = [pair for pair in otfs_sorted.values() if len(pair) == 2]
+    font_pairs = [pair for pair in fonts_sorted.values() if len(pair) == 2]
+    return font_pairs
+
+
+def collect_fonts_os2(paths):
+    '''
+    brittle. only works reliably if folders have same amount of fonts.
+    '''
+    fonts_a = paths[0].rglob('*.[ot]tf')
+    fonts_b = paths[1].rglob('*.[ot]tf')
+
+    fonts_a_sorted = sorted(
+        fonts_a, key=lambda x:
+        (TTFont(x)['OS/2'].usWidthClass, TTFont(x)['OS/2'].usWeightClass))
+    fonts_b_sorted = sorted(
+        fonts_b, key=lambda x:
+        (TTFont(x)['OS/2'].usWidthClass, TTFont(x)['OS/2'].usWeightClass))
+
+    font_pairs = zip(fonts_a_sorted, fonts_b_sorted)
+    return font_pairs
+
+
+def get_style_name(font_path):
+    f = TTFont(font_path)
+    style_name = f['name'].getDebugName(17)
+    if not style_name:
+        style_name = f['name'].getDebugName(2)
+    print(font_path, style_name)
+    return style_name
+
+
+def collect_fonts_stylename(paths):
+    '''
+    may drop fonts if a style name only exists on one side
+    '''
+    fonts_a = paths[0].rglob('*.[ot]tf')
+    fonts_b = list(paths[1].rglob('*.[ot]tf'))
+
+    fonts_a_sorted = fontSorter.sort_fonts(list(fonts_a))
+    style_names_a = [get_style_name(f) for f in fonts_a_sorted]
+    style_names_b = [get_style_name(f) for f in fonts_b]
+
+    font_pairs = []
+    for style_name in style_names_a:
+        if style_name in style_names_b:
+            index_a = style_names_a.index(style_name)
+            index_b = style_names_b.index(style_name)
+            font_a = fonts_a_sorted[index_a]
+            font_b = fonts_b[index_b]
+            font_pairs.append((font_a, font_b))
+
     return font_pairs
 
 
 def main():
-    """Main entry point for the overlay-font-proof command."""
     args = get_args()
     paths = [Path(i) for i in [args.ff_a, args.ff_b]]
     txt = get_text()
 
     if all([p.is_dir() for p in paths]):
-        fonts = collect_fonts(paths)
+        fonts = collect_fonts_stylename(paths)
         pdf_name = f'overlay_fonts {" vs ".join(p.name for p in paths)}.pdf'
 
         for font_pair in fonts:
             temp_fonts = [
                 make_temp_font(fi, f) for fi, f in enumerate(font_pair)]
-            make_comparison_page(txt, *temp_fonts)
+            make_overlay_page(txt, *temp_fonts)
 
     elif all([p.is_file() for p in paths]):
         fonts = paths
@@ -223,9 +234,12 @@ def main():
             print('cannot compare across paths and files')
 
     if fonts:
-        db.saveImage(pdf_name)
-        subprocess.Popen(['open', pdf_name])
+        pdf_path = Path(f'~/Desktop/{pdf_name}').expanduser()
+        db.saveImage(pdf_path)
+        subprocess.Popen(['open', pdf_path])
+    else:
+        print('could not find any fonts')
 
 
 if __name__ == '__main__':
-    main() 
+    main()
