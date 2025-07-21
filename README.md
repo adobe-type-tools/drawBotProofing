@@ -161,14 +161,6 @@ Input: folder containing UFO or font files, or individual font- or UFO files.
 
 ----
 
-### `makeReadme.py`
-
-Create/update the README.md file for this repository.
-
-    python3 makeReadme.py
-
-----
-
 ### `textProof.py`
 
 Create example paragraphs corresponding to a given character set.

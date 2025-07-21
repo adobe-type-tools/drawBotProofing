@@ -13,31 +13,32 @@ Create/update the README.md file for this repository.
 '''
 
 import ast
-import os
+from pathlib import Path
 
 
-def make_doc_snippet(file_name):
+def make_doc_snippet(file):
     '''
     Read the doc string of a Python script, and return it in markdown format.
     If an image file (corresponding to the script name) exists in an _images
     folder, add a reference to that image.
     '''
     doc_snippet = None
-    base_name, suffix = os.path.splitext(file_name)
-    # very simple way of looking for related images
-    image_files = sorted([
-        img for img in os.listdir('_images/') if img.startswith(base_name) and
-        img.endswith('.png')])
 
-    if suffix == '.py':
-        body = ast.parse(''.join(open(file_name)))
+    # very simple way of looking for related images
+    images = sorted([
+        img for img in Path('_images/').iterdir() if
+        img.name.startswith(file.stem) and
+        img.suffix == '.png'])
+
+    if file.suffix == '.py' and file.name != '__init__.py':
+        body = ast.parse(''.join(open(file)))
         docstring = ast.get_docstring(body)
 
         if docstring:
-            doc_snippet = f'### `{file_name}`\n\n{docstring}\n'
-            if image_files:
-                for image_file in image_files:
-                    doc_snippet += f'\n![{file_name}](_images/{image_file})\n'
+            doc_snippet = f'### `{file.name}`\n\n{docstring}\n'
+            if images:
+                for image_file in images:
+                    doc_snippet += f'\n![{file.name}](_images/{image_file.name})\n'
             doc_snippet += '\n----\n'
 
     return doc_snippet
@@ -82,8 +83,8 @@ if __name__ == '__main__':
     output = []
     output.append(header)
 
-    for file_name in sorted(os.listdir('.')):
-        doc_snippet = make_doc_snippet(file_name)
+    for file in sorted(Path('drawbot_proofing').iterdir()):
+        doc_snippet = make_doc_snippet(file)
         if doc_snippet:
             output.append(doc_snippet)
 
