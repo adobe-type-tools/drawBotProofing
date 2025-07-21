@@ -122,11 +122,11 @@ def get_cmap(font_path, ttc_arg=0):
 
     try:
         return ttfont['cmap'].getBestCmap()
-    except AssertionError:
+    except Exception:
         return {}
 
 
-def supports_characters(ffi, chars):
+def supports_chars(ffi, chars):
     support = False
     cmap = get_cmap(ffi.path, ffi.font_number)
 
@@ -158,8 +158,8 @@ def font_path_to_ffi(font_path):
 
 def get_available_fonts(args):
     '''
-    Return a list of objects, which contain a font’s path, PS name, and a
-    font number (if applicable).
+    Return a list of objects, which contain a font’s path, PS name,
+    and a font number (if applicable).
     '''
     available_fonts = []
     if args.input_path:
@@ -183,9 +183,19 @@ def get_available_fonts(args):
             print(f'{args.input_path} seems to be invalid.')
 
     else:  # use installed fonts
-        pool = multiprocessing.Pool()
-        font_paths = pool.map(path_for_ps_name, db.installedFonts())
-        available_fonts = sum(pool.map(font_path_to_ffi, font_paths), [])
+        installed_fonts = db.installedFonts()
+        print(f'Processing {len(installed_fonts)} installed fonts...')
+
+        with multiprocessing.Pool() as pool:
+            try:
+                font_paths = pool.map(path_for_ps_name, installed_fonts)
+                # Filter out None values from failed font path lookups
+                valid_font_paths = [fp for fp in font_paths if fp is not None]
+                available_fonts = sum(
+                    pool.map(font_path_to_ffi, valid_font_paths), [])
+            except Exception as e:
+                print(f'Error processing installed fonts: {e}')
+                return []
 
     return available_fonts
 
@@ -197,10 +207,17 @@ def collect_font_objects(args):
         available_fonts = filter_fonts_by_regex(available_fonts, args.regex)
 
     # filtering for character support
-    pool = multiprocessing.Pool()
-    support_map = pool.starmap(
-        supports_characters, zip(available_fonts, repeat(args.characters)))
-    filtered_fonts = [ffi for (ffi, support) in support_map if support is True]
+    print(f'Checking character support for {len(available_fonts)} fonts...')
+    with multiprocessing.Pool() as pool:
+        try:
+            support_map = pool.starmap(
+                supports_chars, zip(available_fonts, repeat(args.chars)))
+            filtered_fonts = [
+                ffi for (ffi, support) in support_map if support is True]
+            print(f'Found {len(filtered_fonts)} fonts supporting "{args.chars}"')
+        except Exception as e:
+            print(f'Error checking character support: {e}')
+            return []
 
     # simple sorting by PS name -- this is imperfect but makes sense for
     # installed fonts, or when a deep folder tree is parsed.
@@ -209,7 +226,7 @@ def collect_font_objects(args):
 
 
 def make_pdf_name(args):
-    chars_safe = args.characters.replace('/', '_')  # remove slash from path
+    chars_safe = args.chars.replace('/', '_')  # remove slash from path
 
     if args.input_path:
         short_dir = Path(args.input_path).name
@@ -227,7 +244,7 @@ def make_line(args, ffi):
     by ffi.path. A label with the PS name is added.
     '''
     fs = db.FormattedString(
-        args.characters + ' ',
+        args.chars + ' ',
         font=ffi.path,
         fontSize=int(args.pt),
         fontNumber=ffi.font_number,
@@ -271,7 +288,7 @@ def get_options(args=None):
     )
 
     parser.add_argument(
-        'characters',
+        'chars',
         metavar='',
         nargs='?',
         action='store',
