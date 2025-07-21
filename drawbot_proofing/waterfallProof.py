@@ -17,12 +17,10 @@ Input: folder containing font files.
 '''
 
 import argparse
-import os
-from pathlib import Path
 import subprocess
 import sys
-
 import drawBot as db
+from pathlib import Path
 
 from .proofing_helpers import fontSorter
 from .proofing_helpers.files import get_font_paths, read_text_file
@@ -74,25 +72,24 @@ def get_options():
 
 def main():
     args = get_options()
-    if os.path.isdir(args.d):
-        font_paths = get_font_paths(args.d)
-        fonts = fontSorter.sort_fonts(font_paths)
+    input_dir = Path(args.d)
+    content_dir = Path(__file__).parent / '_content'
+
+    if input_dir.is_dir():
+        font_paths = get_font_paths(input_dir)
+        fonts = fontSorter.sort_fonts(font_paths, alternate_italics=True)
     else:
-        sys.exit('no fonts found')
+        sys.exit(f'{args.d} is not a directory')
 
     db.newDrawing()
     PT_SIZE = args.pointsize
     LEADING = PT_SIZE * 1.2
     MARGIN = 48
 
-    v_content_path = os.path.join(
-        os.path.dirname(__file__), '_content/waterfall_vertical.txt')
-    h_content_path = os.path.join(
-        os.path.dirname(__file__), '_content/waterfall_horizontal.txt')
-    v_content = read_text_file(v_content_path)
-    h_content = read_text_file(h_content_path)
+    v_content = read_text_file(content_dir / 'waterfall_vertical.txt')
+    h_content = read_text_file(content_dir / 'waterfall_horizontal.txt')
 
-    # Create a new page for each word in the vertical content text file:
+    # create a new page for each word in the vertical content text file:
     for line in v_content.split('\n'):
 
         feature_dict = {
@@ -130,12 +127,12 @@ def main():
 
         db.text(fs, (MARGIN, offset))
 
-    dir_name = Path(args.d).name
-    output_path = f'~/Desktop/waterfallProof ({dir_name}).pdf'
+    output_path = Path(
+        f'~/Desktop/waterfallProof ({input_dir.name}).pdf').expanduser()
     db.saveImage(output_path)
     db.endDrawing()
     print(f'saved to {output_path}')
-    subprocess.call(['open', os.path.expanduser(output_path)])
+    subprocess.call(['open', output_path])
 
 
 if __name__ == '__main__':
