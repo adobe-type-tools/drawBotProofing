@@ -79,6 +79,10 @@ def make_proof_pages(args, input_file):
     if not upm:
         upm = 1000
 
+    footer = font_path.name
+    if footer == 'font.ufo':
+        footer += f' ({f.info.styleName})'
+
     suffixes = get_figure_suffixes(all_glyphs, args.suffixes)
     for suffix in suffixes:
         proof_text = make_proof_text(glyph_order, suffix)
@@ -89,10 +93,7 @@ def make_proof_pages(args, input_file):
             # A4Landscape: 842 x 505
 
             stamp = db.FormattedString(
-                '{} | {} | {}'.format(
-                    font_path.name,
-                    suffix,
-                    timestamp(readable=True)),
+                f'{footer} | {suffix} | {timestamp(readable=True)}',
                 font=FONT_MONO,
                 fontSize=10,
                 align='right')
@@ -101,7 +102,7 @@ def make_proof_pages(args, input_file):
             MARGIN = 30
             x_offset = MARGIN
             y_offset = db.height() - MARGIN - args.point_size
-            scale_factor = args.point_size / 1000
+            scale_factor = args.point_size / upm
             line_space = args.point_size * 1.2
 
             for line in proof_text:
@@ -144,8 +145,13 @@ def get_figure_suffixes(gnames, custom_suffixes, report=False):
         gn for gn in gnames if '.' in gn and gn.split('.')[0] == 'three'])
 
     if custom_suffixes is None:
-        suffixes = [''] + sorted([
-            '.' + '.'.join(gn.split('.')[1:]) for gn in figure_variants])
+        suffixes = []
+        if 'three' in gnames:
+            # default, non-suffixed figures exist
+            suffixes.append('')
+        # all the other suffixes
+        suffixes.extend(sorted([
+            '.' + '.'.join(gn.split('.')[1:]) for gn in figure_variants]))
 
         if report:
             print('figure suffixes found:')
