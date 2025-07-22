@@ -15,13 +15,13 @@ Input: font file(s) or folder of fonts.
 
 '''
 
-import os
 import sys
 
 import argparse
 import subprocess
 
 import drawBot as db
+from pathlib import Path
 
 from .proofing_helpers.files import get_font_paths
 from .proofing_helpers.globals import *
@@ -136,8 +136,6 @@ def make_proof(args, content, font_paths, output_path):
     db.newDrawing()
     MARGIN = 30
 
-    base_names = [os.path.basename(font) for font in font_paths]
-
     if args.kerning_off:
         kerning_flag = ' (no kerning) '
         fea_dict = {'kern': False}
@@ -145,14 +143,11 @@ def make_proof(args, content, font_paths, output_path):
         kerning_flag = ' '
         fea_dict = {}
 
-    for font_index, font in enumerate(font_paths):
-        font_name = base_names[font_index]
+    for font in font_paths:
         db.newPage('LetterLandscape')
 
         stamp = db.FormattedString(
-            '{}{}| {}'.format(
-                font_name, kerning_flag,
-                timestamp(readable=True)),
+            f'{font.name}{kerning_flag}| {timestamp(readable=True)}',
             font=FONT_MONO,
             fontSize=8,
             align='right')
@@ -174,7 +169,7 @@ def make_proof(args, content, font_paths, output_path):
     db.saveImage(output_path)
     db.endDrawing()
 
-    subprocess.call(['open', os.path.expanduser(output_path)])
+    subprocess.call(['open', output_path])
 
 
 def make_output_path(args):
@@ -195,6 +190,7 @@ def make_output_path(args):
 
 def main():
     args = get_options()
+    wordlist_path = Path(args.wordlist)
     output_path = make_output_path(args)
 
     font_list = []
@@ -210,8 +206,8 @@ def main():
         req_chars = args.combination
         combo_mode = True
 
-    if os.path.exists(args.wordlist):
-        content = filter_wordlist(args.wordlist, req_chars, combo_mode)
+    if wordlist_path.exists():
+        content = filter_wordlist(wordlist_path, req_chars, combo_mode)
     else:
         sys.exit('No default word list found.')
 

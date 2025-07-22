@@ -13,14 +13,13 @@ Input: single UFO or folder containing UFO files.
 
 '''
 
-import os
-
 import argparse
 import subprocess
 
 import drawBot as db
 
 from fontParts.fontshell import RFont
+from pathlib import Path
 
 from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_ufo_paths
@@ -61,6 +60,7 @@ def dot_suffixes(suffix_list):
 
 
 def make_page(args, font, suffix):
+    font_path = Path(font.path)
     proof_text = make_proof_text(font.glyphOrder, suffix)
     all_gnames = set([gn for line in proof_text for gn in line])
 
@@ -70,7 +70,7 @@ def make_page(args, font, suffix):
 
         stamp = db.FormattedString(
             '{} | {} | {}'.format(
-                os.path.basename(font.path),
+                font_path.name,
                 suffix,
                 timestamp(readable=True)),
             font=FONT_MONO,
@@ -151,15 +151,14 @@ def main():
     args = get_options()
     ufos = get_ufo_paths(args.path)
     ufos.sort()
-    base_path = os.path.basename(os.path.normpath(args.path))
-    output_path = (
-        f'~/Desktop/figure spacing {base_path}.pdf'
-    )
+    args_path = Path(args.path)
+    output_pdf = f'figure spacing {args_path.name}.pdf'
+    output_path = Path(f'~/Desktop/{output_pdf}').expanduser()
 
-    fonts = [RFont(ufo) for ufo in ufos]
-    if fonts:
+    rfonts = [RFont(ufo) for ufo in ufos]
+    if rfonts:
         figure_variants = set([
-            gn for f in fonts for gn in f.keys() if
+            gn for f in rfonts for gn in f.keys() if
             '.' in gn and
             gn.split('.')[0] == 'three'])
 
@@ -179,13 +178,13 @@ def main():
             suffixes = dot_suffixes(args.suffixes)
 
         db.newDrawing()
-        for font in fonts:
+        for font in rfonts:
             for suffix in suffixes:
                 make_page(args, font, suffix)
         db.saveImage(output_path)
         db.endDrawing()
 
-        subprocess.call(['open', os.path.expanduser(output_path)])
+        subprocess.call(['open', output_path])
 
     else:
         print(f'no UFOs found in {args.path}')

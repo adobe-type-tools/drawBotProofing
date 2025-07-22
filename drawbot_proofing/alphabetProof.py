@@ -19,16 +19,15 @@ Input: one or more font files.
 
 '''
 
-import os
-
 import argparse
 import subprocess
 
 import drawBot as db
+from pathlib import Path
 
-from .proofing_helpers.stamps import timestamp
 from .proofing_helpers.files import get_font_paths, make_temp_font
-from .proofing_helpers.fontSorter import sort_fonts
+from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
+from .proofing_helpers.stamps import timestamp
 
 
 class RawDescriptionAndDefaultsFormatter(
@@ -125,12 +124,11 @@ def read_sample_text(kind='sample', w_system='lat'):
         return chunks
 
     else:
-        assets_path = os.path.dirname(__file__)
-        text_dir = os.path.join(assets_path, '_content', 'alphabet proof')
+        text_dir = Path(__file__).parent / '_content' / 'alphabet proof'
         text_file_name = f'{kind}_{w_system}.txt'
-        text_path = os.path.join(assets_path, text_dir, text_file_name)
+        text_path = text_dir / text_file_name
 
-        if os.path.exists(text_path):
+        if text_path.exists():
             with open(text_path, 'r') as tf:
                 pages = tf.read().split('\n\n\n')
 
@@ -148,11 +146,12 @@ def read_sample_text(kind='sample', w_system='lat'):
             print(text_path, 'does not exist')
 
 
-def make_proof(args, input_paths, output_path):
+def make_proof(args, fonts, output_path):
 
     if args.text:
-        if os.path.exists(args.text):
-            proof_text = read_text_file(args.text)
+        text_path = Path(args.text)
+        if text_path.exists():
+            proof_text = read_text_file(text_path)
 
     else:
         mode = args.mode.lower()
@@ -162,21 +161,14 @@ def make_proof(args, input_paths, output_path):
 
     db.newDrawing()
 
-    assets_path = os.path.dirname(__file__)
-    ADOBE_BLANK = db.installFont(os.path.join(
-        assets_path, '_fonts/AdobeBlank.otf'))
-    FONT_MONO = os.path.join(
-        assets_path, '_fonts/SourceCodePro-Regular.otf')
     MARGIN = 30
     line_space = args.point_size * 1.2
-    base_names = [os.path.basename(font) for font in input_paths]
 
-    if len(input_paths) == 1:
-        font_paths = input_paths
+    if len(fonts) == 1:
+        tmp_fonts = fonts
     else:
-        font_paths = [
-            make_temp_font(input_index, input_path) for
-            (input_index, input_path) in enumerate(input_paths)]
+        tmp_fonts = [
+            make_temp_font(i, font) for (i, font) in enumerate(fonts)]
 
     for page in proof_text:
 
@@ -191,12 +183,13 @@ def make_proof(args, input_paths, output_path):
         #         feature_name: True for feature_name in feature_line.split()}
         #     page = '\n'.join(page_lines[1:])
 
-        for font_index, font in enumerate(font_paths):
-            font_name = base_names[font_index]
+        for font_index, font in enumerate(fonts):
+            tmp_font = tmp_fonts[font_index]
+            font_path = Path(font)
             db.newPage('LetterLandscape')
 
             fs_stamp = db.FormattedString(
-                f'{font_name}',
+                f'{font_path.name}',
                 font=FONT_MONO,
                 fontSize=10,
                 align='right')
@@ -210,7 +203,7 @@ def make_proof(args, input_paths, output_path):
 
                 fs = db.FormattedString(
                     line,
-                    font=font,
+                    font=tmp_font,
                     fontSize=args.point_size,
                     fallbackFont=ADOBE_BLANK,
                     openTypeFeatures=feature_dict,
@@ -243,32 +236,15 @@ def make_proof_text(mode, writing_system, custom_string=None):
     return proof_text
 
 
-def get_input_paths(input_args):
-    '''
-    Find if the input argument is a folder or a/multiple file(s).
-    Return either just the file, or get font paths within folders.
-
-    '''
-    if len(input_args) == 1 and os.path.isdir(input_args[-1]):
-        return sort_fonts(get_font_paths(input_args[-1]), True)
-    return input_args
-
-
-def make_output_name(args):
+def make_pdf_name(args, fonts):
     '''
     Try to make a sensible filename for the PDF proof created.
 
     '''
-    if len(args.input) == 1 and os.path.isdir(args.input[-1]):
-        input_paths = get_font_paths(args.input[-1])
-    else:
-        input_paths = args.input
-    all_font_names = [
-        os.path.splitext(os.path.basename(font))[0] for font in input_paths
-    ]
+    all_font_names = [font.name for font in fonts]
     font_name_string = ' vs '.join(all_font_names)
 
-    if len(font_name_string) > 200:
+    if len(font_name_string) > 255:
         font_name_string = 'comparison of many fonts'
 
     name_chunks = [font_name_string, args.mode, args.writing_system]
@@ -280,11 +256,14 @@ def make_output_name(args):
 
 def main():
     args = get_options()
-    input_paths = get_input_paths(args.input)
-    output_path = (os.path.join(
-        os.path.expanduser('~/Desktop'),
-        make_output_name(args)))
-    make_proof(args, input_paths, output_path)
+
+    fonts = []
+    for item in args.input:
+        fonts.extend(get_font_paths(item))
+
+    output_pdf_name = make_pdf_name(args, fonts)
+    output_path = Path(f'~/Desktop/{output_pdf_name}').expanduser()
+    make_proof(args, fonts, output_path)
     subprocess.call(['open', output_path])
 
 
