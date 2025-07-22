@@ -19,10 +19,11 @@ import subprocess
 import drawBot as db
 
 from fontParts.fontshell import RFont
+from fontTools.ttLib import TTFont
 from pathlib import Path
 
 from .proofing_helpers.drawing import draw_glyph
-from .proofing_helpers.files import get_ufo_paths
+from .proofing_helpers.files import get_ufo_paths, get_font_paths
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.stamps import timestamp
 
@@ -59,47 +60,66 @@ def dot_suffixes(suffix_list):
     return dotted_suffix_list
 
 
-def make_page(args, font, suffix):
-    font_path = Path(font.path)
-    proof_text = make_proof_text(font.glyphOrder, suffix)
-    all_gnames = set([gn for line in proof_text for gn in line])
+def make_proof_pages(args, input_file):
+    font_path = Path(input_file)
 
-    if set(all_gnames) <= set(font.keys()):
-        db.newPage('A4Landscape')
-        # A4Landscape: 842 x 505
-
-        stamp = db.FormattedString(
-            '{} | {} | {}'.format(
-                font_path.name,
-                suffix,
-                timestamp(readable=True)),
-            font=FONT_MONO,
-            fontSize=10,
-            align='right')
-
-        db.textBox(stamp, (280, 20, 542, 20))
-        MARGIN = 30
-        x_offset = MARGIN
-        y_offset = db.height() - MARGIN - args.point_size
-        scale_factor = args.point_size / 1000
-        line_space = args.point_size * 1.2
-
-        for line in proof_text:
-
-            for gname in line:
-                with db.savedState():
-                    glyph = font[gname]
-                    db.translate(x_offset, y_offset)
-                    db.scale(scale_factor)
-                    draw_glyph(glyph)
-                    x_offset += glyph.width * scale_factor
-            x_offset = MARGIN
-            y_offset -= line_space
+    if input_file.suffix.lower() == '.ufo':
+        f = RFont(input_file)
+        all_glyphs = f.keys()
+        glyph_container = f
+        upm = f.info.unitsPerEm
+        glyph_order = f.glyphOrder
     else:
-        not_supported = sorted(set(all_gnames) - set(font.keys()))
-        print(
-            f'{", ".join(sorted(not_supported))}\n'
-            f'not in {font.info.styleName}')
+        f = TTFont(input_file)
+        all_glyphs = f.getGlyphOrder()
+        glyph_container = f.getGlyphSet()
+        upm = f['head'].unitsPerEm
+        glyph_order = f.getGlyphOrder()
+
+    if not upm:
+        upm = 1000
+
+    suffixes = get_figure_suffixes(all_glyphs, args.suffixes)
+    for suffix in suffixes:
+        proof_text = make_proof_text(glyph_order, suffix)
+        all_gnames = set([gn for line in proof_text for gn in line])
+
+        if set(all_gnames) <= set(glyph_order):
+            db.newPage('A4Landscape')
+            # A4Landscape: 842 x 505
+
+            stamp = db.FormattedString(
+                '{} | {} | {}'.format(
+                    font_path.name,
+                    suffix,
+                    timestamp(readable=True)),
+                font=FONT_MONO,
+                fontSize=10,
+                align='right')
+
+            db.textBox(stamp, (280, 20, 542, 20))
+            MARGIN = 30
+            x_offset = MARGIN
+            y_offset = db.height() - MARGIN - args.point_size
+            scale_factor = args.point_size / 1000
+            line_space = args.point_size * 1.2
+
+            for line in proof_text:
+
+                for gname in line:
+                    with db.savedState():
+                        glyph = glyph_container[gname]
+                        db.translate(x_offset, y_offset)
+                        db.scale(scale_factor)
+                        draw_glyph(glyph)
+                        x_offset += glyph.width * scale_factor
+                x_offset = MARGIN
+                y_offset -= line_space
+        else:
+            not_supported = sorted(set(all_gnames) - set(glyph_order))
+            print(
+                f'{", ".join(sorted(not_supported))}\n'
+                f'not in {font_path.name}')
 
 
 def make_proof_text(available_gnames, suffix=''):
@@ -117,6 +137,29 @@ def make_proof_text(available_gnames, suffix=''):
         joined_line = [spacer] + list(joinit(line, spacer)) + [spacer]
         output.append(joined_line)
     return output
+
+
+def get_figure_suffixes(gnames, custom_suffixes, report=False):
+    figure_variants = set([
+        gn for gn in gnames if '.' in gn and gn.split('.')[0] == 'three'])
+
+    if custom_suffixes is None:
+        suffixes = [''] + sorted([
+            '.' + '.'.join(gn.split('.')[1:]) for gn in figure_variants])
+
+        if report:
+            print('figure suffixes found:')
+            for suffix in suffixes:
+                if suffix == '':
+                    print('(no suffix)')
+                else:
+                    print(suffix)
+            print()
+
+    else:
+        suffixes = dot_suffixes(custom_suffixes)
+
+    return suffixes
 
 
 def get_options():
@@ -142,52 +185,30 @@ def get_options():
 
     parser.add_argument(
         'path',
-        help='folder containing UFO file(s)')
+        help='folder containing UFO or font files')
 
     return parser.parse_args()
 
 
 def main():
     args = get_options()
-    ufos = get_ufo_paths(args.path)
-    ufos.sort()
-    args_path = Path(args.path)
-    output_pdf = f'figure spacing {args_path.name}.pdf'
+
+    input_path = Path(args.path)
+    input_list = []
+    input_list.extend(get_ufo_paths(input_path))
+    input_list.extend(get_font_paths(input_path))
+
+    output_pdf = f'figure spacing {input_path.name}.pdf'
     output_path = Path(f'~/Desktop/{output_pdf}').expanduser()
 
-    rfonts = [RFont(ufo) for ufo in ufos]
-    if rfonts:
-        figure_variants = set([
-            gn for f in rfonts for gn in f.keys() if
-            '.' in gn and
-            gn.split('.')[0] == 'three'])
+    db.newDrawing()
+    for input_file in input_list:
+        make_proof_pages(args, input_file)
 
-        if args.suffixes is None:
-            suffixes = [''] + sorted([
-                '.' + '.'.join(gn.split('.')[1:]) for gn in figure_variants])
+    db.saveImage(output_path)
+    db.endDrawing()
 
-            print('figure suffixes found:')
-            for suffix in suffixes:
-                if suffix == '':
-                    print('(no suffix)')
-                else:
-                    print(suffix)
-            print()
-
-        else:
-            suffixes = dot_suffixes(args.suffixes)
-
-        db.newDrawing()
-        for font in rfonts:
-            for suffix in suffixes:
-                make_page(args, font, suffix)
-        db.saveImage(output_path)
-        db.endDrawing()
-
-        subprocess.call(['open', output_path])
-
-    else:
-        print(f'no UFOs found in {args.path}')
+    subprocess.call(['open', output_path])
 
 
 if __name__ == '__main__':
