@@ -9,7 +9,7 @@
 Simple script check figure spacing in UFOs (without kerning).
 For each figure suffix (such as .tosf), a new spacing page is made.
 
-Input: single UFO or folder containing UFO files.
+Input: folder containing UFO or font files, or individual font- or UFO files.
 
 '''
 

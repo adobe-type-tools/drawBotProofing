@@ -58,14 +58,6 @@ def get_options(args=None):
     #     help='draw metrics (not implemented)')
 
     # parser.add_argument(
-    #     '-b', '--boxes',
-    #     default=False,
-    #     action='store',
-    #     type=int,
-    #     metavar='INT',
-    #     help='override glyphs per line calculation')
-
-    # parser.add_argument(
     #     '--date',
     #     default=False,
     #     action='store_true',

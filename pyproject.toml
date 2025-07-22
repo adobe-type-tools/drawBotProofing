@@ -52,7 +52,7 @@ vertical-metrics-proof = "drawbot_proofing.verticalMetricsProof:main"
 vertical-metrics-comparison-proof = "drawbot_proofing.verticalMetricsComparisonProof:main"
 waterfall-proof = "drawbot_proofing.waterfallProof:main"
 accent-proof = "drawbot_proofing.accentProof:main"
-figure-spacing-proof-ufo = "drawbot_proofing.figureSpacingProofUFO:main"
+figure-spacing-proof = "drawbot_proofing.figureSpacingProof:main"
 overlay-font-proof = "drawbot_proofing.overlayFontProof:main"
 
 [tool.setuptools.packages.find]

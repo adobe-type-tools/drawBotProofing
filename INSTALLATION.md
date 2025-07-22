@@ -58,7 +58,7 @@ After installation, the following commands will be available:
 - `vertical-metrics-comparison-proof` - Compare vertical metrics across fonts
 - `waterfall-proof` - Create waterfall proofs
 - `accent-proof` - Generate accent proofs
-- `figure-spacing-proof-ufo` - Test figure spacing in UFO files
+- `figure-spacing-proof` - Create figure spacing proofs
 - `overlay-font-proof` - Create overlay comparisons between fonts
 
 ## Quick Start
