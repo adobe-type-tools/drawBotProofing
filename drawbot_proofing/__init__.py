@@ -9,4 +9,4 @@ __author__ = "Adobe"
 __email__ = "opensource@adobe.com"
 
 # Import key modules for easier access
-from . import proofing_helpers 
+from . import proofing_helpers
