@@ -16,7 +16,6 @@ Input: folder with UFO files or individual UFOs
 '''
 
 import math
-import os
 import re
 
 import argparse
@@ -26,6 +25,8 @@ import subprocess
 
 import defcon
 import drawBot as db
+
+from pathlib import Path
 
 from .proofing_helpers import fontSorter
 from .proofing_helpers.drawing import draw_glyph
@@ -195,7 +196,7 @@ def make_single_glyph_page(args, page_width, page_height, font, glyph_name):
     '''
     A page with a single glyph, intended for a “flip-book” style showing.
     '''
-    ufo_name = os.path.basename(font.path)
+    ufo_name = Path(font.path).name
     if ufo_name == 'font.ufo':
         ufo_name = font.info.postscriptFontName
     stamp = u'%s – %s' % (ufo_name, glyph_name)
@@ -538,19 +539,17 @@ def make_output_path(args, family_name, output_mode, matches):
             name_chunks.append(f'({rep_start})')
 
     output_name = ' '.join(name_chunks) + '.pdf'
-    output_path = os.path.join(
-        os.path.expanduser('~/Desktop'),
-        output_name)
+    output_path = Path(f'~/Desktop/{output_name}').expanduser()
 
     return output_path
 
 
 def compress_user(path):
     '''
-    opposite of os.path.expanduser
+    opposite of .expanduser()
     '''
-    user_folder = os.path.expanduser('~')
-    return path.replace(user_folder, '~')
+    user_folder = str(Path('~').expanduser())
+    return str(path).replace(user_folder, '~')
 
 
 def ordered_keys(font):
@@ -581,7 +580,8 @@ def main(test_args=None):
         # no sorting, just passing single fonts
         ufo_list = args.d
 
-    font_list = list(map(defcon.Font, [f_path for f_path in ufo_list]))
+    font_list = list(map(defcon.Font, ufo_list))
+
     if font_list:
         for font in font_list:
             print(font.info.styleName)
@@ -678,7 +678,6 @@ def main(test_args=None):
                     args, BOX_WIDTH, BOX_HEIGHT, glyph_name, font_list)
 
         output_path = make_output_path(args, family_name, output_mode, matches)
-
         db.saveImage(output_path)
         print('saved PDF to', compress_user(output_path))
         subprocess.call(['open', output_path])
