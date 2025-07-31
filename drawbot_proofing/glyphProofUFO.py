@@ -30,7 +30,7 @@ from pathlib import Path
 
 from .proofing_helpers import fontSorter
 from .proofing_helpers.drawing import draw_glyph
-from .proofing_helpers.files import get_ufo_paths
+from .proofing_helpers.files import get_ufo_paths, get_font_paths
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.stamps import timestamp
 
@@ -492,19 +492,15 @@ def get_columns(args, font_list):
         return args.columns
 
     # calculation based on number of fonts provided
-    if len(font_list) <= 5:
-        return len(font_list)
-    else:
-        if len(font_list) in [i ** 2 for i in range(3, 7)]:
-            columns = int(math.sqrt(len(font_list)))
+    num_fonts = len(font_list)
 
+    if num_fonts <= 5:
+        columns = num_fonts
+    else:
+        if 6 <= num_fonts < 10:
+            columns = num_fonts // 2
         else:
-            if len(font_list) >= 6:
-                columns = len(font_list) // 2
-            elif len(font_list) >= 12:  # 12
-                columns = len(font_list) // 3
-            else:  # 32
-                columns = len(font_list) // 4
+            columns = math.ceil(math.sqrt(num_fonts))
 
     return columns
 
@@ -563,55 +559,77 @@ def make_uni_dict(font_list):
     return uni_dict
 
 
+def get_glyph_names(font_list, contours_only=False):
+    '''
+    either get all glyph names, or only names for glyphs with contours
+    '''
+    glyph_names = []
+    template_font = font_list[0]
+    template_gnames = ordered_keys(template_font)
+
+    if contours_only:
+        glyph_names = [
+            gn for gn in template_gnames if len(template_font[gn])]
+        for font in font_list[1:]:
+            addl_glyph_names = [
+                gn for gn in ordered_keys(font) if
+                len(font[gn]) and gn not in glyph_names
+            ]
+            glyph_names.extend(addl_glyph_names)
+
+    else:
+        glyph_names = template_gnames
+        for font in font_list[1:]:
+            addl_glyph_names = [
+                gn for gn in ordered_keys(font) if
+                gn not in glyph_names
+            ]
+            glyph_names.extend(addl_glyph_names)
+
+    return glyph_names
+
+
 def main(test_args=None):
     args = get_options(test_args)
     if len(args.d) == 1:
         ufo_paths = get_ufo_paths(args.d[0])
+        font_paths = get_font_paths(args.d[0])
         ufo_list = fontSorter.sort_fonts(ufo_paths)
+        font_list = fontSorter.sort_fonts(font_paths)
+
+        if ufo_list:
+            input_files = ufo_list
+        elif font_list:
+            input_files = font_list
+        else:
+            input_files = []
     else:
         # no sorting, just passing single fonts
-        ufo_list = args.d
+        input_files = args.d
 
-    font_list = list(map(defcon.Font, ufo_list))
+    font_list = list(map(defcon.Font, input_files))
 
     if font_list:
         for font in font_list:
             print(font.info.styleName)
         family_name = get_family_name(font_list)
-        template_font = font_list[0]
-        all_glyphs = ordered_keys(template_font)
-        contour_glyphs = [
-            gname for gname in all_glyphs if
-            len(template_font[gname])]
 
-        for font in font_list[1:]:
-            addl_glyph_names = [
-                gName for gName in ordered_keys(font) if
-                gName not in all_glyphs]
-            addl_contour_glyphs = [
-                gname for gname in ordered_keys(font) if
-                len(font[gname]) and gname not in contour_glyphs
-            ]
-            all_glyphs.extend(addl_glyph_names)
-            contour_glyphs.extend(addl_contour_glyphs)
+        all_glyph_names = get_glyph_names(font_list, args.contours)
 
         # which glyphs end up in the PDF?
         matches = None
         if args.regex:
             reg_ex = re.compile(args.regex)
-            matches = list(filter(reg_ex.match, all_glyphs))
+            matches = list(filter(reg_ex.match, all_glyph_names))
             if matches:
                 print('filtered glyph list:')
                 print(' '.join(matches))
                 glyph_list = matches
             else:
                 print('no matches for regular expression')
-                glyph_list = all_glyphs
-        elif args.contours:
-            print('contours only')
-            glyph_list = contour_glyphs
+                glyph_list = all_glyph_names
         else:
-            glyph_list = all_glyphs
+            glyph_list = all_glyph_names
 
         db.newDrawing()
 
