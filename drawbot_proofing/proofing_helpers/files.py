@@ -32,11 +32,11 @@ def get_font_paths(input_path):
 
     if path.is_dir():
         # directory was passed
-        otf_paths = list(path.rglob('*.otf'))
-        ttf_paths = list(path.rglob('*.ttf'))
+        otf_paths = list(path.rglob('*.otf')) + list(path.rglob('*.OTF'))
+        ttf_paths = list(path.rglob('*.ttf')) + list(path.rglob('*.TTF'))
     else:
         # single file was passed
-        if path.suffix in ['.otf', '.ttf']:
+        if path.suffix.lower() in ['.otf', '.ttf']:
             return [path]
 
     if otf_paths:
@@ -55,10 +55,10 @@ def get_ufo_paths(input_path, filter='font.ufo'):
 
     path = Path(input_path).resolve()
     if path.is_dir():
-        if path.suffix == '.ufo':
+        if path.suffix.lower() == '.ufo':
             return [path]
         else:
-            ufo_paths = list(path.rglob('*.ufo'))
+            ufo_paths = list(path.rglob('*.ufo')) + list(path.rglob('*.UFO'))
     elif path.suffix == '.designspace':
         doc = DesignSpaceDocument.fromfile(path)
         for source in doc.sources:
