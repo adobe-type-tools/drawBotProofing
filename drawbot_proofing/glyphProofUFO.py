@@ -365,14 +365,14 @@ def make_cover(family_name, font_list, page_size, margin=20):
         else:
             scale_factor = page_height / glyph_width
 
-        scale_factor *= 2
+        scale_factor *= 3
 
         db.translate(-glyph_center[0], -glyph_center[1])
         db.scale(scale_factor, center=glyph_center)
 
         db.translate(
-            page_center[0] / scale_factor + db.randint(-10, 10),
-            page_center[1] / scale_factor + db.randint(-10, 10),
+            page_center[0] / scale_factor + db.randint(-20, 20),
+            page_center[1] / scale_factor + db.randint(-20, 20),
         )
 
         db.fill(1)
@@ -417,7 +417,11 @@ def make_proof_page(glyph_name, font_list, args):
     current_line = 1
 
     # see if the glyph exists in at least one of the UFOs
-    glyph_exists = [glyph_name in font for font in font_list]
+
+    if isinstance(font_list[0], defcon.Font):
+        glyph_exists = [glyph_name in font for font in font_list]
+    else:
+        glyph_exists = [glyph_name in font.getGlyphOrder() for font in font_list]
 
     if any(glyph_exists):
 
@@ -452,40 +456,45 @@ def make_proof_page(glyph_name, font_list, args):
         anchor_list = []
         anchor_dict = {}
         max_anchors_per_line = columns
+
         for font in font_list:
+            if isinstance(font, defcon.Font):
+                glyph_container = font
+                upm = font.info.unitsPerEm
+            else:
+                glyph_container = font.getGlyphSet()
+                upm = font['head'].unitsPerEm
+
+            if not upm:
+                upm = 1000
+
             num_glyphs += 1
             db.fill(0)
             y_offset = page_height - (BOX_HEIGHT * current_line) + BOX_WIDTH * 0.4
 
-            # stylename_stamp = db.FormattedString(
-            #     txt=weight_code,
-            #     font=FONT_MONO,
-            #     fontSize=10,
-            #     align='center'
-            # )
-
-            if glyph_name in font:
+            if glyph_name in glyph_container:
                 db.fill(0)
-                glyph = font[glyph_name]
+                glyph = glyph_container[glyph_name]
                 draw_sb = True
                 # draw_vm = True
 
             else:
                 db.fill(0.8)
-                if '.notdef' in font.keys():
-                    glyph = font['.notdef']
-                elif 'space' in font.keys():
-                    glyph = font['space']
+                if '.notdef' in glyph_container:
+                    glyph = glyph_container['.notdef']
+                elif 'space' in glyph_container:
+                    glyph = glyph_container['space']
                 else:
-                    gname = font.glyphOrder[0]
-                    glyph = font[gname]
+                    gname = get_glyph_order(font)[0]
+                    glyph = glyph_container[gname]
+
                 draw_sb = False
                 # draw_vm = False
                 max_anchors_per_line -= 1
 
             with db.savedState():
 
-                scale_factor = BOX_WIDTH / 1000
+                scale_factor = BOX_WIDTH / upm
                 local_offset = (BOX_WIDTH - glyph.width * scale_factor) // 2
                 db.translate(x_offset + local_offset, y_offset)
                 db.scale(scale_factor)
@@ -500,25 +509,19 @@ def make_proof_page(glyph_name, font_list, args):
                 draw_glyph(glyph)
 
                 if args.anchors:
-                    if glyph.anchors:
-                        for anchor in glyph.anchors:
-                            an_x = anchor.x * scale_factor + x_offset + local_offset
-                            an_y = anchor.y * scale_factor + y_offset
-                            anchor_dict.setdefault(
-                                anchor.name, []).append((an_x, an_y))
-                        draw_anchors(glyph, 30)
-
-            # if current_line == 1:
-            #     textBox(stylename_stamp, (footer_rect))
+                    if isinstance(glyph, defcon.Glyph):
+                        if glyph.anchors:
+                            for anchor in glyph.anchors:
+                                an_x = anchor.x * scale_factor + x_offset + local_offset
+                                an_y = anchor.y * scale_factor + y_offset
+                                anchor_dict.setdefault(
+                                    anchor.name, []).append((an_x, an_y))
+                            draw_anchors(glyph, 30)
 
             x_offset += BOX_WIDTH
             if num_glyphs % columns == 0:
                 current_line += 1
                 x_offset = 0
-
-        # current_line = 1
-        # num_glyphs = 0
-        # x_offset = 0
 
         if args.anchors:
             for anchor_name, anchor_list in anchor_dict.items():
@@ -631,11 +634,12 @@ def make_uni_dict(font_list):
     uni_dict = {}
     for font in font_list:
         if isinstance(font, defcon.Font):
-            # double-mapping
-            reverse_cmap = {g.name: g.unicode for g in font if g.unicode}
+            # xxx double-mapping
+            gn_2_cp = {g.name: g.unicode for g in font if g.unicode}
         else:
             reverse_cmap = font['cmap'].buildReversed()
-        uni_dict.update(reverse_cmap)
+            gn_2_cp = {gn: list(cp)[0] for gn, cp in reverse_cmap.items()}
+        uni_dict.update(gn_2_cp)
 
     return uni_dict
 
@@ -689,15 +693,15 @@ def get_glyph_names(font_list, contours=False):
     return glyph_names
 
 
-def make_font_list(input_args):
+def make_font_list(input_paths):
     '''
     * if UFOs are found, return a list of defcon Font objects
     * if fonts are found, return a list of ttFont objects
     '''
 
-    if len(input_args) == 1:
-        ufo_paths = get_ufo_paths(input_args[0])
-        font_paths = get_font_paths(input_args[0])
+    if len(input_paths) == 1:
+        ufo_paths = get_ufo_paths(input_paths[0])
+        font_paths = get_font_paths(input_paths[0])
         ufos = fontSorter.sort_fonts(ufo_paths)
         fonts = fontSorter.sort_fonts(font_paths)
 
@@ -709,7 +713,7 @@ def make_font_list(input_args):
             input_files = []
     else:
         # no sorting, just passing single files
-        input_files = input_args
+        input_files = input_paths
 
     suffixes = [file.suffix.lower() for file in input_files]
     if set(suffixes) == {'.ufo'}:
@@ -745,7 +749,6 @@ def main(test_args=None):
         family_name = global_family_name(font_list)
 
         glyph_list = get_glyph_names(font_list, args.contours)
-
         if args.regex:
             glyph_list = filter_glyph_names(glyph_list, args.regex)
 
