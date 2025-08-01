@@ -43,14 +43,20 @@ def get_overlap_index(list_of_strings, start_char=0):
     '''
     if not list_of_strings:
         return 0
-    shortest_item_found = min([(len(item), item) for item in list_of_strings])
-    shortest_item = shortest_item_found[1]
-    for i in range(start_char, len(shortest_item)):
-        chars = [item[i] for item in list_of_strings]
-        if len(set(chars)) == 1:
-            start_char += 1
-        else:
+    strings = set(list_of_strings)
+    words_by_length = sorted([(len(word), word) for word in strings])
+    shortest_word = words_by_length[0][1]
+
+    for i in range(start_char, len(shortest_word)):
+        chars = [word[i] for word in list_of_strings]
+        if len(set(chars)) > 1:
+            # names start to diverge
             return i
+        elif i == len(shortest_word) - 1:
+            # shortest name is contained in all other names
+            return len(shortest_word)
+        else:
+            continue
 
 
 def get_name_overlap(list_of_strings):
