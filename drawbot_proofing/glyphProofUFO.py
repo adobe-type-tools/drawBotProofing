@@ -57,12 +57,6 @@ def get_options(args=None):
     #     action='store_true',
     #     help='draw metrics (not implemented)')
 
-    # parser.add_argument(
-    #     '--date',
-    #     default=False,
-    #     action='store_true',
-    #     help='date proof file name')
-
     parser.add_argument(
         '-c', '--contours',
         default=False,
@@ -505,17 +499,13 @@ def get_columns(args, font_list):
     return columns
 
 
-def make_output_path(args, family_name, output_mode, matches):
+def make_output_path(family_name, output_mode, matches=[]):
     '''
     Make output path based on the options chosen.
     '''
     if family_name is None:
         family_name = 'no family name'
     name_chunks = [output_mode, family_name]
-
-    # if args.date:
-    #     time_stamp = timestamp(connector='_')
-    #     name_chunks.insert(0, time_stamp)
 
     if matches:
         rep_start = matches[0]
@@ -559,17 +549,35 @@ def make_uni_dict(font_list):
     return uni_dict
 
 
-def get_glyph_names(font_list, contours_only=False):
+def filter_glyph_names(glyph_names, regex_str):
     '''
-    either get all glyph names, or only names for glyphs with contours
+    filter a list of glyphs by regular expression
+    '''
+    matches = None
+    reg_ex = re.compile(regex_str)
+    matches = list(filter(reg_ex.match, glyph_names))
+    if matches:
+        print('filtered glyph list:')
+        print(' '.join(matches))
+        return matches
+    else:
+        print('no matches for regular expression')
+        return glyph_names
+
+
+def get_glyph_names(font_list, contours=False):
+    '''
+    get glyph names -- either all, or only names for glyphs with contours
     '''
     glyph_names = []
     template_font = font_list[0]
     template_gnames = ordered_keys(template_font)
 
-    if contours_only:
+    if contours:
+        # only contours, no empty or composite glyphs
         glyph_names = [
             gn for gn in template_gnames if len(template_font[gn])]
+
         for font in font_list[1:]:
             addl_glyph_names = [
                 gn for gn in ordered_keys(font) if
@@ -578,6 +586,7 @@ def get_glyph_names(font_list, contours_only=False):
             glyph_names.extend(addl_glyph_names)
 
     else:
+        # all glyphs, including space etc.
         glyph_names = template_gnames
         for font in font_list[1:]:
             addl_glyph_names = [
@@ -591,16 +600,17 @@ def get_glyph_names(font_list, contours_only=False):
 
 def main(test_args=None):
     args = get_options(test_args)
+
     if len(args.d) == 1:
         ufo_paths = get_ufo_paths(args.d[0])
         font_paths = get_font_paths(args.d[0])
-        ufo_list = fontSorter.sort_fonts(ufo_paths)
-        font_list = fontSorter.sort_fonts(font_paths)
+        ufos = fontSorter.sort_fonts(ufo_paths)
+        fonts = fontSorter.sort_fonts(font_paths)
 
-        if ufo_list:
-            input_files = ufo_list
-        elif font_list:
-            input_files = font_list
+        if ufos:
+            input_files = ufos
+        elif fonts:
+            input_files = fonts
         else:
             input_files = []
     else:
@@ -614,25 +624,12 @@ def main(test_args=None):
             print(font.info.styleName)
         family_name = get_family_name(font_list)
 
-        all_glyph_names = get_glyph_names(font_list, args.contours)
+        glyph_list = get_glyph_names(font_list, args.contours)
 
-        # which glyphs end up in the PDF?
-        matches = None
         if args.regex:
-            reg_ex = re.compile(args.regex)
-            matches = list(filter(reg_ex.match, all_glyph_names))
-            if matches:
-                print('filtered glyph list:')
-                print(' '.join(matches))
-                glyph_list = matches
-            else:
-                print('no matches for regular expression')
-                glyph_list = all_glyph_names
-        else:
-            glyph_list = all_glyph_names
+            glyph_list = filter_glyph_names(glyph_list, args.regex)
 
         db.newDrawing()
-
         if args.mode == 'single':
             page_height = page_width = 1200
             output_mode = 'page proof'
@@ -687,7 +684,11 @@ def main(test_args=None):
                 make_proof_page(
                     args, BOX_WIDTH, BOX_HEIGHT, glyph_name, font_list)
 
-        output_path = make_output_path(args, family_name, output_mode, matches)
+        if args.regex:
+            output_path = make_output_path(family_name, output_mode, glyph_list)
+        else:
+            output_path = make_output_path(family_name, output_mode)
+
         db.saveImage(output_path)
         print('saved PDF to', compress_user(output_path))
         subprocess.call(['open', output_path])
