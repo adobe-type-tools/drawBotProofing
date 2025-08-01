@@ -26,6 +26,7 @@ import subprocess
 import defcon
 import drawBot as db
 
+from fontTools import ttLib
 from pathlib import Path
 
 from .proofing_helpers import fontSorter
@@ -33,6 +34,7 @@ from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_ufo_paths, get_font_paths
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.stamps import timestamp
+from .proofing_helpers.names import get_name_overlap
 
 
 # general measurements
@@ -148,16 +150,37 @@ def polar_point(center, radius, angle):
     return x, y
 
 
+def get_bounds(g):
+    '''
+    find out if a glyph has contours or not
+    '''
+    if isinstance(g, defcon.Glyph):
+        bounds = g.bounds
+    else:
+        from fontTools.pens.boundsPen import BoundsPen
+        bp = BoundsPen(g.glyphSet)
+        g.draw(bp)
+        bounds = bp.bounds
+    return bounds
+
+
 def get_random_glyph(font_list):
     '''
     Gets a random glyph (with outlines) to display on cover
     '''
     random_font = db.choice(font_list)
-    random_glyph = db.choice([glyph for glyph in random_font.keys()])
-    glyph = random_font[random_glyph]
+    random_gname = db.choice(get_glyph_order(random_font))
 
-    if not len(glyph):
+    if isinstance(random_font, defcon.Font):
+        glyph_container = random_font
+    else:
+        glyph_container = random_font.getGlyphSet()
+
+    glyph = glyph_container[random_gname]
+    bounds = get_bounds(glyph)
+    if not bounds:
         glyph = get_random_glyph(font_list)
+
     return glyph
 
 
@@ -178,15 +201,16 @@ def make_gradient():
     return start_color, end_color
 
 
-def make_single_glyph_page(args, page_width, page_height, font, glyph_name):
+def make_single_glyph_page(glyph_name, font, page_size, args):
     '''
     A page with a single glyph, intended for a “flip-book” style showing.
     '''
+
     ufo_name = Path(font.path).name
     if ufo_name == 'font.ufo':
         ufo_name = font.info.postscriptFontName
     stamp = u'%s – %s' % (ufo_name, glyph_name)
-    db.newPage(page_width, page_height)
+    db.newPage(*page_size)
     if glyph_name in font.keys():
         glyph = font[glyph_name]
         db.fill(0)
@@ -208,14 +232,12 @@ def make_single_glyph_page(args, page_width, page_height, font, glyph_name):
             draw_anchors(glyph, 30)
 
 
-def make_overlay_glyph_page(
-    args, page_width, page_height, font_list, stroke_colors, glyph_name
-):
+def make_overlay_glyph_page(glyph_name, font_list, stroke_colors, page_size, args):
     '''
     A page with all glyphs of the same name overlaid (in outlines).
     '''
     stamp = u'%s' % glyph_name
-    db.newPage(page_width, page_height)
+    db.newPage(*page_size)
 
     for i, font in enumerate(font_list):
         stroke_color = stroke_colors[i]
@@ -239,25 +261,59 @@ def make_overlay_glyph_page(
     db.textBox(fs, (0, 0, db.width(), 100))
 
 
-def get_family_name(font_list):
-    '''
-    XXX to become smarter
-    '''
-    template_font = font_list[0]
-    family_name = template_font.info.familyName
-    if all(['Italic' in f.info.styleName for f in font_list]):
-        # Add "Italic" to the family name, so Roman- and Italic PDFs don’t
-        # overwrite each other
-        family_name += ' Italic'
+def get_style_name(f):
+    if isinstance(f, defcon.Font):
+        style_name = f.info.styleName
+        if not style_name:
+            style_name = '[no style name]'
+    else:
+        name_table = f['name']
+        style_name = name_table.getDebugName(17)
+        if not style_name:
+            style_name = name_table.getDebugName(2)
+
+    return style_name
+
+
+def get_family_name(f):
+    if isinstance(f, defcon.Font):
+        family_name = f.info.familyName
+        if not family_name:
+            family_name = '[no family name]'
+    else:
+        name_table = f['name']
+        family_name = name_table.getDebugName(16)
+        if not family_name:
+            family_name = name_table.getDebugName(1)
 
     return family_name
 
 
-def make_gradient_page(page_width, page_height, glyph_name, font_list):
+def global_family_name(font_list):
 
+    family_names = [get_family_name(f) for f in font_list]
+    overlap = get_name_overlap(family_names)
+
+    if overlap and len(overlap) > 3:
+        global_fn = overlap
+    else:
+        global_fn = get_family_name(font_list[0])
+
+    if (
+        'It' not in global_fn and
+        all(['Italic' in get_style_name(f) for f in font_list])
+    ):
+        global_fn += ' Italic'
+
+    return global_fn
+
+
+def make_gradient_page(glyph_name, font_list, page_size):
+
+    page_width, page_height = page_size
     scale_factor = BOX_WIDTH / 1000
     stamp = u'%s' % (glyph_name)
-    db.newPage(page_width, page_height)
+    db.newPage(*page_size)
     combined_width = sum(
         [f[glyph_name].width for f in font_list if glyph_name in f.keys()])
     x_offset = (page_width - combined_width * scale_factor) / 2
@@ -277,14 +333,13 @@ def make_gradient_page(page_width, page_height, glyph_name, font_list):
     db.textBox(fs, (0, 0, page_width, 50))
 
 
-def make_cover(page_width, page_height, font_list, margin=20):
+def make_cover(family_name, font_list, page_size, margin=20):
     '''
     Make cover with gradient, some info about the family, and a large white
     shape overlaid.
     '''
-    family_name = get_family_name(font_list)
-
-    db.newPage(page_width, page_height)
+    page_width, page_height = page_size
+    db.newPage(*page_size)
     start_color, end_color = make_gradient()
 
     db.linearGradient(
@@ -295,28 +350,41 @@ def make_cover(page_width, page_height, font_list, margin=20):
 
     db.rect(0, 0, page_width, page_height)
     cover_glyph = get_random_glyph(font_list)
+    page_center = page_width / 2, page_height / 2
 
     with db.savedState():
-        glyph_height = cover_glyph.bounds[3] - cover_glyph.bounds[1]
-        glyph_width = cover_glyph.bounds[2] - cover_glyph.bounds[0]
+        glyph_bounds = get_bounds(cover_glyph)
+        glyph_height = glyph_bounds[3] - glyph_bounds[1]
+        glyph_width = glyph_bounds[2] - glyph_bounds[0]
+        glyph_center = (
+            glyph_bounds[0] + glyph_width / 2,
+            glyph_bounds[1] + glyph_height / 2)
 
         if glyph_height > glyph_width:
             scale_factor = page_height / glyph_height
         else:
             scale_factor = page_height / glyph_width
 
-        db.scale(scale_factor)
-        db.translate(-cover_glyph.leftMargin, -cover_glyph.bounds[1])
+        scale_factor *= 2
 
-        db.translate(-glyph_width / 2, -glyph_height / 2)
-        db.scale(2)
-        db.translate(glyph_width / 4, glyph_height / 16)
+        db.translate(-glyph_center[0], -glyph_center[1])
+        db.scale(scale_factor, center=glyph_center)
+
+        db.translate(
+            page_center[0] / scale_factor + db.randint(-10, 10),
+            page_center[1] / scale_factor + db.randint(-10, 10),
+        )
 
         db.fill(1)
         draw_glyph(cover_glyph)
-        cg_font = cover_glyph.getParent().info.styleName
-        cg_name = cover_glyph.name
-        print(f'cover: {cg_name} ({cg_font})')
+
+        if isinstance(cover_glyph, defcon.Glyph):
+            cg_font = cover_glyph.getParent()
+        else:
+            cg_font = cover_glyph.glyphSet.font
+
+        cg_style_name = get_style_name(cg_font)
+        print(f'cover: {cover_glyph.name} ({cg_style_name})')
 
     cover_text = '{}\n{}'.format(
         family_name, timestamp(readable=True, connector='\n'))
@@ -334,14 +402,15 @@ def make_cover(page_width, page_height, font_list, margin=20):
     db.textBox(cover_stamp, (rect_size))
 
 
-def make_proof_page(args, box_width, box_height, glyph_name, font_list):
+def make_proof_page(glyph_name, font_list, args):
     '''
     Default mode, in which glyphs are set side-by-side.
     '''
-    columns = get_columns(args, font_list)
-    lines = math.ceil(len(font_list) / columns)
+    columns = get_columns(font_list, args)
+    rows = math.ceil(len(font_list) / columns)
+
     page_width = BOX_WIDTH * columns
-    page_height = BOX_HEIGHT * lines
+    page_height = BOX_HEIGHT * rows
 
     uni_dict = make_uni_dict(font_list)
     num_glyphs = 0
@@ -356,8 +425,8 @@ def make_proof_page(args, box_width, box_height, glyph_name, font_list):
         db.stroke(0.5)
         db.strokeWidth(0.5)
 
-        for i in range(1, lines + 1):
-            y_offset = page_height - (box_height * i) + BOX_WIDTH * 0.4
+        for i in range(1, rows + 1):
+            y_offset = page_height - (BOX_HEIGHT * i) + BOX_WIDTH * 0.4
             db.line((0, y_offset), (page_width, y_offset))
 
         unicode_value = uni_dict.get(glyph_name)
@@ -386,7 +455,7 @@ def make_proof_page(args, box_width, box_height, glyph_name, font_list):
         for font in font_list:
             num_glyphs += 1
             db.fill(0)
-            y_offset = page_height - (box_height * current_line) + box_width * 0.4
+            y_offset = page_height - (BOX_HEIGHT * current_line) + BOX_WIDTH * 0.4
 
             # stylename_stamp = db.FormattedString(
             #     txt=weight_code,
@@ -480,7 +549,7 @@ def make_proof_page(args, box_width, box_height, glyph_name, font_list):
                     db.drawPath()
 
 
-def get_columns(args, font_list):
+def get_columns(font_list, args):
     if args.columns:
         # column number has been overridden manually
         return args.columns
@@ -561,7 +630,13 @@ def make_uni_dict(font_list):
     '''
     uni_dict = {}
     for font in font_list:
-        uni_dict.update({g.name: g.unicode for g in font if g.unicode})
+        if isinstance(font, defcon.Font):
+            # double-mapping
+            reverse_cmap = {g.name: g.unicode for g in font if g.unicode}
+        else:
+            reverse_cmap = font['cmap'].buildReversed()
+        uni_dict.update(reverse_cmap)
+
     return uni_dict
 
 
@@ -614,12 +689,15 @@ def get_glyph_names(font_list, contours=False):
     return glyph_names
 
 
-def main(test_args=None):
-    args = get_options(test_args)
+def make_font_list(input_args):
+    '''
+    * if UFOs are found, return a list of defcon Font objects
+    * if fonts are found, return a list of ttFont objects
+    '''
 
-    if len(args.d) == 1:
-        ufo_paths = get_ufo_paths(args.d[0])
-        font_paths = get_font_paths(args.d[0])
+    if len(input_args) == 1:
+        ufo_paths = get_ufo_paths(input_args[0])
+        font_paths = get_font_paths(input_args[0])
         ufos = fontSorter.sort_fonts(ufo_paths)
         fonts = fontSorter.sort_fonts(font_paths)
 
@@ -630,15 +708,41 @@ def main(test_args=None):
         else:
             input_files = []
     else:
-        # no sorting, just passing single fonts
-        input_files = args.d
+        # no sorting, just passing single files
+        input_files = input_args
 
-    font_list = list(map(defcon.Font, input_files))
+    suffixes = [file.suffix.lower() for file in input_files]
+    if set(suffixes) == {'.ufo'}:
+        # ufo files
+        font_list = list(map(defcon.Font, input_files))
+    else:
+        # font files
+        font_list = list(map(ttLib.TTFont, input_files))
+    return font_list
+
+
+def make_stroke_colors(font_list, args):
+    if args.stroke_colors:
+        # strokes are colorful
+        stroke_colors = []
+        for font in font_list:
+            hue = random.choice(range(256)) / 255
+            stroke_colors.append(colorsys.hls_to_rgb(hue, 0.5, 1))
+    else:
+        # all strokes are black
+        stroke_colors = [(0, 0, 0, 1) for f in font_list]
+
+    return stroke_colors
+
+
+def main(test_args=None):
+    args = get_options(test_args)
+    font_list = make_font_list(args.d)
 
     if font_list:
         for font in font_list:
-            print(font.info.styleName)
-        family_name = get_family_name(font_list)
+            print(get_style_name(font))
+        family_name = global_family_name(font_list)
 
         glyph_list = get_glyph_names(font_list, args.contours)
 
@@ -646,59 +750,47 @@ def main(test_args=None):
             glyph_list = filter_glyph_names(glyph_list, args.regex)
 
         db.newDrawing()
+
         if args.mode == 'single':
-            page_height = page_width = 1200
+            page_size = (1200, 1200)
             output_mode = 'page proof'
             if len(glyph_list) > 1:
-                make_cover(page_width, page_height, font_list, margin)
+                make_cover(family_name, font_list, page_size, margin)
             for glyph_name in glyph_list:
                 for font in font_list:
-                    make_single_glyph_page(
-                        args, page_width, page_height, font, glyph_name)
+                    make_single_glyph_page(glyph_name, font, page_size, args)
 
         elif args.mode == 'overlay':
-            page_height = page_width = 1200
+            page_size = (1200, 1200)
             output_mode = 'overlay proof'
+            stroke_colors = make_stroke_colors(font_list, args)
             if len(glyph_list) > 1:
                 # do not make a cover for a single-page proof
-                make_cover(page_width, page_height, font_list, margin)
-
-            if args.stroke_colors:
-                # strokes are colorful
-                stroke_colors = []
-                for font in font_list:
-                    hue = random.choice(range(256)) / 255
-                    stroke_colors.append(colorsys.hls_to_rgb(hue, 0.5, 1))
-            else:
-                # all strokes are black
-                stroke_colors = [(0, 0, 0, 1) for f in font_list]
+                make_cover(family_name, font_list, page_size, margin)
 
             for glyph_name in glyph_list:
                 make_overlay_glyph_page(
-                    args, page_width, page_height,
-                    font_list, stroke_colors, glyph_name)
+                    glyph_name, font_list, stroke_colors, page_size, args)
 
         elif args.mode == 'gradient':
-            page_width = BOX_WIDTH * len(font_list)
-            page_height = BOX_HEIGHT
+            page_size = BOX_WIDTH * len(font_list), BOX_HEIGHT
             output_mode = 'gradient proof'
             if len(glyph_list) > 1:
-                make_cover(page_width, page_height, font_list, margin)
+                make_cover(family_name, font_list, page_size, margin)
             for glyph_name in glyph_list:
-                make_gradient_page(page_width, page_height, glyph_name, font_list)
+                make_gradient_page(glyph_name, font_list, page_size)
 
         else:
             # default
-            columns = get_columns(args, font_list)
-            lines = math.ceil(len(font_list) / columns)
-            page_width = BOX_WIDTH * columns
-            page_height = BOX_HEIGHT * lines
             output_mode = 'glyph proof'
+            columns = get_columns(font_list, args)
+            rows = math.ceil(len(font_list) / columns)
+            page_size = (BOX_WIDTH * columns, BOX_HEIGHT * rows)
+
             if len(glyph_list) > 1:
-                make_cover(page_width, page_height, font_list, margin)
+                make_cover(family_name, font_list, page_size, margin)
             for glyph_name in glyph_list:
-                make_proof_page(
-                    args, BOX_WIDTH, BOX_HEIGHT, glyph_name, font_list)
+                make_proof_page(glyph_name, font_list, args)
 
         if args.regex:
             output_path = make_output_path(family_name, output_mode, glyph_list)
