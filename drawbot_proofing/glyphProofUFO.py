@@ -530,13 +530,29 @@ def compress_user(path):
     return str(path).replace(user_folder, '~')
 
 
-def ordered_keys(font):
+def get_glyph_order(f):
     '''
+    for a Defcon font or fontTools TTFont:
     return a list of glyph names
-    - ordered by font.glyphOrder
-    - existing in the font object
+
+        - ordered by glyphOrder, or (if glyphOrder does not exist)
+          ordered by unicodeData.sortGlyphNames
+        - existing in the font object (UFO only)
+
     '''
-    return [gn for gn in font.glyphOrder if gn in font.keys()]
+
+    if isinstance(f, defcon.Font):
+        # ufo
+        keys = f.keys()
+        glyph_order = f.glyphOrder
+        if not glyph_order:
+            glyph_order = f.unicodeData.sortGlyphNames(keys)
+
+        return sorted(keys, key=glyph_order.index)
+
+    else:
+        # fontTools font
+        return f.getGlyphOrder()
 
 
 def make_uni_dict(font_list):
@@ -571,7 +587,7 @@ def get_glyph_names(font_list, contours=False):
     '''
     glyph_names = []
     template_font = font_list[0]
-    template_gnames = ordered_keys(template_font)
+    template_gnames = get_glyph_order(template_font)
 
     if contours:
         # only contours, no empty or composite glyphs
@@ -580,7 +596,7 @@ def get_glyph_names(font_list, contours=False):
 
         for font in font_list[1:]:
             addl_glyph_names = [
-                gn for gn in ordered_keys(font) if
+                gn for gn in get_glyph_order(font) if
                 len(font[gn]) and gn not in glyph_names
             ]
             glyph_names.extend(addl_glyph_names)
@@ -590,7 +606,7 @@ def get_glyph_names(font_list, contours=False):
         glyph_names = template_gnames
         for font in font_list[1:]:
             addl_glyph_names = [
-                gn for gn in ordered_keys(font) if
+                gn for gn in get_glyph_order(font) if
                 gn not in glyph_names
             ]
             glyph_names.extend(addl_glyph_names)
