@@ -80,7 +80,7 @@ def get_options(args=None):
         help='alternate output modes')
 
     parser.add_argument(
-        '--stroke_colors',
+        '-s', '--stroke_colors',
         action='store_true',
         default=False,
         help='color strokes in overlay mode')
@@ -170,12 +170,7 @@ def get_random_glyph(font_list):
     '''
     random_font = db.choice(font_list)
     random_gname = db.choice(get_glyph_order(random_font))
-
-    if isinstance(random_font, defcon.Font):
-        glyph_container = random_font
-    else:
-        glyph_container = random_font.getGlyphSet()
-
+    glyph_container = get_container(random_font)
     glyph = glyph_container[random_gname]
     bounds = get_bounds(glyph)
     if not bounds:
@@ -184,7 +179,7 @@ def get_random_glyph(font_list):
     return glyph
 
 
-def make_gradient():
+def make_gradient_stops():
     '''
     Returns two gradient color values
     '''
@@ -206,10 +201,8 @@ def make_single_glyph_page(glyph_name, font, page_size, args):
     A page with a single glyph, intended for a “flip-book” style showing.
     '''
 
-    ufo_name = Path(font.path).name
-    if ufo_name == 'font.ufo':
-        ufo_name = font.info.postscriptFontName
-    stamp = u'%s – %s' % (ufo_name, glyph_name)
+    style_name = get_style_name(font)
+    stamp = u'%s – %s' % (style_name, glyph_name)
     db.newPage(*page_size)
     if glyph_name in font.keys():
         glyph = font[glyph_name]
@@ -240,16 +233,23 @@ def make_overlay_glyph_page(glyph_name, font_list, stroke_colors, page_size, arg
     db.newPage(*page_size)
 
     for i, font in enumerate(font_list):
+        glyph_container = get_container(font)
+        upm = get_upm(font)
+
         stroke_color = stroke_colors[i]
-        if glyph_name in font.keys():
-            glyph = font[glyph_name]
+        if glyph_name in glyph_container.keys():
+            glyph = glyph_container[glyph_name]
+            scale_factor = 1000 / upm
+
             with db.savedState():
-                db.fill(None)
-                db.stroke(*stroke_color)
-                db.strokeWidth(0.5)
-                x_offset = (db.width() - glyph.width) // 2
+                x_offset = (db.width() - glyph.width * scale_factor) // 2
                 y_offset = 250
                 db.translate(x_offset, y_offset)
+                db.scale(scale_factor)
+
+                db.fill(None)
+                db.stroke(*stroke_color)
+                db.strokeWidth(0.25 / scale_factor)
                 draw_glyph(glyph)
                 db.stroke(None)
                 if args.anchors:
@@ -289,6 +289,29 @@ def get_family_name(f):
     return family_name
 
 
+def get_upm(f):
+    if isinstance(f, defcon.Font):
+        upm = f.info.unitsPerEm
+    else:
+        upm = f['head'].unitsPerEm
+
+    if not upm:
+        upm = 1000
+    return upm
+
+
+def get_container(f):
+    '''
+    get the container dict to access glyph objects
+    '''
+    if isinstance(f, defcon.Font):
+        container = f
+    else:
+        container = f.getGlyphSet()
+
+    return container
+
+
 def global_family_name(font_list):
 
     family_names = [get_family_name(f) for f in font_list]
@@ -310,12 +333,24 @@ def global_family_name(font_list):
 
 def make_gradient_page(glyph_name, font_list, page_size):
 
+    # xxx only works for 1000UPM at the moment
     page_width, page_height = page_size
     scale_factor = BOX_WIDTH / 1000
     stamp = u'%s' % (glyph_name)
     db.newPage(*page_size)
-    combined_width = sum(
-        [f[glyph_name].width for f in font_list if glyph_name in f.keys()])
+
+    if isinstance(font_list[0], defcon.Font):
+        combined_width = sum([
+            f[glyph_name].width for f in font_list if glyph_name in f.keys()])
+        upms = [f.info.unitsPerEm for f in font_list]
+    else:
+        metrics = [
+            f['hmtx'].metrics.get(glyph_name, (0, 0)) for f in font_list if
+            glyph_name in f.getGlyphOrder()]
+        upms = [f['head'].unitsPerEm for f in font_list]
+        combined_width = sum([m[0] for i, m in enumerate(metrics)])
+        # combined_width = sum([m[0] * (1000 / upms[i]) for i, m in enumerate(metrics)])
+
     x_offset = (page_width - combined_width * scale_factor) / 2
     y_offset = 100
 
@@ -323,8 +358,10 @@ def make_gradient_page(glyph_name, font_list, page_size):
         db.translate(x_offset, y_offset)
         db.scale(scale_factor)
         for font in font_list:
-            if glyph_name in font.keys():
-                glyph = font[glyph_name]
+            glyph_container = get_container(font)
+
+            if glyph_name in glyph_container.keys():
+                glyph = glyph_container[glyph_name]
                 draw_glyph(glyph)
                 db.translate(glyph.width, 0)
 
@@ -340,7 +377,7 @@ def make_cover(family_name, font_list, page_size, margin=20):
     '''
     page_width, page_height = page_size
     db.newPage(*page_size)
-    start_color, end_color = make_gradient()
+    start_color, end_color = make_gradient_stops()
 
     db.linearGradient(
         (0, 0),  # startPoint
@@ -458,16 +495,8 @@ def make_proof_page(glyph_name, font_list, args):
         max_anchors_per_line = columns
 
         for font in font_list:
-            if isinstance(font, defcon.Font):
-                glyph_container = font
-                upm = font.info.unitsPerEm
-            else:
-                glyph_container = font.getGlyphSet()
-                upm = font['head'].unitsPerEm
-
-            if not upm:
-                upm = 1000
-
+            glyph_container = get_container(font)
+            upm = get_upm(font)
             num_glyphs += 1
             db.fill(0)
             y_offset = page_height - (BOX_HEIGHT * current_line) + BOX_WIDTH * 0.4
@@ -571,6 +600,14 @@ def get_columns(font_list, args):
     return columns
 
 
+def compress_user(path):
+    '''
+    opposite of .expanduser()
+    '''
+    user_folder = str(Path('~').expanduser())
+    return str(path).replace(user_folder, '~')
+
+
 def make_output_path(family_name, output_mode, matches=[]):
     '''
     Make output path based on the options chosen.
@@ -592,14 +629,6 @@ def make_output_path(family_name, output_mode, matches=[]):
     output_path = Path(f'~/Desktop/{output_name}').expanduser()
 
     return output_path
-
-
-def compress_user(path):
-    '''
-    opposite of .expanduser()
-    '''
-    user_folder = str(Path('~').expanduser())
-    return str(path).replace(user_folder, '~')
 
 
 def get_glyph_order(f):
@@ -624,7 +653,9 @@ def get_glyph_order(f):
 
     else:
         # fontTools font
-        return f.getGlyphOrder()
+        # the `list` is deliberate. If we just return the getGlyphOrder object
+        # it is possible to modify it accidentally
+        return list(f.getGlyphOrder())
 
 
 def make_uni_dict(font_list):
@@ -689,7 +720,6 @@ def get_glyph_names(font_list, contours=False):
                 gn not in glyph_names
             ]
             glyph_names.extend(addl_glyph_names)
-
     return glyph_names
 
 
@@ -747,7 +777,6 @@ def main(test_args=None):
         for font in font_list:
             print(get_style_name(font))
         family_name = global_family_name(font_list)
-
         glyph_list = get_glyph_names(font_list, args.contours)
         if args.regex:
             glyph_list = filter_glyph_names(glyph_list, args.regex)
