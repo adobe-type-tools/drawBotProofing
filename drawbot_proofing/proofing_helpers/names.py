@@ -33,6 +33,8 @@ def get_ps_name(input_file):
         ttf = ttLib.TTFont(input_file.resolve())
         name_table = ttf.get('name')
         ps_name = name_table.getDebugName(6)
+        if not ps_name:
+            ps_name = ''
 
     return ps_name
 
