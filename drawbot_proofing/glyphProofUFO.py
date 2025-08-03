@@ -179,21 +179,147 @@ def get_random_glyph(font_list):
     return glyph
 
 
-def make_gradient_stops():
-    '''
-    Returns two gradient color values
-    '''
-    saturation = 1
-    luminance = 0.5
-    gamut = 48
-    hue_number = db.randint(0, 256)
-    next_hue_number = (hue_number + gamut) % 256
-    hue = hue_number / 256
-    next_hue = next_hue_number / 256
+def get_style_name(f):
+    if isinstance(f, defcon.Font):
+        style_name = f.info.styleName
+        if not style_name:
+            style_name = '[no style name]'
+    else:
+        name_table = f['name']
+        style_name = name_table.getDebugName(17)
+        if not style_name:
+            style_name = name_table.getDebugName(2)
 
-    start_color = colorsys.hls_to_rgb(hue, luminance, saturation)
-    end_color = colorsys.hls_to_rgb(next_hue, luminance, saturation)
-    return start_color, end_color
+    return style_name
+
+
+def get_family_name(f):
+    if isinstance(f, defcon.Font):
+        family_name = f.info.familyName
+        if not family_name:
+            family_name = '[no family name]'
+    else:
+        name_table = f['name']
+        family_name = name_table.getDebugName(16)
+        if not family_name:
+            family_name = name_table.getDebugName(1)
+
+    return family_name
+
+
+def global_family_name(font_list):
+
+    family_names = [get_family_name(f) for f in font_list]
+    overlap = get_name_overlap(family_names)
+
+    if overlap and len(overlap) > 3:
+        global_fn = overlap
+    else:
+        global_fn = get_family_name(font_list[0])
+
+    if (
+        'It' not in global_fn and
+        all(['Italic' in get_style_name(f) for f in font_list])
+    ):
+        global_fn += ' Italic'
+
+    return global_fn
+
+
+def get_glyph_order(f):
+    '''
+    for a Defcon font or fontTools TTFont:
+    return a list of glyph names
+
+        - ordered by glyphOrder, or (if glyphOrder does not exist)
+          ordered by unicodeData.sortGlyphNames
+        - existing in the font object (UFO only)
+
+    '''
+
+    if isinstance(f, defcon.Font):
+        # ufo
+        keys = f.keys()
+        glyph_order = f.glyphOrder
+        if not glyph_order:
+            glyph_order = f.unicodeData.sortGlyphNames(keys)
+
+        return sorted(keys, key=glyph_order.index)
+
+    else:
+        # fontTools font
+        # the `list` is deliberate. If we just return the getGlyphOrder object
+        # it is possible to modify it accidentally
+        return list(f.getGlyphOrder())
+
+
+def get_upm(f):
+    if isinstance(f, defcon.Font):
+        upm = f.info.unitsPerEm
+    else:
+        upm = f['head'].unitsPerEm
+
+    if not upm:
+        upm = 1000
+    return upm
+
+
+def make_anchor_dict(font):
+    anchor_dict = {}
+    if isinstance(font, defcon.Font):
+        for g in font:
+            for anchor in g.anchors:
+                anchor_dict.setdefault(g.name, []).append((anchor.x, anchor.y))
+    else:
+        lu_types = [4, 5, 6]
+        lookups = font['GPOS'].table.LookupList.Lookup
+        mark_lookups = [lu for lu in lookups if lu.LookupType in lu_types]
+        for lu in mark_lookups:
+            # MarkBasePos
+            for mbp in lu.SubTable:
+                base_glyphs = mbp.BaseCoverage.glyphs
+                mark_glyphs = mbp.MarkCoverage.glyphs
+                for mi, mr in enumerate(mbp.MarkArray.MarkRecord):
+                    glyph = mark_glyphs[mi]
+                    anchor = mr.MarkAnchor
+                    coords = anchor.XCoordinate, anchor.YCoordinate
+                    anchor_dict.setdefault(glyph, []).append(coords)
+
+                for bi, br in enumerate(mbp.BaseArray.BaseRecord):
+                    glyph = base_glyphs[bi]
+                    for anchor in br.BaseAnchor:
+                        coords = anchor.XCoordinate, anchor.YCoordinate
+                        anchor_dict.setdefault(glyph, []).append(coords)
+    return anchor_dict
+
+
+def make_uni_dict(font_list):
+    '''
+    all glyphs of all fonts with their code points
+    '''
+    uni_dict = {}
+    for font in font_list:
+        if isinstance(font, defcon.Font):
+            # xxx double-mapping
+            gn_2_cp = {g.name: g.unicode for g in font if g.unicode}
+        else:
+            reverse_cmap = font['cmap'].buildReversed()
+            gn_2_cp = {gn: list(cp)[0] for gn, cp in reverse_cmap.items()}
+        uni_dict.update(gn_2_cp)
+
+    return uni_dict
+
+
+def get_container(f):
+    '''
+    get the container dict to access glyph objects
+    '''
+    if isinstance(f, defcon.Font):
+        container = f
+    else:
+        container = f.getGlyphSet()
+
+    return container
 
 
 def make_single_glyph_page(glyph_name, font, page_size, args):
@@ -267,141 +393,41 @@ def make_overlay_glyph_page(glyph_name, font_list, stroke_colors, page_size, arg
     db.textBox(fs, (0, 0, db.width(), 100))
 
 
-def get_style_name(f):
-    if isinstance(f, defcon.Font):
-        style_name = f.info.styleName
-        if not style_name:
-            style_name = '[no style name]'
-    else:
-        name_table = f['name']
-        style_name = name_table.getDebugName(17)
-        if not style_name:
-            style_name = name_table.getDebugName(2)
-
-    return style_name
-
-
-def get_family_name(f):
-    if isinstance(f, defcon.Font):
-        family_name = f.info.familyName
-        if not family_name:
-            family_name = '[no family name]'
-    else:
-        name_table = f['name']
-        family_name = name_table.getDebugName(16)
-        if not family_name:
-            family_name = name_table.getDebugName(1)
-
-    return family_name
-
-
-def get_upm(f):
-    if isinstance(f, defcon.Font):
-        upm = f.info.unitsPerEm
-    else:
-        upm = f['head'].unitsPerEm
-
-    if not upm:
-        upm = 1000
-    return upm
-
-
-def make_anchor_dict(font):
-    anchor_dict = {}
-    if isinstance(font, defcon.Font):
-        for g in font:
-            for anchor in g.anchors:
-                anchor_dict.setdefault(g.name, []).append((anchor.x, anchor.y))
-    else:
-        lu_types = [4, 5, 6]
-        lookups = font['GPOS'].table.LookupList.Lookup
-        mark_lookups = [lu for lu in lookups if lu.LookupType in lu_types]
-        for lu in mark_lookups:
-            # MarkBasePos
-            for mbp in lu.SubTable:
-                base_glyphs = mbp.BaseCoverage.glyphs
-                mark_glyphs = mbp.MarkCoverage.glyphs
-                for mi, mr in enumerate(mbp.MarkArray.MarkRecord):
-                    glyph = mark_glyphs[mi]
-                    anchor = mr.MarkAnchor
-                    coords = anchor.XCoordinate, anchor.YCoordinate
-                    anchor_dict.setdefault(glyph, []).append(coords)
-
-                for bi, br in enumerate(mbp.BaseArray.BaseRecord):
-                    glyph = base_glyphs[bi]
-                    for anchor in br.BaseAnchor:
-                        coords = anchor.XCoordinate, anchor.YCoordinate
-                        anchor_dict.setdefault(glyph, []).append(coords)
-    return anchor_dict
-
-
-def get_container(f):
-    '''
-    get the container dict to access glyph objects
-    '''
-    if isinstance(f, defcon.Font):
-        container = f
-    else:
-        container = f.getGlyphSet()
-
-    return container
-
-
-def global_family_name(font_list):
-
-    family_names = [get_family_name(f) for f in font_list]
-    overlap = get_name_overlap(family_names)
-
-    if overlap and len(overlap) > 3:
-        global_fn = overlap
-    else:
-        global_fn = get_family_name(font_list[0])
-
-    if (
-        'It' not in global_fn and
-        all(['Italic' in get_style_name(f) for f in font_list])
-    ):
-        global_fn += ' Italic'
-
-    return global_fn
-
-
 def make_gradient_page(glyph_name, font_list, page_size):
 
-    # xxx only works for 1000UPM at the moment
+    # xxx only works for fonts with the same UPM across styles
     page_width, page_height = page_size
-    scale_factor = BOX_WIDTH / 1000
-    stamp = u'%s' % (glyph_name)
+    global_scale = BOX_WIDTH / 1000
     db.newPage(*page_size)
 
     if isinstance(font_list[0], defcon.Font):
         combined_width = sum([
             f[glyph_name].width for f in font_list if glyph_name in f.keys()])
-        upms = [f.info.unitsPerEm for f in font_list]
     else:
         metrics = [
             f['hmtx'].metrics.get(glyph_name, (0, 0)) for f in font_list if
             glyph_name in f.getGlyphOrder()]
-        upms = [f['head'].unitsPerEm for f in font_list]
-        combined_width = sum([m[0] for i, m in enumerate(metrics)])
         # combined_width = sum([m[0] * (1000 / upms[i]) for i, m in enumerate(metrics)])
+        combined_width = sum([m[0] for i, m in enumerate(metrics)])
 
-    x_offset = (page_width - combined_width * scale_factor) / 2
+    upms = [get_upm(f) for f in font_list]
+    upm_factor = 1000 / upms[0]
+    # x_offset = (page_width - combined_width * scale_factor) / 2
+    x_offset = (page_width - combined_width * global_scale * upm_factor) / 2
     y_offset = 100
 
     with db.savedState():
         db.translate(x_offset, y_offset)
-        db.scale(scale_factor)
-        for font in font_list:
+        db.scale(global_scale * upm_factor)
+        for i, font in enumerate(font_list):
             glyph_container = get_container(font)
-
             if glyph_name in glyph_container.keys():
                 glyph = glyph_container[glyph_name]
                 draw_glyph(glyph)
                 db.translate(glyph.width, 0)
 
     fs = db.FormattedString(
-        txt=stamp, font=FONT_MONO, fontSize=10, align='center')
+        txt=glyph_name, font=FONT_MONO, fontSize=10, align='center')
     db.textBox(fs, (0, 0, page_width, 50))
 
 
@@ -663,50 +689,6 @@ def make_output_path(family_name, output_mode, matches=[]):
     return output_path
 
 
-def get_glyph_order(f):
-    '''
-    for a Defcon font or fontTools TTFont:
-    return a list of glyph names
-
-        - ordered by glyphOrder, or (if glyphOrder does not exist)
-          ordered by unicodeData.sortGlyphNames
-        - existing in the font object (UFO only)
-
-    '''
-
-    if isinstance(f, defcon.Font):
-        # ufo
-        keys = f.keys()
-        glyph_order = f.glyphOrder
-        if not glyph_order:
-            glyph_order = f.unicodeData.sortGlyphNames(keys)
-
-        return sorted(keys, key=glyph_order.index)
-
-    else:
-        # fontTools font
-        # the `list` is deliberate. If we just return the getGlyphOrder object
-        # it is possible to modify it accidentally
-        return list(f.getGlyphOrder())
-
-
-def make_uni_dict(font_list):
-    '''
-    all glyphs of all fonts with their code points
-    '''
-    uni_dict = {}
-    for font in font_list:
-        if isinstance(font, defcon.Font):
-            # xxx double-mapping
-            gn_2_cp = {g.name: g.unicode for g in font if g.unicode}
-        else:
-            reverse_cmap = font['cmap'].buildReversed()
-            gn_2_cp = {gn: list(cp)[0] for gn, cp in reverse_cmap.items()}
-        uni_dict.update(gn_2_cp)
-
-    return uni_dict
-
-
 def filter_glyph_names(glyph_names, regex_str):
     '''
     filter a list of glyphs by regular expression
@@ -785,6 +767,23 @@ def make_font_list(input_paths):
         # font files
         font_list = list(map(ttLib.TTFont, input_files))
     return font_list
+
+
+def make_gradient_stops():
+    '''
+    Returns two gradient color values
+    '''
+    saturation = 1
+    luminance = 0.5
+    gamut = 48
+    hue_number = db.randint(0, 256)
+    next_hue_number = (hue_number + gamut) % 256
+    hue = hue_number / 256
+    next_hue = next_hue_number / 256
+
+    start_color = colorsys.hls_to_rgb(hue, luminance, saturation)
+    end_color = colorsys.hls_to_rgb(next_hue, luminance, saturation)
+    return start_color, end_color
 
 
 def make_stroke_colors(font_list, args):
