@@ -269,11 +269,15 @@ def get_upm(f):
 
 def make_anchor_dict(font):
     anchor_dict = {}
+
     if isinstance(font, defcon.Font):
         for g in font:
             for anchor in g.anchors:
                 anchor_dict.setdefault(g.name, []).append((anchor.x, anchor.y))
     else:
+        if not ('GPOS' in font):
+            return anchor_dict
+
         # lu_types = [4, 5, 6]
         lookups = font['GPOS'].table.LookupList.Lookup
 
@@ -600,8 +604,9 @@ def make_proof_page(glyph_name, font_list, args):
         max_anchors_per_line = columns
 
         for font in font_list:
+            if args.anchors:
+                anchor_dict = make_anchor_dict(font)
             glyph_container = get_container(font)
-            anchor_dict = make_anchor_dict(font)
             upm = get_upm(font)
             num_glyphs += 1
             db.fill(0)
