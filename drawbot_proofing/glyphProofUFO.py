@@ -101,11 +101,11 @@ def get_options(args=None):
     return parser.parse_args(args)
 
 
-def draw_anchors(glyph, size):
+def draw_anchors(glyph, anchor_coords, size=30):
     radius = size / 2
-    for anchor in glyph.anchors:
+    for x, y in anchor_coords:
         db.fill(1, 0, 0)
-        db.oval(anchor.x - radius, anchor.y - radius, size, size)
+        db.oval(x - radius, y - radius, size, size)
 
 
 def draw_sidebearings(glyph, height=100):
@@ -271,10 +271,12 @@ def make_anchor_dict(font):
             for anchor in g.anchors:
                 anchor_dict.setdefault(g.name, []).append((anchor.x, anchor.y))
     else:
-        lu_types = [4, 5, 6]
+        # lu_types = [4, 5, 6]
         lookups = font['GPOS'].table.LookupList.Lookup
-        mark_lookups = [lu for lu in lookups if lu.LookupType in lu_types]
-        for lu in mark_lookups:
+
+        # mark-to-base
+        m2b_lookups = [lu for lu in lookups if lu.LookupType == 4]
+        for lu in m2b_lookups:
             # MarkBasePos
             for mbp in lu.SubTable:
                 base_glyphs = mbp.BaseCoverage.glyphs
@@ -290,6 +292,45 @@ def make_anchor_dict(font):
                     for anchor in br.BaseAnchor:
                         coords = anchor.XCoordinate, anchor.YCoordinate
                         anchor_dict.setdefault(glyph, []).append(coords)
+
+        # mark-to-ligature
+        m2l_lookups = [lu for lu in lookups if lu.LookupType == 5]
+        for lu in m2l_lookups:
+            # MarkLigPos
+            for mlp in lu.SubTable:
+                liga_glyphs = mlp.LigatureCoverage.glyphs
+                mark_glyphs = mlp.MarkCoverage.glyphs
+                for mi, mr in enumerate(mlp.MarkArray.MarkRecord):
+                    glyph = mark_glyphs[mi]
+                    anchor = mr.MarkAnchor
+                    coords = anchor.XCoordinate, anchor.YCoordinate
+                    anchor_dict.setdefault(glyph, []).append(coords)
+
+                for li, la in enumerate(mlp.LigatureArray.LigatureAttach):
+                    glyph = liga_glyphs[li]
+                    for cr in la.ComponentRecord:
+                        for anchor in cr.LigatureAnchor:
+                            coords = anchor.XCoordinate, anchor.YCoordinate
+                            anchor_dict.setdefault(glyph, []).append(coords)
+
+        # mark-to-mark
+        m2m_lookups = [lu for lu in lookups if lu.LookupType == 6]
+        for lu in m2m_lookups:
+            # MarkMarkPos
+            for mmp in lu.SubTable:
+                mark1_glyphs = mmp.Mark1Coverage.glyphs
+                mark2_glyphs = mmp.Mark2Coverage.glyphs
+                for mi, mr in enumerate(mmp.Mark1Array.MarkRecord):
+                    glyph = mark1_glyphs[mi]
+                    anchor = mr.MarkAnchor
+                    coords = anchor.XCoordinate, anchor.YCoordinate
+                    anchor_dict.setdefault(glyph, []).append(coords)
+                for mi, mr in enumerate(mmp.Mark2Array.Mark2Record):
+                    glyph = mark2_glyphs[mi]
+                    for anchor in mr.Mark2Anchor:
+                        coords = anchor.XCoordinate, anchor.YCoordinate
+                        anchor_dict.setdefault(glyph, []).append(coords)
+
     return anchor_dict
 
 
@@ -328,7 +369,7 @@ def make_single_glyph_page(glyph_name, font, page_size, args):
     '''
 
     style_name = get_style_name(font)
-    stamp = u'%s – %s' % (style_name, glyph_name)
+    stamp = f'{style_name} – {glyph_name}'
     db.newPage(*page_size)
     glyph_container = get_container(font)
     upm = get_upm(font)
@@ -352,16 +393,18 @@ def make_single_glyph_page(glyph_name, font, page_size, args):
     db.scale(scale_factor)
     db.stroke(None)
     draw_glyph(glyph)
+
     if args.anchors:
-        if glyph.anchors:
-            draw_anchors(glyph, 30)
+        anchor_dict = make_anchor_dict(font)
+        anchors = anchor_dict.get(glyph_name)
+        if anchors:
+            draw_anchors(glyph, anchors)
 
 
 def make_overlay_glyph_page(glyph_name, font_list, stroke_colors, page_size, args):
     '''
     A page with all glyphs of the same name overlaid (in outlines).
     '''
-    stamp = u'%s' % glyph_name
     db.newPage(*page_size)
 
     for i, font in enumerate(font_list):
@@ -385,11 +428,13 @@ def make_overlay_glyph_page(glyph_name, font_list, stroke_colors, page_size, arg
                 draw_glyph(glyph)
                 db.stroke(None)
                 if args.anchors:
-                    if glyph.anchors:
-                        draw_anchors(glyph, 30)
+                    anchor_dict = make_anchor_dict(font)
+                    anchors = anchor_dict.get(glyph_name)
+                    if anchors:
+                        draw_anchors(glyph, anchors)
 
     fs = db.FormattedString(
-        txt=stamp, font=FONT_MONO, fontSize=20, align='center')
+        txt=glyph_name, font=FONT_MONO, fontSize=20, align='center')
     db.textBox(fs, (0, 0, db.width(), 100))
 
 
@@ -530,8 +575,8 @@ def make_proof_page(glyph_name, font_list, args):
 
         unicode_value = uni_dict.get(glyph_name)
         if unicode_value:
-            stamp_text = u'%s | %s | U+%0.4X' % (
-                glyph_name, chr(unicode_value), unicode_value)
+            char = chr(unicode_value)
+            stamp_text = f'{glyph_name} | {char} | U+{unicode_value:04X}'
         else:
             stamp_text = glyph_name
 
@@ -548,12 +593,12 @@ def make_proof_page(glyph_name, font_list, args):
         db.fill(None)
         db.textBox(stamp, (rect_size))
         x_offset = 0
-        anchor_list = []
-        anchor_dict = {}
+        page_anchors = {}
         max_anchors_per_line = columns
 
         for font in font_list:
             glyph_container = get_container(font)
+            anchor_dict = make_anchor_dict(font)
             upm = get_upm(font)
             num_glyphs += 1
             db.fill(0)
@@ -596,14 +641,15 @@ def make_proof_page(glyph_name, font_list, args):
                 draw_glyph(glyph)
 
                 if args.anchors:
-                    if isinstance(glyph, defcon.Glyph):
-                        if glyph.anchors:
-                            for anchor in glyph.anchors:
-                                an_x = anchor.x * scale_factor + x_offset + local_offset
-                                an_y = anchor.y * scale_factor + y_offset
-                                anchor_dict.setdefault(
-                                    anchor.name, []).append((an_x, an_y))
-                            draw_anchors(glyph, 30)
+                    anchors = anchor_dict.get(glyph_name)
+                    if anchors:
+                        for anchor_index, anchor_coords in enumerate(anchors):
+                            x, y = anchor_coords
+                            an_x = x * scale_factor + x_offset + local_offset
+                            an_y = y * scale_factor + y_offset
+                            page_anchors.setdefault(
+                                anchor_index, []).append((an_x, an_y))
+                        draw_anchors(glyph, anchors)
 
             x_offset += BOX_WIDTH
             if num_glyphs % columns == 0:
@@ -611,7 +657,7 @@ def make_proof_page(glyph_name, font_list, args):
                 x_offset = 0
 
         if args.anchors:
-            for anchor_name, anchor_list in anchor_dict.items():
+            for anchor_index, anchor_list in page_anchors.items():
                 db.strokeWidth(0.5)
                 hue = random.choice(range(256)) / 256
                 stroke_color = colorsys.hls_to_rgb(hue, 0.5, 1)
