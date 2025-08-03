@@ -51,7 +51,7 @@ After installation, the following commands will be available:
 - `comparison-proof` - Compare multiple fonts side by side
 
 ### Advanced Tools
-- `glyph-proof-ufo` - Generate glyph proofs from UFO files
+- `glyph-proof` - Generate various glyph proofs
 - `glyphset-proof` - Create comprehensive glyphset proofs
 - `unicode-chart-proof` - Generate Unicode character charts
 - `vertical-metrics-proof` - Analyze vertical metrics
