@@ -204,13 +204,18 @@ def make_single_glyph_page(glyph_name, font, page_size, args):
     style_name = get_style_name(font)
     stamp = u'%s – %s' % (style_name, glyph_name)
     db.newPage(*page_size)
-    if glyph_name in font.keys():
-        glyph = font[glyph_name]
+    glyph_container = get_container(font)
+    upm = get_upm(font)
+    scale_factor = 1000 / upm
+
+    if glyph_name in glyph_container.keys():
+        glyph = glyph_container[glyph_name]
         db.fill(0)
     else:
-        glyph = font['.notdef']
+        glyph = glyph_container['.notdef']
         db.fill(0, 0, 0, 0.25)
-    x_offset = (db.width() - glyph.width) // 2
+
+    x_offset = (db.width() - glyph.width * scale_factor) // 2
     y_offset = 250
 
     fs = db.FormattedString(
@@ -218,6 +223,7 @@ def make_single_glyph_page(glyph_name, font, page_size, args):
     db.textBox(fs, (0, 0, db.width(), 100))
 
     db.translate(x_offset, y_offset)
+    db.scale(scale_factor)
     db.stroke(None)
     draw_glyph(glyph)
     if args.anchors:
@@ -407,9 +413,11 @@ def make_cover(family_name, font_list, page_size, margin=20):
         db.translate(-glyph_center[0], -glyph_center[1])
         db.scale(scale_factor, center=glyph_center)
 
+        h_jiggle = db.randint(int(-page_width / 8), int(page_width / 8))
+        v_jiggle = db.randint(int(-page_height / 8), int(page_height / 8))
         db.translate(
-            page_center[0] / scale_factor + db.randint(-20, 20),
-            page_center[1] / scale_factor + db.randint(-20, 20),
+            page_center[0] / scale_factor + h_jiggle,
+            page_center[1] / scale_factor + v_jiggle,
         )
 
         db.fill(1)
@@ -453,13 +461,8 @@ def make_proof_page(glyph_name, font_list, args):
     num_glyphs = 0
     current_line = 1
 
-    # see if the glyph exists in at least one of the UFOs
-
-    if isinstance(font_list[0], defcon.Font):
-        glyph_exists = [glyph_name in font for font in font_list]
-    else:
-        glyph_exists = [glyph_name in font.getGlyphOrder() for font in font_list]
-
+    # see if the glyph exists in at least one of the fonts
+    glyph_exists = [glyph_name in get_container(f) for f in font_list]
     if any(glyph_exists):
 
         db.newPage(page_width, page_height)
@@ -743,7 +746,7 @@ def make_font_list(input_paths):
             input_files = []
     else:
         # no sorting, just passing single files
-        input_files = input_paths
+        input_files = [Path(p) for p in input_paths]
 
     suffixes = [file.suffix.lower() for file in input_files]
     if set(suffixes) == {'.ufo'}:
@@ -776,6 +779,7 @@ def main(test_args=None):
     if font_list:
         for font in font_list:
             print(get_style_name(font))
+
         family_name = global_family_name(font_list)
         glyph_list = get_glyph_names(font_list, args.contours)
         if args.regex:
