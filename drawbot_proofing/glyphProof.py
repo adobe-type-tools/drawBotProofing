@@ -6,12 +6,15 @@
 # it.
 
 '''
-Creates PDF document which helps comparing glyphs of different weights
-to each other. Various modes are possible – the default is an
-[Autopsy](https://vimeo.com/116063612)-like showing of glyphs side-by-side.
-Other modes include `gradient`, `single`, `overlay`.
+Creates a PDF document which helps comparing glyphs to each other.
+Various modes are possible – the default is an
+[Autopsy](https://vimeo.com/116063612)-like showing of glyphs in a grid view.
+Other modes include `gradient` (horizontal waterfall), `single` (page-by-page),
+and `overlay` (superimposed outline view).
 
-Input: folder with UFO files or individual UFOs
+Input: folder containing UFO files or fonts, or individual UFOs/fonts.
+In the input filtering process, UFO files are preferred to fonts.
+
 
 '''
 
