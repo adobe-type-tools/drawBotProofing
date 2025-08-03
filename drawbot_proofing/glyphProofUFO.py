@@ -306,6 +306,35 @@ def get_upm(f):
     return upm
 
 
+def make_anchor_dict(font):
+    anchor_dict = {}
+    if isinstance(font, defcon.Font):
+        for g in font:
+            for anchor in g.anchors:
+                anchor_dict.setdefault(g.name, []).append((anchor.x, anchor.y))
+    else:
+        lu_types = [4, 5, 6]
+        lookups = font['GPOS'].table.LookupList.Lookup
+        mark_lookups = [lu for lu in lookups if lu.LookupType in lu_types]
+        for lu in mark_lookups:
+            # MarkBasePos
+            for mbp in lu.SubTable:
+                base_glyphs = mbp.BaseCoverage.glyphs
+                mark_glyphs = mbp.MarkCoverage.glyphs
+                for mi, mr in enumerate(mbp.MarkArray.MarkRecord):
+                    glyph = mark_glyphs[mi]
+                    anchor = mr.MarkAnchor
+                    coords = anchor.XCoordinate, anchor.YCoordinate
+                    anchor_dict.setdefault(glyph, []).append(coords)
+
+                for bi, br in enumerate(mbp.BaseArray.BaseRecord):
+                    glyph = base_glyphs[bi]
+                    for anchor in br.BaseAnchor:
+                        coords = anchor.XCoordinate, anchor.YCoordinate
+                        anchor_dict.setdefault(glyph, []).append(coords)
+    return anchor_dict
+
+
 def get_container(f):
     '''
     get the container dict to access glyph objects
