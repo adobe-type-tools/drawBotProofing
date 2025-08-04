@@ -12,8 +12,13 @@ Various modes are possible – the default is an
 Other modes include `gradient` (horizontal waterfall), `single` (page-by-page),
 and `overlay` (superimposed outline view).
 
-Input: folder containing UFO files or fonts, or individual UFOs/fonts.
-In the input filtering process, UFO files are preferred to fonts.
+Input (pick one):
+    * folder(s) containing UFO files or font files
+    * individual UFO- or font files
+    * designspace file (UFO sources)
+
+In the input filtering process, UFO files are preferred to fonts, OTFs to TTFs,
+so if results are unexpected, it helps to specify input files one-by-one.
 
 
 '''
@@ -110,7 +115,7 @@ class ProofingFont(FontContainer):
         self.anchor_dict = self.make_anchor_dict(self.font)
 
     def get_style_name(self, f):
-        if f.flavor == 'dc_font':
+        if self.flavor == 'dc_font':
             style_name = f.info.styleName
         else:
             name_table = f['name']
@@ -124,7 +129,7 @@ class ProofingFont(FontContainer):
         return style_name
 
     def get_family_name(self, f):
-        if f.flavor == 'dc_font':
+        if self.flavor == 'dc_font':
             family_name = f.info.familyName
         else:
             name_table = f['name']
@@ -148,7 +153,7 @@ class ProofingFont(FontContainer):
             return the inherent glyphOrder
         '''
 
-        if f.flavor == 'dc_font':
+        if self.flavor == 'dc_font':
             keys = f.keys()
             glyph_order = f.glyphOrder
             if not glyph_order:
@@ -163,7 +168,7 @@ class ProofingFont(FontContainer):
             return list(f.getGlyphOrder())
 
     def get_upm(self, f):
-        if f.flavor == 'dc_font':
+        if self.flavor == 'dc_font':
             upm = f.info.unitsPerEm
         else:
             upm = f['head'].unitsPerEm
@@ -178,7 +183,7 @@ class ProofingFont(FontContainer):
         { glyph name: code point dict }
         xxx double-mapping is ignored, not really relevant for this use case
         '''
-        if f.flavor == 'dc_font':
+        if self.flavor == 'dc_font':
             gn_2_cp = {g.name: g.unicode for g in f if g.unicode}
         else:
             reverse_cmap = f['cmap'].buildReversed()
@@ -193,7 +198,7 @@ class ProofingFont(FontContainer):
         '''
         anchor_dict = {}
 
-        if f.flavor == 'dc_font':
+        if self.flavor == 'dc_font':
             for g in f:
                 for anchor in g.anchors:
                     coords = anchor.x, anchor.y
@@ -782,13 +787,11 @@ def build_proofing_fonts(input_paths):
     if len(input_paths) == 1:
         ufo_paths = get_ufo_paths(input_paths[0])
         font_paths = get_font_paths(input_paths[0])
-        ufos = fontSorter.sort_fonts(ufo_paths)
-        fonts = fontSorter.sort_fonts(font_paths)
 
-        if ufos:
-            input_files = ufos
-        elif fonts:
-            input_files = fonts
+        if ufo_paths:
+            input_files = fontSorter.sort_fonts(ufo_paths)
+        elif font_paths:
+            input_files = fontSorter.sort_fonts(font_paths)
         else:
             input_files = []
     else:
