@@ -43,65 +43,226 @@ from .proofing_helpers.names import get_name_overlap
 # general measurements
 BOX_WIDTH = 200
 BOX_HEIGHT = BOX_WIDTH * 1.5
-margin = BOX_HEIGHT * 0.1
+MARGIN = BOX_HEIGHT * 0.1
 
 
-def get_options(args=None):
-    parser = argparse.ArgumentParser(
-        description=__doc__)
+class FontContainer(object):
+    '''
+    an object that contains
+    * the font object (defcon or fontTools)
+    * a reference to the original file
+    * the object’s flavor
+    * a container dict for glyph access
+    '''
 
-    parser.add_argument(
-        '-a', '--anchors',
-        default=False,
-        action='store_true',
-        help='draw anchors')
+    def __init__(self, font_file):
+        self.font = self.make_font_object(font_file)
+        self.file = font_file
+        self.flavor = self.get_flavor(self.font)
+        self.container = self.get_container(self.font)
 
-    # parser.add_argument(
-    #     '-m', '--metrics',
-    #     default=False,
-    #     action='store_true',
-    #     help='draw metrics (not implemented)')
+    def make_font_object(self, font_file):
+        if font_file.suffix.lower() == '.ufo':
+            font_obj = defcon.Font(font_file)
+        else:
+            # font files
+            font_obj = ttLib.TTFont(font_file)
+        return font_obj
 
-    parser.add_argument(
-        '-c', '--contours',
-        default=False,
-        action='store_true',
-        help='only draw glyphs with contours')
+    def get_container(self, font_obj):
+        '''
+        get the container dict to access glyph objects
+        '''
+        if isinstance(font_obj, defcon.Font):
+            container = font_obj
+        else:
+            container = font_obj.getGlyphSet()
+        return container
 
-    parser.add_argument(
-        '-r', '--regex',
-        action='store',
-        metavar='REGEX',
-        type=str,
-        help='regular expression to filter glyph list')
+    def get_flavor(self, font_obj):
+        if isinstance(font_obj, defcon.Font):
+            flavor = 'dc_font'
+        else:
+            flavor = 'tt_font'
+        return flavor
 
-    parser.add_argument(
-        '-m', '--mode',
-        choices=['single', 'overlay', 'gradient'],
-        default='default',
-        required=False,
-        help='alternate output modes')
 
-    parser.add_argument(
-        '-s', '--stroke_colors',
-        action='store_true',
-        default=False,
-        help='color strokes in overlay mode')
+class ProofingFont(FontContainer):
 
-    parser.add_argument(
-        '-l', '--columns',
-        required=False,
-        type=int,
-        help='override automatic number of columns'
-    )
-    parser.add_argument(
-        'd',
-        action='store',
-        metavar='FOLDER',
-        nargs='+',
-        help='folder to crawl')
+    '''
+    an object that contains everything FontContainer contains, plus
+    * style name
+    * family name
+    * glyph order
+    * UPM
+    * glyph name-to-codepoint dict
+    * glyph name-to-anchors dict
+    '''
 
-    return parser.parse_args(args)
+    def __init__(self, font_file):
+        FontContainer.__init__(self, font_file)
+        self.style_name = self.get_style_name(self.font)
+        self.family_name = self.get_family_name(self.font)
+        self.glyph_order = self.get_glyph_order(self.font)
+        self.upm = self.get_upm(self.font)
+
+        self.uni_dict = self.make_uni_dict(self.font)
+        self.anchor_dict = self.make_anchor_dict(self.font)
+
+    def get_style_name(self, f):
+        if f.flavor == 'dc_font':
+            style_name = f.info.styleName
+        else:
+            name_table = f['name']
+            style_name = name_table.getDebugName(17)
+            if not style_name:
+                style_name = name_table.getDebugName(2)
+
+        if not style_name:
+            style_name = '[no style name]'
+
+        return style_name
+
+    def get_family_name(self, f):
+        if f.flavor == 'dc_font':
+            family_name = f.info.familyName
+        else:
+            name_table = f['name']
+            family_name = name_table.getDebugName(16)
+            if not family_name:
+                family_name = name_table.getDebugName(1)
+
+        if not family_name:
+            family_name = '[no family name]'
+
+        return family_name
+
+    def get_glyph_order(self, f):
+        '''
+        for a UFO:
+            return a list of glyph names
+            - ordered by glyphOrder, or (if glyphOrder does not exist)
+              ordered by unicodeData.sortGlyphNames
+            - existing in the font object
+        for a fontTools TTFont:
+            return the inherent glyphOrder
+        '''
+
+        if f.flavor == 'dc_font':
+            keys = f.keys()
+            glyph_order = f.glyphOrder
+            if not glyph_order:
+                glyph_order = f.unicodeData.sortGlyphNames(keys)
+            return sorted(keys, key=glyph_order.index)
+
+        else:
+            # fontTools font
+            # the `list` wrapper is deliberate.
+            # If we just return the getGlyphOrder object it is possible to
+            # accidentally modify it in memory
+            return list(f.getGlyphOrder())
+
+    def get_upm(self, f):
+        if f.flavor == 'dc_font':
+            upm = f.info.unitsPerEm
+        else:
+            upm = f['head'].unitsPerEm
+
+        if not upm:
+            upm = 1000
+
+        return upm
+
+    def make_uni_dict(self, f):
+        '''
+        { glyph name: code point dict }
+        xxx double-mapping is ignored, not really relevant for this use case
+        '''
+        if f.flavor == 'dc_font':
+            gn_2_cp = {g.name: g.unicode for g in f if g.unicode}
+        else:
+            reverse_cmap = f['cmap'].buildReversed()
+            gn_2_cp = {gn: list(cp)[0] for gn, cp in reverse_cmap.items()}
+
+        return gn_2_cp
+
+    def make_anchor_dict(self, f):
+        '''
+        collect all anchors and their coordinates
+        xxx at the moment, anchors for cursive attachment are not collected.
+        '''
+        anchor_dict = {}
+
+        if f.flavor == 'dc_font':
+            for g in f:
+                for anchor in g.anchors:
+                    coords = anchor.x, anchor.y
+                    anchor_dict.setdefault(g.name, []).append(coords)
+        else:
+            if not ('GPOS' in f):
+                return {}
+
+            # lu_types = [4, 5, 6]
+            lookups = f['GPOS'].table.LookupList.Lookup
+
+            # mark-to-base
+            m2b_lookups = [lu for lu in lookups if lu.LookupType == 4]
+            for lu in m2b_lookups:
+                # MarkBasePos
+                for mbp in lu.SubTable:
+                    base_glyphs = mbp.BaseCoverage.glyphs
+                    mark_glyphs = mbp.MarkCoverage.glyphs
+                    for mi, mr in enumerate(mbp.MarkArray.MarkRecord):
+                        glyph = mark_glyphs[mi]
+                        anchor = mr.MarkAnchor
+                        coords = anchor.XCoordinate, anchor.YCoordinate
+                        anchor_dict.setdefault(glyph, []).append(coords)
+
+                    for bi, br in enumerate(mbp.BaseArray.BaseRecord):
+                        glyph = base_glyphs[bi]
+                        for anchor in br.BaseAnchor:
+                            coords = anchor.XCoordinate, anchor.YCoordinate
+                            anchor_dict.setdefault(glyph, []).append(coords)
+
+            # mark-to-ligature
+            m2l_lookups = [lu for lu in lookups if lu.LookupType == 5]
+            for lu in m2l_lookups:
+                # MarkLigPos
+                for mlp in lu.SubTable:
+                    liga_glyphs = mlp.LigatureCoverage.glyphs
+                    mark_glyphs = mlp.MarkCoverage.glyphs
+                    for mi, mr in enumerate(mlp.MarkArray.MarkRecord):
+                        glyph = mark_glyphs[mi]
+                        anchor = mr.MarkAnchor
+                        coords = anchor.XCoordinate, anchor.YCoordinate
+                        anchor_dict.setdefault(glyph, []).append(coords)
+
+                    for li, la in enumerate(mlp.LigatureArray.LigatureAttach):
+                        glyph = liga_glyphs[li]
+                        for cr in la.ComponentRecord:
+                            for anchor in cr.LigatureAnchor:
+                                coords = anchor.XCoordinate, anchor.YCoordinate
+                                anchor_dict.setdefault(glyph, []).append(coords)
+
+            # mark-to-mark
+            m2m_lookups = [lu for lu in lookups if lu.LookupType == 6]
+            for lu in m2m_lookups:
+                # MarkMarkPos
+                for mmp in lu.SubTable:
+                    mark1_glyphs = mmp.Mark1Coverage.glyphs
+                    mark2_glyphs = mmp.Mark2Coverage.glyphs
+                    for mi, mr in enumerate(mmp.Mark1Array.MarkRecord):
+                        glyph = mark1_glyphs[mi]
+                        anchor = mr.MarkAnchor
+                        coords = anchor.XCoordinate, anchor.YCoordinate
+                        anchor_dict.setdefault(glyph, []).append(coords)
+                    for mi, mr in enumerate(mmp.Mark2Array.Mark2Record):
+                        glyph = mark2_glyphs[mi]
+                        for anchor in mr.Mark2Anchor:
+                            coords = anchor.XCoordinate, anchor.YCoordinate
+                            anchor_dict.setdefault(glyph, []).append(coords)
+
+        return anchor_dict
 
 
 def draw_anchors(glyph, anchor_coords, size=30):
@@ -116,17 +277,6 @@ def draw_sidebearings(glyph, height=100):
     # strokeWidth(0.5)
     db.line((0, -height / 2), (0, height / 2))
     db.line((glyph.width, -height / 2), (glyph.width, height / 2))
-
-
-def draw_metrics(glyph):
-    # stroke(0.5)
-    # strokeWidth(0.5)
-    # font = glyph.font
-    font = glyph.getParent()
-    db.line((0, font.info.descender), (glyph.width, font.info.descender))
-    db.line((0, font.info.xHeight), (glyph.width, font.info.xHeight))
-    db.line((0, font.info.capHeight), (glyph.width, font.info.capHeight))
-    db.line((0, font.info.ascender), (glyph.width, font.info.ascender))
 
 
 def calc_vector(p1, p2):
@@ -167,234 +317,81 @@ def get_bounds(g):
     return bounds
 
 
-def get_random_glyph(font_list):
+def get_cover_font_and_glyph(proofing_fonts):
     '''
     Gets a random glyph (with outlines) to display on cover
+    Also, the ProofingFont object this glyph comes from
     '''
-    random_font = db.choice(font_list)
-    random_gname = db.choice(get_glyph_order(random_font))
-    glyph_container = get_container(random_font)
-    glyph = glyph_container[random_gname]
+    random_pf = db.choice(proofing_fonts)
+    random_gname = db.choice(random_pf.glyph_order)
+    glyph = random_pf.container[random_gname]
     bounds = get_bounds(glyph)
     if not bounds:
-        glyph = get_random_glyph(font_list)
+        _, glyph = get_cover_font_and_glyph(proofing_fonts)
 
-    return glyph
+    return random_pf, glyph
 
 
-def get_style_name(f):
-    if isinstance(f, defcon.Font):
-        style_name = f.info.styleName
-        if not style_name:
-            style_name = '[no style name]'
+def get_global_family_name(proofing_fonts):
+
+    family_names = [pf.family_name for pf in proofing_fonts]
+    unique_family_names = sorted(set(family_names), key=family_names.index)
+    style_names = [pf.style_name for pf in proofing_fonts]
+    overlap = get_name_overlap(unique_family_names)
+
+    if len(unique_family_names) == 1:
+        global_fn = unique_family_names[0]
+
+    elif len(unique_family_names) == 2:
+        global_fn = ' & '.join(unique_family_names)
+
     else:
-        name_table = f['name']
-        style_name = name_table.getDebugName(17)
-        if not style_name:
-            style_name = name_table.getDebugName(2)
+        if overlap and len(overlap) > 3:
+            global_fn = overlap
+        else:
+            global_fn = ', '.join(unique_family_names[:2]) + ' etc.'
 
-    return style_name
-
-
-def get_family_name(f):
-    if isinstance(f, defcon.Font):
-        family_name = f.info.familyName
-        if not family_name:
-            family_name = '[no family name]'
-    else:
-        name_table = f['name']
-        family_name = name_table.getDebugName(16)
-        if not family_name:
-            family_name = name_table.getDebugName(1)
-
-    return family_name
-
-
-def global_family_name(font_list):
-
-    family_names = [get_family_name(f) for f in font_list]
-    overlap = get_name_overlap(family_names)
-
-    if overlap and len(overlap) > 3:
-        global_fn = overlap
-    else:
-        global_fn = get_family_name(font_list[0])
-
-    if (
-        'It' not in global_fn and
-        all(['Italic' in get_style_name(f) for f in font_list])
-    ):
+    if 'It' not in global_fn and all(['Italic' in sn for sn in style_names]):
         global_fn += ' Italic'
 
     return global_fn
 
 
-def get_glyph_order(f):
-    '''
-    for a Defcon font or fontTools TTFont:
-    return a list of glyph names
-
-        - ordered by glyphOrder, or (if glyphOrder does not exist)
-          ordered by unicodeData.sortGlyphNames
-        - existing in the font object (UFO only)
-
-    '''
-
-    if isinstance(f, defcon.Font):
-        # ufo
-        keys = f.keys()
-        glyph_order = f.glyphOrder
-        if not glyph_order:
-            glyph_order = f.unicodeData.sortGlyphNames(keys)
-
-        return sorted(keys, key=glyph_order.index)
-
-    else:
-        # fontTools font
-        # the `list` is deliberate. If we just return the getGlyphOrder object
-        # it is possible to modify it accidentally
-        return list(f.getGlyphOrder())
-
-
-def get_upm(f):
-    if isinstance(f, defcon.Font):
-        upm = f.info.unitsPerEm
-    else:
-        upm = f['head'].unitsPerEm
-
-    if not upm:
-        upm = 1000
-    return upm
-
-
-def make_anchor_dict(font):
-    anchor_dict = {}
-
-    if isinstance(font, defcon.Font):
-        for g in font:
-            for anchor in g.anchors:
-                anchor_dict.setdefault(g.name, []).append((anchor.x, anchor.y))
-    else:
-        if not ('GPOS' in font):
-            return anchor_dict
-
-        # lu_types = [4, 5, 6]
-        lookups = font['GPOS'].table.LookupList.Lookup
-
-        # mark-to-base
-        m2b_lookups = [lu for lu in lookups if lu.LookupType == 4]
-        for lu in m2b_lookups:
-            # MarkBasePos
-            for mbp in lu.SubTable:
-                base_glyphs = mbp.BaseCoverage.glyphs
-                mark_glyphs = mbp.MarkCoverage.glyphs
-                for mi, mr in enumerate(mbp.MarkArray.MarkRecord):
-                    glyph = mark_glyphs[mi]
-                    anchor = mr.MarkAnchor
-                    coords = anchor.XCoordinate, anchor.YCoordinate
-                    anchor_dict.setdefault(glyph, []).append(coords)
-
-                for bi, br in enumerate(mbp.BaseArray.BaseRecord):
-                    glyph = base_glyphs[bi]
-                    for anchor in br.BaseAnchor:
-                        coords = anchor.XCoordinate, anchor.YCoordinate
-                        anchor_dict.setdefault(glyph, []).append(coords)
-
-        # mark-to-ligature
-        m2l_lookups = [lu for lu in lookups if lu.LookupType == 5]
-        for lu in m2l_lookups:
-            # MarkLigPos
-            for mlp in lu.SubTable:
-                liga_glyphs = mlp.LigatureCoverage.glyphs
-                mark_glyphs = mlp.MarkCoverage.glyphs
-                for mi, mr in enumerate(mlp.MarkArray.MarkRecord):
-                    glyph = mark_glyphs[mi]
-                    anchor = mr.MarkAnchor
-                    coords = anchor.XCoordinate, anchor.YCoordinate
-                    anchor_dict.setdefault(glyph, []).append(coords)
-
-                for li, la in enumerate(mlp.LigatureArray.LigatureAttach):
-                    glyph = liga_glyphs[li]
-                    for cr in la.ComponentRecord:
-                        for anchor in cr.LigatureAnchor:
-                            coords = anchor.XCoordinate, anchor.YCoordinate
-                            anchor_dict.setdefault(glyph, []).append(coords)
-
-        # mark-to-mark
-        m2m_lookups = [lu for lu in lookups if lu.LookupType == 6]
-        for lu in m2m_lookups:
-            # MarkMarkPos
-            for mmp in lu.SubTable:
-                mark1_glyphs = mmp.Mark1Coverage.glyphs
-                mark2_glyphs = mmp.Mark2Coverage.glyphs
-                for mi, mr in enumerate(mmp.Mark1Array.MarkRecord):
-                    glyph = mark1_glyphs[mi]
-                    anchor = mr.MarkAnchor
-                    coords = anchor.XCoordinate, anchor.YCoordinate
-                    anchor_dict.setdefault(glyph, []).append(coords)
-                for mi, mr in enumerate(mmp.Mark2Array.Mark2Record):
-                    glyph = mark2_glyphs[mi]
-                    for anchor in mr.Mark2Anchor:
-                        coords = anchor.XCoordinate, anchor.YCoordinate
-                        anchor_dict.setdefault(glyph, []).append(coords)
-
-    return anchor_dict
-
-
-def make_uni_dict(font_list):
+def get_global_uni_dict(proofing_fonts):
     '''
     all glyphs of all fonts with their code points
     '''
-    uni_dict = {}
-    for font in font_list:
-        if isinstance(font, defcon.Font):
-            # xxx double-mapping
-            gn_2_cp = {g.name: g.unicode for g in font if g.unicode}
-        else:
-            reverse_cmap = font['cmap'].buildReversed()
-            gn_2_cp = {gn: list(cp)[0] for gn, cp in reverse_cmap.items()}
-        uni_dict.update(gn_2_cp)
+    cmb_uni_dict = {}
+    for pf in proofing_fonts:
+        cmb_uni_dict.update(pf.uni_dict)
 
-    return uni_dict
+    return cmb_uni_dict
 
 
-def get_container(f):
-    '''
-    get the container dict to access glyph objects
-    '''
-    if isinstance(f, defcon.Font):
-        container = f
-    else:
-        container = f.getGlyphSet()
-
-    return container
-
-
-def make_single_glyph_page(glyph_name, font, page_size, args):
+def make_single_glyph_page(glyph_name, pf, page_size, args):
     '''
     A page with a single glyph, intended for a “flip-book” style showing.
     '''
 
-    style_name = get_style_name(font)
-    stamp = f'{style_name} – {glyph_name}'
     db.newPage(*page_size)
-    glyph_container = get_container(font)
-    upm = get_upm(font)
-    scale_factor = 1000 / upm
+    scale_factor = 1000 / pf.upm
 
-    if glyph_name in glyph_container.keys():
-        glyph = glyph_container[glyph_name]
+    if glyph_name in pf.container.keys():
+        glyph = pf.container[glyph_name]
         db.fill(0)
     else:
-        glyph = glyph_container['.notdef']
+        glyph = pf.container['.notdef']
         db.fill(0, 0, 0, 0.25)
 
     x_offset = (db.width() - glyph.width * scale_factor) // 2
     y_offset = 250
 
-    fs = db.FormattedString(
-        txt=stamp, font=FONT_MONO, fontSize=20, align='center')
-    db.textBox(fs, (0, 0, db.width(), 100))
+    footer = db.FormattedString(
+        txt=f'{pf.style_name} – {glyph_name}',
+        font=FONT_MONO,
+        fontSize=20,
+        align='center')
+    db.textBox(footer, (0, 0, db.width(), 100))
 
     db.translate(x_offset, y_offset)
     db.scale(scale_factor)
@@ -402,26 +399,22 @@ def make_single_glyph_page(glyph_name, font, page_size, args):
     draw_glyph(glyph)
 
     if args.anchors:
-        anchor_dict = make_anchor_dict(font)
-        anchors = anchor_dict.get(glyph_name)
+        anchors = pf.anchor_dict.get(glyph_name)
         if anchors:
             draw_anchors(glyph, anchors)
 
 
-def make_overlay_glyph_page(glyph_name, font_list, stroke_colors, page_size, args):
+def make_overlay_glyph_page(glyph_name, proofing_fonts, stroke_colors, page_size, args):
     '''
     A page with all glyphs of the same name overlaid (in outlines).
     '''
     db.newPage(*page_size)
 
-    for i, font in enumerate(font_list):
-        glyph_container = get_container(font)
-        upm = get_upm(font)
-
+    for i, pf in enumerate(proofing_fonts):
         stroke_color = stroke_colors[i]
-        if glyph_name in glyph_container.keys():
-            glyph = glyph_container[glyph_name]
-            scale_factor = 1000 / upm
+        if glyph_name in pf.container.keys():
+            glyph = pf.container[glyph_name]
+            scale_factor = 1000 / pf.upm
 
             with db.savedState():
                 x_offset = (db.width() - glyph.width * scale_factor) // 2
@@ -435,34 +428,39 @@ def make_overlay_glyph_page(glyph_name, font_list, stroke_colors, page_size, arg
                 draw_glyph(glyph)
                 db.stroke(None)
                 if args.anchors:
-                    anchor_dict = make_anchor_dict(font)
-                    anchors = anchor_dict.get(glyph_name)
+                    anchors = pf.anchor_dict.get(glyph_name)
                     if anchors:
                         draw_anchors(glyph, anchors)
 
-    fs = db.FormattedString(
+    footer = db.FormattedString(
         txt=glyph_name, font=FONT_MONO, fontSize=20, align='center')
-    db.textBox(fs, (0, 0, db.width(), 100))
+    db.textBox(footer, (0, 0, db.width(), 100))
 
 
-def make_gradient_page(glyph_name, font_list, page_size):
+def make_gradient_page(glyph_name, proofing_fonts, page_size):
 
     # xxx only works for fonts with the same UPM across styles
     page_width, page_height = page_size
     global_scale = BOX_WIDTH / 1000
     db.newPage(*page_size)
 
-    if isinstance(font_list[0], defcon.Font):
+    if proofing_fonts[0].flavor == 'dc_font':
         combined_width = sum([
-            f[glyph_name].width for f in font_list if glyph_name in f.keys()])
+            pf.container[glyph_name].width
+            for pf in proofing_fonts if glyph_name in pf.container])
     else:
-        metrics = [
-            f['hmtx'].metrics.get(glyph_name, (0, 0)) for f in font_list if
-            glyph_name in f.getGlyphOrder()]
-        # combined_width = sum([m[0] * (1000 / upms[i]) for i, m in enumerate(metrics)])
-        combined_width = sum([m[0] for i, m in enumerate(metrics)])
+        hmtx_metrics = [
+            pf.font['hmtx'].metrics.get(glyph_name, (0, 0))
+            for pf in proofing_fonts if glyph_name in pf.glyph_order]
 
-    upms = [get_upm(f) for f in font_list]
+        # this would take different UPMs into account
+        # combined_width = sum([
+        #     m[0] * (1000 / proofing_fonts[i].upm)
+        #     for i, m in enumerate(hmtx_metrics)])
+
+        combined_width = sum([m[0] for i, m in enumerate(hmtx_metrics)])
+
+    upms = [pf.upm for pf in proofing_fonts]
     upm_factor = 1000 / upms[0]
     # x_offset = (page_width - combined_width * scale_factor) / 2
     x_offset = (page_width - combined_width * global_scale * upm_factor) / 2
@@ -471,19 +469,18 @@ def make_gradient_page(glyph_name, font_list, page_size):
     with db.savedState():
         db.translate(x_offset, y_offset)
         db.scale(global_scale * upm_factor)
-        for i, font in enumerate(font_list):
-            glyph_container = get_container(font)
-            if glyph_name in glyph_container.keys():
-                glyph = glyph_container[glyph_name]
+        for i, pf in enumerate(proofing_fonts):
+            if glyph_name in pf.container.keys():
+                glyph = pf.container[glyph_name]
                 draw_glyph(glyph)
                 db.translate(glyph.width, 0)
 
-    fs = db.FormattedString(
+    footer = db.FormattedString(
         txt=glyph_name, font=FONT_MONO, fontSize=10, align='center')
-    db.textBox(fs, (0, 0, page_width, 50))
+    db.textBox(footer, (0, 0, page_width, 50))
 
 
-def make_cover(family_name, font_list, page_size, margin=20):
+def make_cover(family_name, proofing_fonts, page_size, margin=20):
     '''
     Make cover with gradient, some info about the family, and a large white
     shape overlaid.
@@ -499,7 +496,7 @@ def make_cover(family_name, font_list, page_size, margin=20):
     )
 
     db.rect(0, 0, page_width, page_height)
-    cover_glyph = get_random_glyph(font_list)
+    cover_font, cover_glyph = get_cover_font_and_glyph(proofing_fonts)
     page_center = page_width / 2, page_height / 2
 
     with db.savedState():
@@ -530,13 +527,7 @@ def make_cover(family_name, font_list, page_size, margin=20):
         db.fill(1)
         draw_glyph(cover_glyph)
 
-        if isinstance(cover_glyph, defcon.Glyph):
-            cg_font = cover_glyph.getParent()
-        else:
-            cg_font = cover_glyph.glyphSet.font
-
-        cg_style_name = get_style_name(cg_font)
-        print(f'cover: {cover_glyph.name} ({cg_style_name})')
+        print(f'cover: {cover_glyph.name} ({cover_font.style_name})')
 
     cover_text = '{}\n{}'.format(
         family_name, timestamp(readable=True, connector='\n'))
@@ -550,26 +541,26 @@ def make_cover(family_name, font_list, page_size, margin=20):
     rect_size = (
         margin, page_height - 2 * margin,
         page_width - 2 * margin, margin * 1.5)
+
     db.fill(0)
     db.textBox(cover_stamp, (rect_size))
 
 
-def make_proof_page(glyph_name, font_list, args):
+def make_proof_page(glyph_name, proofing_fonts, args):
     '''
     Default mode, in which glyphs are set side-by-side.
     '''
-    columns = get_columns(font_list, args)
-    rows = math.ceil(len(font_list) / columns)
+    rows, columns = get_rows_columns(len(proofing_fonts), args)
 
     page_width = BOX_WIDTH * columns
     page_height = BOX_HEIGHT * rows
 
-    uni_dict = make_uni_dict(font_list)
+    uni_dict = get_global_uni_dict(proofing_fonts)
     num_glyphs = 0
     current_line = 1
 
     # see if the glyph exists in at least one of the fonts
-    glyph_exists = [glyph_name in get_container(f) for f in font_list]
+    glyph_exists = [glyph_name in pf.container for pf in proofing_fonts]
     if any(glyph_exists):
 
         db.newPage(page_width, page_height)
@@ -587,7 +578,7 @@ def make_proof_page(glyph_name, font_list, args):
         else:
             stamp_text = glyph_name
 
-        stamp = db.FormattedString(
+        header = db.FormattedString(
             txt=stamp_text,
             font=FONT_MONO,
             fontSize=10,
@@ -595,61 +586,51 @@ def make_proof_page(glyph_name, font_list, args):
         )
 
         rect_size = (
-            margin, page_height - margin,
-            page_width - 2 * margin, margin / 2)
+            MARGIN, page_height - MARGIN, page_width - 2 * MARGIN, MARGIN / 2)
         db.fill(None)
-        db.textBox(stamp, (rect_size))
+        db.textBox(header, (rect_size))
         x_offset = 0
         page_anchors = {}
         max_anchors_per_line = columns
 
-        for font in font_list:
-            if args.anchors:
-                anchor_dict = make_anchor_dict(font)
-            glyph_container = get_container(font)
-            upm = get_upm(font)
+        for pf in proofing_fonts:
             num_glyphs += 1
             db.fill(0)
             y_offset = page_height - (BOX_HEIGHT * current_line) + BOX_WIDTH * 0.4
 
-            if glyph_name in glyph_container:
+            if glyph_name in pf.container:
                 db.fill(0)
-                glyph = glyph_container[glyph_name]
+                glyph = pf.container[glyph_name]
                 draw_sb = True
-                # draw_vm = True
 
             else:
                 db.fill(0.8)
-                if '.notdef' in glyph_container:
-                    glyph = glyph_container['.notdef']
-                elif 'space' in glyph_container:
-                    glyph = glyph_container['space']
+                if '.notdef' in pf.container:
+                    glyph = pf.container['.notdef']
+                elif 'space' in pf.container:
+                    glyph = pf.container['space']
                 else:
-                    gname = get_glyph_order(font)[0]
-                    glyph = glyph_container[gname]
+                    gname = pf.glyph_order[0]
+                    glyph = pf.container[gname]
 
                 draw_sb = False
-                # draw_vm = False
                 max_anchors_per_line -= 1
 
             with db.savedState():
 
-                scale_factor = BOX_WIDTH / upm
+                scale_factor = BOX_WIDTH / pf.upm
                 local_offset = (BOX_WIDTH - glyph.width * scale_factor) // 2
                 db.translate(x_offset + local_offset, y_offset)
                 db.scale(scale_factor)
 
                 if draw_sb:
                     draw_sidebearings(glyph)
-                # metrics don’t look good
-                # if draw_vm:
-                #     draw_metrics(glyph)
 
                 db.stroke(None)
                 draw_glyph(glyph)
 
                 if args.anchors:
-                    anchors = anchor_dict.get(glyph_name)
+                    anchors = pf.anchor_dict.get(glyph_name)
                     if anchors:
                         for anchor_index, anchor_coords in enumerate(anchors):
                             x, y = anchor_coords
@@ -693,23 +674,24 @@ def make_proof_page(glyph_name, font_list, args):
                     db.drawPath()
 
 
-def get_columns(font_list, args):
+def get_rows_columns(num_fonts, args):
+    # column calculation based on number of fonts provided
     if args.columns:
         # column number has been overridden manually
-        return args.columns
+        columns = args.columns
 
-    # calculation based on number of fonts provided
-    num_fonts = len(font_list)
-
-    if num_fonts <= 5:
-        columns = num_fonts
     else:
-        if 6 <= num_fonts < 10:
-            columns = num_fonts // 2
+        if num_fonts <= 5:
+            columns = num_fonts
         else:
-            columns = math.ceil(math.sqrt(num_fonts))
+            if 6 <= num_fonts < 10:
+                columns = num_fonts // 2
+            else:
+                columns = math.ceil(math.sqrt(num_fonts))
 
-    return columns
+    rows = math.ceil(num_fonts) // columns
+
+    return rows, columns
 
 
 def compress_user(path):
@@ -759,39 +741,39 @@ def filter_glyph_names(glyph_names, regex_str):
         return glyph_names
 
 
-def get_glyph_names(font_list, contours=False):
+def get_glyph_names(proofing_fonts, contours=False):
     '''
     get glyph names -- either all, or only names for glyphs with contours
     '''
     glyph_names = []
-    template_font = font_list[0]
-    template_gnames = get_glyph_order(template_font)
+    template_font = proofing_fonts[0]
+    template_gnames = template_font.glyph_order
 
     if contours:
         # only contours, no empty or composite glyphs
         glyph_names = [
             gn for gn in template_gnames if len(template_font[gn])]
 
-        for font in font_list[1:]:
+        for pf in proofing_fonts[1:]:
             addl_glyph_names = [
-                gn for gn in get_glyph_order(font) if
-                len(font[gn]) and gn not in glyph_names
+                gn for gn in pf.glyph_order if
+                len(pf.font[gn]) and gn not in glyph_names
             ]
             glyph_names.extend(addl_glyph_names)
 
     else:
         # all glyphs, including space etc.
         glyph_names = template_gnames
-        for font in font_list[1:]:
+        for pf in proofing_fonts[1:]:
             addl_glyph_names = [
-                gn for gn in get_glyph_order(font) if
+                gn for gn in pf.glyph_order if
                 gn not in glyph_names
             ]
             glyph_names.extend(addl_glyph_names)
     return glyph_names
 
 
-def make_font_list(input_paths):
+def build_proofing_fonts(input_paths):
     '''
     * if UFOs are found, return a list of defcon Font objects
     * if fonts are found, return a list of ttFont objects
@@ -813,14 +795,8 @@ def make_font_list(input_paths):
         # no sorting, just passing single files
         input_files = [Path(p) for p in input_paths]
 
-    suffixes = [file.suffix.lower() for file in input_files]
-    if set(suffixes) == {'.ufo'}:
-        # ufo files
-        font_list = list(map(defcon.Font, input_files))
-    else:
-        # font files
-        font_list = list(map(ttLib.TTFont, input_files))
-    return font_list
+    proofing_fonts = list(map(ProofingFont, input_files))
+    return proofing_fonts
 
 
 def make_gradient_stops():
@@ -854,71 +830,128 @@ def make_stroke_colors(font_list, args):
     return stroke_colors
 
 
+def get_options(args=None):
+    parser = argparse.ArgumentParser(
+        description=__doc__)
+
+    parser.add_argument(
+        '-a', '--anchors',
+        default=False,
+        action='store_true',
+        help='draw anchors')
+
+    parser.add_argument(
+        '-c', '--contours',
+        default=False,
+        action='store_true',
+        help='only draw glyphs with contours')
+
+    parser.add_argument(
+        '-r', '--regex',
+        action='store',
+        metavar='REGEX',
+        type=str,
+        help='regular expression to filter glyph list')
+
+    parser.add_argument(
+        '-m', '--mode',
+        choices=['single', 'overlay', 'gradient'],
+        default='default',
+        required=False,
+        help='alternate output modes')
+
+    parser.add_argument(
+        '-s', '--stroke_colors',
+        action='store_true',
+        default=False,
+        help='color strokes in overlay mode')
+
+    parser.add_argument(
+        '-l', '--columns',
+        required=False,
+        type=int,
+        help='override automatic number of columns'
+    )
+    parser.add_argument(
+        'd',
+        action='store',
+        metavar='FOLDER',
+        nargs='+',
+        help='folder to crawl')
+
+    return parser.parse_args(args)
+
+
+def make_proof(proofing_fonts, args):
+
+    glyph_list = get_glyph_names(proofing_fonts, args.contours)
+    if args.regex:
+        glyph_list = filter_glyph_names(glyph_list, args.regex)
+
+    global_family_name = get_global_family_name(proofing_fonts)
+    db.newDrawing()
+
+    if args.mode == 'single':
+        page_size = (1200, 1200)
+        output_mode = 'page proof'
+        if len(glyph_list) > 1:
+            # do not make a cover for a single-page proof
+            make_cover(global_family_name, proofing_fonts, page_size, MARGIN)
+        for glyph_name in glyph_list:
+            for pf in proofing_fonts:
+                make_single_glyph_page(glyph_name, pf, page_size, args)
+
+    elif args.mode == 'overlay':
+        page_size = (1200, 1200)
+        output_mode = 'overlay proof'
+        stroke_colors = make_stroke_colors(proofing_fonts, args)
+        if len(glyph_list) > 1:
+            make_cover(global_family_name, proofing_fonts, page_size, MARGIN)
+
+        for glyph_name in glyph_list:
+            make_overlay_glyph_page(
+                glyph_name, proofing_fonts, stroke_colors, page_size, args)
+
+    elif args.mode == 'gradient':
+        page_size = BOX_WIDTH * len(proofing_fonts), BOX_HEIGHT
+        output_mode = 'gradient proof'
+        if len(glyph_list) > 1:
+            make_cover(global_family_name, proofing_fonts, page_size, MARGIN)
+        for glyph_name in glyph_list:
+            make_gradient_page(glyph_name, proofing_fonts, page_size)
+
+    else:
+        # default
+        output_mode = 'glyph proof'
+        rows, columns = get_rows_columns(len(proofing_fonts), args)
+        page_size = (BOX_WIDTH * columns, BOX_HEIGHT * rows)
+
+        if len(glyph_list) > 1:
+            make_cover(global_family_name, proofing_fonts, page_size, MARGIN)
+        for glyph_name in glyph_list:
+            make_proof_page(glyph_name, proofing_fonts, args)
+
+    if args.regex:
+        output_path = make_output_path(
+            global_family_name, output_mode, glyph_list)
+    else:
+        output_path = make_output_path(global_family_name, output_mode)
+
+    db.saveImage(output_path)
+    print('saved PDF to', compress_user(output_path))
+    subprocess.call(['open', output_path])
+    db.endDrawing()
+
+
 def main(test_args=None):
     args = get_options(test_args)
-    font_list = make_font_list(args.d)
-
-    if font_list:
-        for font in font_list:
-            print(get_style_name(font))
-
-        family_name = global_family_name(font_list)
-        glyph_list = get_glyph_names(font_list, args.contours)
-        if args.regex:
-            glyph_list = filter_glyph_names(glyph_list, args.regex)
-
-        db.newDrawing()
-
-        if args.mode == 'single':
-            page_size = (1200, 1200)
-            output_mode = 'page proof'
-            if len(glyph_list) > 1:
-                make_cover(family_name, font_list, page_size, margin)
-            for glyph_name in glyph_list:
-                for font in font_list:
-                    make_single_glyph_page(glyph_name, font, page_size, args)
-
-        elif args.mode == 'overlay':
-            page_size = (1200, 1200)
-            output_mode = 'overlay proof'
-            stroke_colors = make_stroke_colors(font_list, args)
-            if len(glyph_list) > 1:
-                # do not make a cover for a single-page proof
-                make_cover(family_name, font_list, page_size, margin)
-
-            for glyph_name in glyph_list:
-                make_overlay_glyph_page(
-                    glyph_name, font_list, stroke_colors, page_size, args)
-
-        elif args.mode == 'gradient':
-            page_size = BOX_WIDTH * len(font_list), BOX_HEIGHT
-            output_mode = 'gradient proof'
-            if len(glyph_list) > 1:
-                make_cover(family_name, font_list, page_size, margin)
-            for glyph_name in glyph_list:
-                make_gradient_page(glyph_name, font_list, page_size)
-
-        else:
-            # default
-            output_mode = 'glyph proof'
-            columns = get_columns(font_list, args)
-            rows = math.ceil(len(font_list) / columns)
-            page_size = (BOX_WIDTH * columns, BOX_HEIGHT * rows)
-
-            if len(glyph_list) > 1:
-                make_cover(family_name, font_list, page_size, margin)
-            for glyph_name in glyph_list:
-                make_proof_page(glyph_name, font_list, args)
-
-        if args.regex:
-            output_path = make_output_path(family_name, output_mode, glyph_list)
-        else:
-            output_path = make_output_path(family_name, output_mode)
-
-        db.saveImage(output_path)
-        print('saved PDF to', compress_user(output_path))
-        subprocess.call(['open', output_path])
-        db.endDrawing()
+    proofing_fonts = build_proofing_fonts(args.d)
+    if proofing_fonts:
+        for pf in proofing_fonts:
+            print(pf.family_name, pf.style_name)
+        make_proof(proofing_fonts, args)
+    else:
+        print(f'no fonts or UFOs found in {args.d}')
 
 
 if __name__ == '__main__':
