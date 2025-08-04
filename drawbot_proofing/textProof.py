@@ -44,6 +44,7 @@ from .proofing_helpers import fontSorter
 from .proofing_helpers import charsets as cs
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK, ADOBE_NOTDEF
 from .proofing_helpers.fonts import get_default_instance
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.helpers import list_uni_names
 from .proofing_helpers.files import (
     get_font_paths, chain_charset_texts, read_text_file, make_temp_font)
@@ -59,14 +60,6 @@ class TextContainer(object):
         self.text = text.strip()
         self.italic = italic
         self.paragraph = paragraph
-
-
-class RawDescriptionAndDefaultsFormatter(
-    # https://stackoverflow.com/a/18462760
-    argparse.ArgumentDefaultsHelpFormatter,
-    argparse.RawDescriptionHelpFormatter
-):
-    pass
 
 
 def get_options():

@@ -26,16 +26,9 @@ import drawBot as db
 from pathlib import Path
 
 from .proofing_helpers.files import get_font_paths, make_temp_font
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
 from .proofing_helpers.stamps import timestamp
-
-
-class RawDescriptionAndDefaultsFormatter(
-    # https://stackoverflow.com/a/18462760
-    argparse.ArgumentDefaultsHelpFormatter,
-    argparse.RawDescriptionHelpFormatter
-):
-    pass
 
 
 def get_options():

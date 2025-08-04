@@ -101,7 +101,10 @@ Input: font file(s) or folder of fonts.
 Simple script check figure spacing in UFOs (without kerning).
 For each figure suffix (such as .tosf), a new spacing page is made.
 
-Input: folder containing UFO or font files, or individual font- or UFO files.
+Input (pick one):
+* folder(s) containing UFO files or font files
+* individual UFO- or font files
+* designspace file (UFO sources)
 
 ![figureSpacingProof.py](_images/figureSpacingProof.png)
 
@@ -112,16 +115,18 @@ Input: folder containing UFO or font files, or individual font- or UFO files.
 Creates a PDF document which helps comparing glyphs to each other.
 Various modes are possible – the default is an
 [Autopsy](https://vimeo.com/116063612)-like showing of glyphs in a grid view.
-Other modes include `gradient` (horizontal waterfall), `single` (page-by-page),
-and `overlay` (superimposed outline view).
+Other modes include
+* `gradient` (horizontal waterfall)
+* `single` (page-by-page)
+* `overlay` (superimposed outline view)
 
 Input (pick one):
-    * folder(s) containing UFO files or font files
-    * individual UFO- or font files
-    * designspace file (UFO sources)
+* folder(s) containing UFO files or font files
+* individual UFO- or font files
+* designspace file (UFO sources)
 
-In the input filtering process, UFO files are preferred to fonts, OTFs to TTFs,
-so if results are unexpected, it helps to specify input files one-by-one.
+In the input filtering process, UFO files are preferred to fonts, OTFs to TTFs.
+If results are unexpected, it helps to specify input files one-by-one.
 
 ![glyphProof.py](_images/glyphProof_1.png)
 
@@ -141,7 +146,10 @@ The output is good to use with a diffing tool like `diff-pdf` in a later step.
 The glyphset can be filtered with a regular expression (for example,
 use `-r ".*dieresis"` to show all glyphs whose names end with -dieresis).
 
-Input: folder containing UFO or font files, or individual font- or UFO files.
+Input (pick one):
+* folder(s) containing UFO files or font files
+* individual UFO- or font files
+* designspace file (UFO sources)
 
 ![glyphsetProof.py](_images/glyphsetProof_1.png)
 
@@ -222,7 +230,10 @@ CLI Inputs: see help
 Creates pages with example characters to visualize the variation
 of vertical metrics across a typeface family.
 
-Input: folder containing font or UFO files.
+Input (pick one):
+* folder(s) containing UFO files or font files
+* individual UFO- or font files
+* designspace file (UFO sources)
 
 ![verticalMetricsComparisonProof.py](_images/verticalMetricsComparisonProof.png)
 

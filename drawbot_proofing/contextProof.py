@@ -24,6 +24,7 @@ import drawBot as db
 from pathlib import Path
 
 from .proofing_helpers.files import get_font_paths
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import *
 from .proofing_helpers.fontSorter import sort_fonts
 from .proofing_helpers.stamps import timestamp
@@ -34,7 +35,7 @@ default_wl = Path(__file__).parent / "_content" / "en_10k.txt"
 def get_options():
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=RawDescriptionAndDefaultsFormatter
     )
 
     parser.add_argument(

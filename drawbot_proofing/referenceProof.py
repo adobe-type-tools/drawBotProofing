@@ -30,6 +30,7 @@ from fontTools import ttLib
 from itertools import repeat
 from pathlib import Path
 
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import ADOBE_BLANK, FONT_MONO
 from .proofing_helpers.names import get_overlap_index, get_ps_name
 
@@ -286,7 +287,7 @@ def make_document(args, formatted_strings):
 def get_options(args=None):
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter
+        formatter_class=RawDescriptionAndDefaultsFormatter
     )
 
     parser.add_argument(

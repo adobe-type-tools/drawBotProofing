@@ -9,7 +9,10 @@
 Simple script check figure spacing in UFOs (without kerning).
 For each figure suffix (such as .tosf), a new spacing page is made.
 
-Input: folder containing UFO or font files, or individual font- or UFO files.
+Input (pick one):
+* folder(s) containing UFO files or font files
+* individual UFO- or font files
+* designspace file (UFO sources)
 
 '''
 
@@ -24,6 +27,7 @@ from pathlib import Path
 
 from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_ufo_paths, get_font_paths
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.stamps import timestamp
 
@@ -171,7 +175,7 @@ def get_figure_suffixes(gnames, custom_suffixes, report=False):
 def get_options():
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=RawDescriptionAndDefaultsFormatter
     )
 
     parser.add_argument(

@@ -9,17 +9,18 @@
 Creates a PDF document which helps comparing glyphs to each other.
 Various modes are possible – the default is an
 [Autopsy](https://vimeo.com/116063612)-like showing of glyphs in a grid view.
-Other modes include `gradient` (horizontal waterfall), `single` (page-by-page),
-and `overlay` (superimposed outline view).
+Other modes include
+* `gradient` (horizontal waterfall)
+* `single` (page-by-page)
+* `overlay` (superimposed outline view)
 
 Input (pick one):
-    * folder(s) containing UFO files or font files
-    * individual UFO- or font files
-    * designspace file (UFO sources)
+* folder(s) containing UFO files or font files
+* individual UFO- or font files
+* designspace file (UFO sources)
 
-In the input filtering process, UFO files are preferred to fonts, OTFs to TTFs,
-so if results are unexpected, it helps to specify input files one-by-one.
-
+In the input filtering process, UFO files are preferred to fonts, OTFs to TTFs.
+If results are unexpected, it helps to specify input files one-by-one.
 
 '''
 
@@ -40,6 +41,7 @@ from pathlib import Path
 from .proofing_helpers import fontSorter
 from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_ufo_paths, get_font_paths
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.stamps import timestamp
 from .proofing_helpers.names import get_name_overlap
@@ -835,7 +837,9 @@ def make_stroke_colors(font_list, args):
 
 def get_options(args=None):
     parser = argparse.ArgumentParser(
-        description=__doc__)
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter
+    )
 
     parser.add_argument(
         '-a', '--anchors',

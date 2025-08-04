@@ -26,6 +26,7 @@ from fontTools import ttLib
 
 from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_font_paths
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.fontSorter import sort_fonts
 from .proofing_helpers.names import get_ps_name, get_name_overlap
@@ -40,22 +41,13 @@ MARGIN = 20
 MARGIN_L = 6 * MARGIN
 
 
-def get_glyph_names(font_info):
-    '''
-    Collect some standard glyphs defining basic metrics,
-    as well as tallest and lowest glyphs.
-    '''
-    glyph_names = [
-        font_info.char_map.get(ord(char)) for
-        char in font_info.sample_string]
-    glyph_names += font_info.g_ymin
-    glyph_names += font_info.g_ymax
-    return glyph_names
-
-
 def get_options(args=None, description=__doc__):
     parser = argparse.ArgumentParser(
-        description=description)
+        # this is a deliberate construction,
+        # so the description can be overridden on import
+        description=description,
+        formatter_class=RawDescriptionAndDefaultsFormatter
+    )
 
     parser.add_argument(
         'input_dir',
@@ -179,6 +171,19 @@ class FontInfo(object):
         # do not assume the glyph name for 'H' to be 'H'
         cap_H_gname = self.char_map.get(ord('H'), '.notdef')
         self.cap_H_width = self.advance_widths.get(cap_H_gname)
+
+
+def get_glyph_names(font_info):
+    '''
+    Collect some standard glyphs defining basic metrics,
+    as well as tallest and lowest glyphs.
+    '''
+    glyph_names = [
+        font_info.char_map.get(ord(char)) for
+        char in font_info.sample_string]
+    glyph_names += font_info.g_ymin
+    glyph_names += font_info.g_ymax
+    return glyph_names
 
 
 def get_string_bounds(f_info, glyph_names):

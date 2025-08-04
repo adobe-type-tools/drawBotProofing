@@ -34,6 +34,7 @@ except ModuleNotFoundError:
     )
 
 from .proofing_helpers.files import get_font_paths
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.fontSorter import sort_fonts
 
 IN_UI = 'drawBot.ui' in sys.modules
@@ -45,7 +46,7 @@ if IN_UI:
 def get_options(args=None, description=__doc__):
     parser = argparse.ArgumentParser(
         description=description,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        formatter_class=RawDescriptionAndDefaultsFormatter,
     )
 
     parser.add_argument(
