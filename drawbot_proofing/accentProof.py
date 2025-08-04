@@ -25,6 +25,7 @@ import re
 
 from pathlib import Path
 from .proofing_helpers import fontSorter
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.stamps import timestamp
 from .proofing_helpers.files import (
     get_font_paths, chain_charset_texts)
@@ -206,7 +207,8 @@ def find_words_containing(input_dict, word_list):
 
 def get_options(args=None):
     parser = argparse.ArgumentParser(
-        description=__doc__
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter
     )
     parser.add_argument(
         'input',

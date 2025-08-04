@@ -27,6 +27,7 @@ import drawBot as db
 from pathlib import Path
 from .proofing_helpers import fontSorter, charsets
 from .proofing_helpers.files import get_font_paths
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import ADOBE_NOTDEF
 from .proofing_helpers.names import get_name_overlap
 
@@ -37,7 +38,7 @@ def get_args(args=None):
 
     parser = argparse.ArgumentParser(
         description=(__doc__),
-        formatter_class=argparse.RawTextHelpFormatter,
+        formatter_class=RawDescriptionAndDefaultsFormatter,
     )
 
     parser.add_argument(

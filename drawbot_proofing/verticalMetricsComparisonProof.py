@@ -9,7 +9,10 @@
 Creates pages with example characters to visualize the variation
 of vertical metrics across a typeface family.
 
-Input: folder containing font or UFO files.
+Input (pick one):
+* folder(s) containing UFO files or font files
+* individual UFO- or font files
+* designspace file (UFO sources)
 
 '''
 

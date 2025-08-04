@@ -8,13 +8,14 @@ import subprocess
 
 from .proofing_helpers import fontSorter
 from .proofing_helpers.files import make_temp_font
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
 
 
 def get_args(default_args=None):
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=RawDescriptionAndDefaultsFormatter
     )
     parser.add_argument(
         'ff_a',
