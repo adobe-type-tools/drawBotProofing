@@ -696,7 +696,7 @@ def get_rows_columns(num_fonts, args):
             else:
                 columns = math.ceil(math.sqrt(num_fonts))
 
-    rows = math.ceil(num_fonts) // columns
+    rows = math.ceil(num_fonts / columns)
 
     return rows, columns
 
