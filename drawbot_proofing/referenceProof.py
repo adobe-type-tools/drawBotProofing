@@ -141,7 +141,7 @@ def font_path_to_ffi(font_path):
     Return a list of one (otf/ttf) or multiple (ttc) font file info objects.
     '''
     ffi_objects = []
-    if font_path.suffix == '.ttc':
+    if font_path.suffix.lower() == '.ttc':
         ttc_style_dict = get_ttc_styles(font_path)
         for font_number, ps_name in ttc_style_dict.items():
             ffi = FontFileInfo(font_path, ps_name, font_number)
@@ -167,7 +167,9 @@ def get_available_fonts(args):
         if input_path.is_dir():  # find fonts in input_path
             font_paths = (
                 list(input_path.rglob('*.otf')) +
-                list(input_path.rglob('*.tt[fc]')))
+                list(input_path.rglob('*.OTF')) +
+                list(input_path.rglob('*.tt[fc]')) +
+                list(input_path.rglob('*.TT[FC]')))
 
             for font_path in font_paths:
                 if (
@@ -325,8 +327,8 @@ def get_options(args=None):
         '--pagesize',
         choices=[size for size in db.sizes() if "Landscape" not in size],
         default="Letter",
-        help='page size'
-    )
+        help='page size')
+
     parser.add_argument(
         '--landscape',
         default=False,
