@@ -59,7 +59,7 @@ def get_ufo_paths(input_path, filter='font.ufo'):
             return [path]
         else:
             ufo_paths = list(path.rglob('*.ufo')) + list(path.rglob('*.UFO'))
-    elif path.suffix == '.designspace':
+    elif path.suffix.lower() == '.designspace':
         doc = DesignSpaceDocument.fromfile(path)
         for source in doc.sources:
             source_path = Path(source.path).resolve()
