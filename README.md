@@ -81,26 +81,6 @@ Input: font file(s) or folder of fonts.
 
 ----
 
-### `comparison-proof`
-
-Create lines for a string of characters, set in all fonts that support it.
-The choice of fonts is either all installed fonts (no argument), or all fonts
-in a given folder tree. The font list can be filtered by supplying a regular
-expression.
-
-This proof helps solving the question:
-“How do other fonts deal with this weird glyph?”
-
-Slow.
-
-![comparisonProof.py](_images/comparisonProof_1.png)
-
-![comparisonProof.py](_images/comparisonProof_2.png)
-
-![comparisonProof.py](_images/comparisonProof_3.png)
-
-----
-
 ### `context-proof`
 
 Creates example pages for usage of a specific letter or letter combination.
@@ -168,6 +148,26 @@ Input: folder containing UFO or font files, or individual font- or UFO files.
 ![glyphsetProof.py](_images/glyphsetProof_2.png)
 
 ![glyphsetProof.py](_images/glyphsetProof_3.png)
+
+----
+
+### `reference-proof`
+
+Create lines for a string of characters, set in all fonts that support it.
+The choice of fonts is either all installed fonts (no argument), or all fonts
+in a given folder tree. The font list can be filtered by supplying a regular
+expression.
+
+This proof helps solving the question:
+“How do other fonts deal with this weird glyph?”
+
+Slow.
+
+![referenceProof.py](_images/referenceProof_1.png)
+
+![referenceProof.py](_images/referenceProof_2.png)
+
+![referenceProof.py](_images/referenceProof_3.png)
 
 ----
 

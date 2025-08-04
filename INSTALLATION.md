@@ -48,7 +48,7 @@ After installation, the following commands will be available:
 - `alphabet-proof` - Create alphabet proofs for different writing systems
 - `charset-proof` - Generate character set proofs
 - `context-proof` - Create contextual proofs for specific characters
-- `comparison-proof` - Compare multiple fonts side by side
+- `reference-proof` - Compare multiple fonts side by side
 
 ### Advanced Tools
 - `glyph-proof` - Generate various glyph proofs
