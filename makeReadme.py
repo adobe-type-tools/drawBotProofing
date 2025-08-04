@@ -16,6 +16,17 @@ import ast
 from pathlib import Path
 
 
+def get_short_name(file):
+    with open('pyproject.toml') as blob:
+        toml_lines = blob.read().splitlines()
+
+    commands = [li for li in toml_lines if li.endswith(':main"')]
+    for line in commands:
+        short_name, module_name = line.split(' = ')
+        if module_name == f'"drawbot_proofing.{file.stem}:main"':
+            return short_name
+
+
 def make_doc_snippet(file):
     '''
     Read the doc string of a Python script, and return it in markdown format.
@@ -31,11 +42,14 @@ def make_doc_snippet(file):
         img.suffix == '.png'])
 
     if file.suffix == '.py' and file.name != '__init__.py':
+        headline = get_short_name(file)
+        if not headline:
+            headline = file.name
         body = ast.parse(''.join(open(file)))
         docstring = ast.get_docstring(body)
 
         if docstring:
-            doc_snippet = f'### `{file.name}`\n\n{docstring}\n'
+            doc_snippet = f'### `{headline}`\n\n{docstring}\n'
             if images:
                 for image_file in images:
                     doc_snippet += f'\n![{file.name}](_images/{image_file.name})\n'
@@ -49,20 +63,23 @@ header = '''\
 
 ## Prerequisites
 
-- we recommend using a Python virtual environment. You can easily create and activate one with the
-following commands in Terminal:
-```
+- we recommend using a Python virtual environment. You can easily create
+and activate one with the following commands in Terminal:
+
+```bash
 python3 -m venv my_venv
 source my_venv/bin/activate
 ```
 
-- once you have a virtual environment activated, install `drawBot` and script dependencies by running
-the following command from the same directory where this file resides:
-```
-python -m pip install -r requirements.txt
-```
+- once you have a virtual environment activated, the proofing tools themselves
+can be installed via `pip`:
 
-You're now ready to run the scripts!
+```bash
+pip install git+https://github.com/adobe-type-tools/drawBotProofing.git
+```
+Further installation instructions can be found in [INSTALLATION.md](INSTALLATION.md).
+
+You’re now ready to start proofing!
 
 ----
 

@@ -2,25 +2,28 @@
 
 ## Prerequisites
 
-- we recommend using a Python virtual environment. You can easily create and activate one with the
-following commands in Terminal:
-```
+- we recommend using a Python virtual environment. You can easily create
+and activate one with the following commands in Terminal:
+
+```bash
 python3 -m venv my_venv
 source my_venv/bin/activate
 ```
 
-- once you have a virtual environment activated, install `drawBot` and script dependencies by running
-the following command from the same directory where this file resides:
-```
-python -m pip install -r requirements.txt
-```
+- once you have a virtual environment activated, the proofing tools themselves
+can be installed via `pip`:
 
-You're now ready to run the scripts!
+```bash
+pip install git+https://github.com/adobe-type-tools/drawBotProofing.git
+```
+Further installation instructions can be found in [INSTALLATION.md](INSTALLATION.md).
+
+You’re now ready to start proofing!
 
 ----
 
 
-### `accentProof.py`
+### `accent-proof`
 
 Proof of all accents with a representation of all glyphs using that accent,
 and example words for each accent (both upper- and lowercase).
@@ -35,7 +38,7 @@ Input: single font or folder containing font files.
 
 ----
 
-### `alphabetProof.py`
+### `alphabet-proof`
 
 Creates example pages for:
 
@@ -56,7 +59,7 @@ Input: one or more font files.
 
 ----
 
-### `charsetProof.py`
+### `charset-proof`
 
 Visualizes a given (Adobe) character set.
 The default charset is AL-3. Code points not supported in the font at hand will
@@ -78,7 +81,7 @@ Input: font file(s) or folder of fonts.
 
 ----
 
-### `comparisonProof.py`
+### `comparison-proof`
 
 Create lines for a string of characters, set in all fonts that support it.
 The choice of fonts is either all installed fonts (no argument), or all fonts
@@ -98,7 +101,7 @@ Slow.
 
 ----
 
-### `contextProof.py`
+### `context-proof`
 
 Creates example pages for usage of a specific letter or letter combination.
 
@@ -113,7 +116,7 @@ Input: font file(s) or folder of fonts.
 
 ----
 
-### `figureSpacingProof.py`
+### `figure-spacing-proof`
 
 Simple script check figure spacing in UFOs (without kerning).
 For each figure suffix (such as .tosf), a new spacing page is made.
@@ -124,7 +127,7 @@ Input: folder containing UFO or font files, or individual font- or UFO files.
 
 ----
 
-### `glyphProof.py`
+### `glyph-proof`
 
 Creates a PDF document which helps comparing glyphs to each other.
 Various modes are possible – the default is an
@@ -132,8 +135,13 @@ Various modes are possible – the default is an
 Other modes include `gradient` (horizontal waterfall), `single` (page-by-page),
 and `overlay` (superimposed outline view).
 
-Input: folder containing UFO files or fonts, or individual UFOs/fonts.
-In the input filtering process, UFO files are preferred to fonts.
+Input (pick one):
+    * folder(s) containing UFO files or font files
+    * individual UFO- or font files
+    * designspace file (UFO sources)
+
+In the input filtering process, UFO files are preferred to fonts, OTFs to TTFs,
+so if results are unexpected, it helps to specify input files one-by-one.
 
 ![glyphProof.py](_images/glyphProof_1.png)
 
@@ -145,7 +153,7 @@ In the input filtering process, UFO files are preferred to fonts.
 
 ----
 
-### `glyphsetProof.py`
+### `glyphset-proof`
 
 Visualizes the complete glyphset of a font or UFO on a single page.
 The output is good to use with a diffing tool like `diff-pdf` in a later step.
@@ -163,7 +171,7 @@ Input: folder containing UFO or font files, or individual font- or UFO files.
 
 ----
 
-### `textProof.py`
+### `text-proof`
 
 Create example paragraphs corresponding to a given character set.
 
@@ -192,7 +200,7 @@ Input:
 
 ----
 
-### `unicodeChartProof.py`
+### `unicode-chart-proof`
 
 Creates character charts similar to those appearing in The Unicode® Standard,
 but using the supplied font (and only the characters present in the font).
@@ -209,7 +217,7 @@ CLI Inputs: see help
 
 ----
 
-### `verticalMetricsComparisonProof.py`
+### `vertical-metrics-comparison-proof`
 
 Creates pages with example characters to visualize the variation
 of vertical metrics across a typeface family.
@@ -220,7 +228,7 @@ Input: folder containing font or UFO files.
 
 ----
 
-### `verticalMetricsProof.py`
+### `vertical-metrics-proof`
 
 Creates simple view which illustrates all vertical metrics
 set in the font metadata. Additionally, tallest and lowest glyphs are shown.
@@ -237,13 +245,13 @@ Input: font file
 
 ----
 
-### `waterfallProof.py`
+### `waterfall-proof`
 
 Creates pages of example words for a list of fonts, arranged in waterfall-like
 fashion (both vertically and horizontally).
 
 The proof text comes from the waterfall_horizontal and waterfall_vertical text
-files found in the _content folder.
+files found in the `_content` folder.
 
 Input: folder containing font files.
 
