@@ -167,7 +167,8 @@ class ProofingFont(FontContainer):
             # the `list` wrapper is deliberate.
             # If we just return the getGlyphOrder object it is possible to
             # accidentally modify it in memory
-            return list(f.getGlyphOrder())
+            glyph_order = list(f.getGlyphOrder())
+            return glyph_order
 
     def get_upm(self, f):
         if self.flavor == 'dc_font':
@@ -754,7 +755,11 @@ def get_glyph_names(proofing_fonts, contours=False):
     '''
     glyph_names = []
     template_font = proofing_fonts[0]
-    template_gnames = template_font.glyph_order
+    # weird (or perhaps I don’t understand it properly) -- when I don’t wrap
+    # template_font.glyph_order with a list (effectively making a copy),
+    # then the actual glyph_order object of the template font object grows with
+    # the list of template_gnames
+    template_gnames = list(template_font.glyph_order)
 
     if contours:
         # only contours, no empty or composite glyphs
@@ -777,6 +782,7 @@ def get_glyph_names(proofing_fonts, contours=False):
                 gn not in glyph_names
             ]
             glyph_names.extend(addl_glyph_names)
+
     return glyph_names
 
 
