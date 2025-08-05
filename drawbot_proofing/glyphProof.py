@@ -36,6 +36,7 @@ import defcon
 import drawBot as db
 
 from fontTools import ttLib
+from fontTools.pens.recordingPen import RecordingPen
 from pathlib import Path
 
 from .proofing_helpers import fontSorter
@@ -313,7 +314,7 @@ def polar_point(center, radius, angle):
 
 def get_bounds(g):
     '''
-    find out if a glyph has contours or not
+    return the bounding rect of a glyph
     '''
     if isinstance(g, defcon.Glyph):
         bounds = g.bounds
@@ -325,6 +326,17 @@ def get_bounds(g):
     return bounds
 
 
+def get_contours(g):
+    '''
+    find out if a glyph has contours or not
+    '''
+    p = RecordingPen()
+    g.draw(p)
+    if set(dict(p.value).keys()) == {'addComponent'}:
+        return None
+    return p.value
+
+
 def get_cover_font_and_glyph(proofing_fonts):
     '''
     Gets a random glyph (with outlines) to display on cover
@@ -333,8 +345,8 @@ def get_cover_font_and_glyph(proofing_fonts):
     random_pf = db.choice(proofing_fonts)
     random_gname = db.choice(random_pf.glyph_order)
     glyph = random_pf.container[random_gname]
-    bounds = get_bounds(glyph)
-    if not bounds:
+    outlines = get_contours(glyph)
+    if not outlines:
         _, glyph = get_cover_font_and_glyph(proofing_fonts)
 
     return random_pf, glyph
@@ -756,12 +768,14 @@ def get_glyph_names(proofing_fonts, contours=False):
     if contours:
         # only contours, no empty or composite glyphs
         glyph_names = [
-            gn for gn in template_gnames if len(template_font[gn])]
+            gn for gn in template_gnames if
+            get_contours(template_font.container[gn])
+        ]
 
         for pf in proofing_fonts[1:]:
             addl_glyph_names = [
                 gn for gn in pf.glyph_order if
-                len(pf.font[gn]) and gn not in glyph_names
+                get_contours(pf.container[gn]) and gn not in glyph_names
             ]
             glyph_names.extend(addl_glyph_names)
 
@@ -770,8 +784,7 @@ def get_glyph_names(proofing_fonts, contours=False):
         glyph_names = template_gnames
         for pf in proofing_fonts[1:]:
             addl_glyph_names = [
-                gn for gn in pf.glyph_order if
-                gn not in glyph_names
+                gn for gn in pf.glyph_order if gn not in glyph_names
             ]
             glyph_names.extend(addl_glyph_names)
 
