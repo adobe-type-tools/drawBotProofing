@@ -369,7 +369,7 @@ def get_global_family_name(proofing_fonts):
         if overlap and len(overlap) > 3:
             global_fn = overlap
         else:
-            global_fn = ', '.join(unique_family_names[:2]) + ' etc.'
+            global_fn = ', '.join(unique_family_names[:2]) + ', etc'
 
     if 'It' not in global_fn and all(['Italic' in sn for sn in style_names]):
         global_fn += ' Italic'
