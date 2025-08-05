@@ -39,7 +39,7 @@ from fontTools import ttLib
 from pathlib import Path
 
 from .proofing_helpers import fontSorter
-from .proofing_helpers.drawing import draw_glyph
+from .proofing_helpers.drawing import draw_glyph, get_glyph_path
 from .proofing_helpers.files import get_ufo_paths, get_font_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
@@ -447,41 +447,33 @@ def make_overlay_glyph_page(glyph_name, proofing_fonts, stroke_colors, page_size
 
 def make_gradient_page(glyph_name, proofing_fonts, page_size):
 
-    # xxx only works for fonts with the same UPM across styles
     page_width, page_height = page_size
-    global_scale = BOX_WIDTH / 1000
     db.newPage(*page_size)
 
-    if proofing_fonts[0].flavor == 'dc_font':
-        combined_width = sum([
-            pf.container[glyph_name].width
-            for pf in proofing_fonts if glyph_name in pf.container])
-    else:
-        hmtx_metrics = [
-            pf.font['hmtx'].metrics.get(glyph_name, (0, 0))
-            for pf in proofing_fonts if glyph_name in pf.glyph_order]
+    bp_container = db.BezierPath()
+    global_scale = BOX_WIDTH / 1000
 
-        # this would take different UPMs into account
-        # combined_width = sum([
-        #     m[0] * (1000 / proofing_fonts[i].upm)
-        #     for i, m in enumerate(hmtx_metrics)])
+    offset = 0
+    for pf in proofing_fonts:
+        upm = pf.upm
+        scale_factor = 1000 / upm
+        if glyph_name in pf.container.keys():
+            glyph = pf.container[glyph_name]
+            glyph_path = get_glyph_path(glyph)
+            bp = db.BezierPath(glyph_path)
+            bp.translate(offset, 0)
+            bp.scale(scale_factor)
+            bp_container.appendPath(bp)
+            offset += glyph.width * scale_factor
 
-        combined_width = sum([m[0] for i, m in enumerate(hmtx_metrics)])
-
-    upms = [pf.upm for pf in proofing_fonts]
-    upm_factor = 1000 / upms[0]
-    # x_offset = (page_width - combined_width * scale_factor) / 2
-    x_offset = (page_width - combined_width * global_scale * upm_factor) / 2
+    container_width = offset
+    x_offset = (page_width - container_width) / 2
     y_offset = 100
 
     with db.savedState():
+        db.scale(global_scale, center=(page_width / 2, 100))
         db.translate(x_offset, y_offset)
-        db.scale(global_scale * upm_factor)
-        for i, pf in enumerate(proofing_fonts):
-            if glyph_name in pf.container.keys():
-                glyph = pf.container[glyph_name]
-                draw_glyph(glyph)
-                db.translate(glyph.width, 0)
+        db.drawPath(bp_container)
 
     footer = db.FormattedString(
         txt=glyph_name, font=FONT_MONO, fontSize=10, align='center')

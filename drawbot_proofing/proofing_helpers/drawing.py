@@ -11,9 +11,10 @@ from fontParts import fontshell
 from fontTools.pens.cocoaPen import CocoaPen
 
 
-def draw_glyph(glyph):
+def get_glyph_path(glyph):
     '''
-    global drawing method, which allows passing either UFO- or fontTools glyphs
+    global path retrieval method,
+    which allows passing either UFO- or fontTools glyphs
     '''
     if isinstance(
         glyph, (defcon.objects.glyph.Glyph, fontshell.glyph.RGlyph)
@@ -24,4 +25,10 @@ def draw_glyph(glyph):
         # font
         cpen = CocoaPen(glyph.glyphSet)
     glyph.draw(cpen)
-    db.drawPath(cpen.path)
+
+    return cpen.path
+
+
+def draw_glyph(glyph):
+    path = get_glyph_path(glyph)
+    db.drawPath(path)
