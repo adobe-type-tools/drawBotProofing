@@ -211,9 +211,7 @@ class ProofingFont(FontContainer):
             if not ('GPOS' in f):
                 return {}
 
-            # lu_types = [4, 5, 6]
             lookups = f['GPOS'].table.LookupList.Lookup
-
             # mark-to-base
             m2b_lookups = [lu for lu in lookups if lu.LookupType == 4]
             for lu in m2b_lookups:
@@ -221,18 +219,21 @@ class ProofingFont(FontContainer):
                 for mbp in lu.SubTable:
                     base_glyphs = mbp.BaseCoverage.glyphs
                     mark_glyphs = mbp.MarkCoverage.glyphs
-                    for mi, mr in enumerate(mbp.MarkArray.MarkRecord):
+                    mark_record = mbp.MarkArray.MarkRecord
+                    base_record = mbp.BaseArray.BaseRecord
+                    for mi, mr in enumerate(mark_record):
                         glyph = mark_glyphs[mi]
                         anchor = mr.MarkAnchor
-                        coords = anchor.XCoordinate, anchor.YCoordinate
-                        anchor_dict.setdefault(glyph, []).append(coords)
-
-                    for bi, br in enumerate(mbp.BaseArray.BaseRecord):
-                        glyph = base_glyphs[bi]
-                        for anchor in br.BaseAnchor:
+                        if anchor:
                             coords = anchor.XCoordinate, anchor.YCoordinate
                             anchor_dict.setdefault(glyph, []).append(coords)
 
+                    for bi, br in enumerate(base_record):
+                        glyph = base_glyphs[bi]
+                        for anchor in br.BaseAnchor:
+                            if anchor:
+                                coords = anchor.XCoordinate, anchor.YCoordinate
+                                anchor_dict.setdefault(glyph, []).append(coords)
             # mark-to-ligature
             m2l_lookups = [lu for lu in lookups if lu.LookupType == 5]
             for lu in m2l_lookups:
@@ -240,18 +241,23 @@ class ProofingFont(FontContainer):
                 for mlp in lu.SubTable:
                     liga_glyphs = mlp.LigatureCoverage.glyphs
                     mark_glyphs = mlp.MarkCoverage.glyphs
-                    for mi, mr in enumerate(mlp.MarkArray.MarkRecord):
+                    mark_record = mlp.MarkArray.MarkRecord
+                    liga_attach = mlp.LigatureArray.LigatureAttach
+                    for mi, mr in enumerate(mark_record):
                         glyph = mark_glyphs[mi]
                         anchor = mr.MarkAnchor
-                        coords = anchor.XCoordinate, anchor.YCoordinate
-                        anchor_dict.setdefault(glyph, []).append(coords)
+                        if anchor:
+                            coords = anchor.XCoordinate, anchor.YCoordinate
+                            anchor_dict.setdefault(glyph, []).append(coords)
 
-                    for li, la in enumerate(mlp.LigatureArray.LigatureAttach):
+                    for li, la in enumerate(liga_attach):
                         glyph = liga_glyphs[li]
                         for cr in la.ComponentRecord:
                             for anchor in cr.LigatureAnchor:
-                                coords = anchor.XCoordinate, anchor.YCoordinate
-                                anchor_dict.setdefault(glyph, []).append(coords)
+                                # anchors can be empty
+                                if anchor:
+                                    coords = anchor.XCoordinate, anchor.YCoordinate
+                                    anchor_dict.setdefault(glyph, []).append(coords)
 
             # mark-to-mark
             m2m_lookups = [lu for lu in lookups if lu.LookupType == 6]
@@ -260,16 +266,92 @@ class ProofingFont(FontContainer):
                 for mmp in lu.SubTable:
                     mark1_glyphs = mmp.Mark1Coverage.glyphs
                     mark2_glyphs = mmp.Mark2Coverage.glyphs
-                    for mi, mr in enumerate(mmp.Mark1Array.MarkRecord):
+                    mark1_record = mmp.Mark1Array.MarkRecord
+                    mark2_record = mmp.Mark2Array.Mark2Record
+                    for mi, mr in enumerate(mark1_record):
                         glyph = mark1_glyphs[mi]
+                        anchor = mr.MarkAnchor
+                        if anchor:
+                            coords = anchor.XCoordinate, anchor.YCoordinate
+                            anchor_dict.setdefault(glyph, []).append(coords)
+                    for mi, mr in enumerate(mark2_record):
+                        glyph = mark2_glyphs[mi]
+                        for anchor in mr.Mark2Anchor:
+                            if anchor:
+                                coords = anchor.XCoordinate, anchor.YCoordinate
+                                anchor_dict.setdefault(glyph, []).append(coords)
+
+            ext_lookups = [lu for lu in lookups if lu.LookupType == 9]
+            for lu in ext_lookups:
+                x_m2b_lookups = [
+                    exp for exp in lu.SubTable if exp.ExtensionLookupType == 4]
+                x_m2l_lookups = [
+                    exp for exp in lu.SubTable if exp.ExtensionLookupType == 5]
+                x_m2m_lookups = [
+                    exp for exp in lu.SubTable if exp.ExtensionLookupType == 6]
+
+                # mark-to-base
+                for x_lu in x_m2b_lookups:
+                    base_glyphs = x_lu.ExtSubTable.BaseCoverage.glyphs
+                    mark_glyphs = x_lu.ExtSubTable.MarkCoverage.glyphs
+                    mark_record = x_lu.ExtSubTable.MarkArray.MarkRecord
+                    base_record = x_lu.ExtSubTable.BaseArray.BaseRecord
+
+                    for mi, mr in enumerate(mark_record):
+                        glyph = mark_glyphs[mi]
                         anchor = mr.MarkAnchor
                         coords = anchor.XCoordinate, anchor.YCoordinate
                         anchor_dict.setdefault(glyph, []).append(coords)
-                    for mi, mr in enumerate(mmp.Mark2Array.Mark2Record):
-                        glyph = mark2_glyphs[mi]
-                        for anchor in mr.Mark2Anchor:
+
+                    for bi, br in enumerate(base_record):
+                        glyph = base_glyphs[bi]
+                        for anchor in br.BaseAnchor:
+                            # anchors can be empty
+                            if anchor:
+                                coords = anchor.XCoordinate, anchor.YCoordinate
+                                anchor_dict.setdefault(glyph, []).append(coords)
+
+                # mark-to-ligature
+                for x_lu in x_m2l_lookups:
+                    mlp = x_lu.ExtSubTable
+                    liga_glyphs = mlp.LigatureCoverage.glyphs
+                    mark_glyphs = mlp.MarkCoverage.glyphs
+                    mark_record = mlp.MarkArray.MarkRecord
+                    liga_attach = mlp.LigatureArray.LigatureAttach
+
+                    for mi, mr in enumerate(mark_record):
+                        glyph = mark_glyphs[mi]
+                        anchor = mr.MarkAnchor
+                        if anchor:
                             coords = anchor.XCoordinate, anchor.YCoordinate
                             anchor_dict.setdefault(glyph, []).append(coords)
+
+                    for li, la in enumerate(liga_attach):
+                        glyph = liga_glyphs[li]
+                        for cr in la.ComponentRecord:
+                            for anchor in cr.LigatureAnchor:
+                                if anchor:
+                                    coords = anchor.XCoordinate, anchor.YCoordinate
+                                    anchor_dict.setdefault(glyph, []).append(coords)
+
+                # mark-to-mark
+                for x_lu in x_m2m_lookups:
+                    mark1_glyphs = x_lu.ExtSubTable.Mark1Coverage.glyphs
+                    mark2_glyphs = x_lu.ExtSubTable.Mark2Coverage.glyphs
+                    mark1_record = x_lu.ExtSubTable.Mark1Array.MarkRecord
+                    mark2_record = x_lu.ExtSubTable.Mark2Array.Mark2Record
+                    for mi, mr in enumerate(mark1_record):
+                        glyph = mark1_glyphs[mi]
+                        anchor = mr.MarkAnchor
+                        if anchor:
+                            coords = anchor.XCoordinate, anchor.YCoordinate
+                            anchor_dict.setdefault(glyph, []).append(coords)
+                    for mi, mr in enumerate(mark2_record):
+                        glyph = mark2_glyphs[mi]
+                        for anchor in mr.Mark2Anchor:
+                            if anchor:
+                                coords = anchor.XCoordinate, anchor.YCoordinate
+                                anchor_dict.setdefault(glyph, []).append(coords)
 
         return anchor_dict
 
