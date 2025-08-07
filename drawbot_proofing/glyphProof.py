@@ -832,7 +832,7 @@ def filter_glyph_names(glyph_names, regex_str):
         return matches
     else:
         print('no matches for regular expression')
-        return glyph_names
+        return []
 
 
 def get_glyph_names(proofing_fonts, contours=False):
@@ -970,8 +970,13 @@ def get_options(args=None):
         '-l', '--columns',
         required=False,
         type=int,
-        help='override automatic number of columns'
-    )
+        help='override automatic number of columns')
+
+    parser.add_argument(
+        '--headless',
+        action='store_true',
+        help='do not automatically open PDF files')
+
     parser.add_argument(
         'd',
         action='store',
@@ -1037,10 +1042,13 @@ def make_proof(proofing_fonts, args):
     else:
         output_path = make_output_path(global_family_name, output_mode)
 
-    db.saveImage(output_path)
-    print('saved PDF to', compress_user(output_path))
-    subprocess.call(['open', output_path])
+    if len(glyph_list):
+        db.saveImage(output_path)
+        print('saved PDF to', compress_user(output_path))
+
     db.endDrawing()
+    if not args.headless:
+        subprocess.call(['open', output_path])
 
 
 def main(test_args=None):
