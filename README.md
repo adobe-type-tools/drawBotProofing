@@ -32,7 +32,8 @@ Additionally, words with “merged” non-abc glyphs (such as æðøß) will be 
 This script is currently limited to AL-3, an extension to AL-4 and beyond is
 thinkable.
 
-Input: single font or folder containing font files.
+Input:
+font file(s) or folder(s) containing font files.
 
 ![accentProof.py](_images/accentProof.png)
 
@@ -48,8 +49,10 @@ Creates example pages for:
 
 Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
 (`all`). Writing systems supported are `lat`, `grk`, `cyr`, and `figures`.
+Kerning can be toggled off.
 
-Input: one or more font files.
+Input:
+font file(s) or folder(s) containing font files.
 
 ![alphabetProof.py](_images/alphabetProof_1.png)
 
@@ -71,7 +74,8 @@ More information on Adobe’s character sets:
 - [Cyrillic](https://github.com/adobe-type-tools/adobe-cyrillic-charsets)
 - [Greek](https://github.com/adobe-type-tools/adobe-greek-charsets)
 
-Input: font file(s) or folder of fonts.
+Input:
+font file(s) or folder(s) containing font files.
 
 ![charsetProof.py](_images/charsetProof_1.png)
 
@@ -88,7 +92,8 @@ Creates example pages for usage of a specific letter or letter combination.
 Needs a word list as an input file, such as the word lists available at
 https://github.com/hermitdave/FrequencyWords/tree/master/content/2016
 
-Input: font file(s) or folder of fonts.
+Input:
+font file(s) or folder(s) containing font files.
 
 ![contextProof.py](_images/contextProof_1.png)
 
@@ -98,13 +103,13 @@ Input: font file(s) or folder of fonts.
 
 ### `figure-spacing-proof`
 
-Simple script check figure spacing in UFOs (without kerning).
-For each figure suffix (such as .tosf), a new spacing page is made.
+Simple script to check figure spacing in fonts or UFOs (without kerning).
+For each figure suffix found (such as .tosf), a new spacing page is made.
 
 Input (pick one):
 * folder(s) containing UFO files or font files
 * individual UFO- or font files
-* designspace file (UFO sources)
+* designspace file (for proofing UFO sources)
 
 ![figureSpacingProof.py](_images/figureSpacingProof.png)
 
@@ -123,7 +128,7 @@ Other modes include
 Input (pick one):
 * folder(s) containing UFO files or font files
 * individual UFO- or font files
-* designspace file (UFO sources)
+* designspace file (for proofing UFO sources)
 
 In the input filtering process, UFO files are preferred to fonts, OTFs to TTFs.
 If results are unexpected, it helps to specify input files one-by-one.
@@ -149,7 +154,7 @@ use `-r ".*dieresis"` to show all glyphs whose names end with -dieresis).
 Input (pick one):
 * folder(s) containing UFO files or font files
 * individual UFO- or font files
-* designspace file (UFO sources)
+* designspace file (for proofing UFO sources)
 
 ![glyphsetProof.py](_images/glyphsetProof_1.png)
 
@@ -159,17 +164,37 @@ Input (pick one):
 
 ----
 
+### `overlay-proof`
+
+In-process proofing tool overlaying releated fonts on top of each other.
+
+To-Do:
+- do not rely on built-in line spacing and hhea ascender
+- make font pairing smarter
+- allow overlaying static and VF
+
+Input (pick one):
+* folder(s) containing files
+* individual font files
+
+![overlayProof.py](_images/overlayProof.png)
+
+----
+
 ### `reference-proof`
 
-Create lines for a string of characters, set in all fonts that support it.
+Create samples for a string of characters, set in all fonts that support it.
 The choice of fonts is either all installed fonts (no argument), or all fonts
 in a given folder tree. The font list can be filtered by supplying a regular
 expression.
 
-This proof helps solving the question:
+This proof helps solving the question
 “How do other fonts deal with this weird glyph?”
 
-Slow.
+Input:
+1. sample characters
+2. folder containing font files
+   (or no argument, which means parsing all installed fonts)
 
 ![referenceProof.py](_images/referenceProof_1.png)
 

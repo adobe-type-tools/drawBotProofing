@@ -6,13 +6,13 @@
 # it.
 
 '''
-Simple script check figure spacing in UFOs (without kerning).
-For each figure suffix (such as .tosf), a new spacing page is made.
+Simple script to check figure spacing in fonts or UFOs (without kerning).
+For each figure suffix found (such as .tosf), a new spacing page is made.
 
 Input (pick one):
 * folder(s) containing UFO files or font files
 * individual UFO- or font files
-* designspace file (UFO sources)
+* designspace file (for proofing UFO sources)
 
 '''
 

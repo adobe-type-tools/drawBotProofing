@@ -13,7 +13,8 @@ Additionally, words with “merged” non-abc glyphs (such as æðøß) will be 
 This script is currently limited to AL-3, an extension to AL-4 and beyond is
 thinkable.
 
-Input: single font or folder containing font files.
+Input:
+font file(s) or folder(s) containing font files.
 
 '''
 
@@ -27,8 +28,7 @@ from pathlib import Path
 from .proofing_helpers import fontSorter
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.stamps import timestamp
-from .proofing_helpers.files import (
-    get_font_paths, chain_charset_texts)
+from .proofing_helpers.files import get_font_paths, chain_charset_texts
 from .proofing_helpers.globals import *
 
 DOC_SIZE = 'Letter'
@@ -138,14 +138,18 @@ def make_pages(content, my_font):
         make_pages(overflow, my_font)
 
 
-def make_output_name(input_path, font_list):
+def make_output_name(font_list):
     name = ['accentProof']
+    chunks = []
 
-    if len(font_list) == 1:
-        name.append(font_list[0].stem)
-    else:
-        name.append(input_path.name)
+    if len(font_list) >= 1:
+        chunks.append(font_list[0].stem)
+    if len(font_list) >= 2:
+        chunks.append(font_list[1].stem)
+    if len(font_list) >= 3:
+        chunks.append('etc')
 
+    name.append(', '.join(chunks))
     return ' '.join(name)
 
 
@@ -169,7 +173,8 @@ def make_example_words(codepoint, words_lc, num_words=10, randomize=True):
         example_words = words_lc
     elif codepoint == 0x030C:  # combining caron
         # make sure that both forms of the caron are shown
-        example_words = words_uc + ['neďeľné šťastný'] + words_lc[:num_words-2]
+        example_words = (
+            words_uc + ['neďeľné šťastný'] + words_lc[:num_words - 2])
     else:
         example_words = words_uc + words_lc
 
@@ -213,7 +218,8 @@ def get_options(args=None):
     parser.add_argument(
         'input',
         metavar='INPUT',
-        help='font file or folder containing font files',
+        nargs='+',
+        help='font file(s) or folder(s)',
     )
     parser.add_argument(
         '--headless',
@@ -226,9 +232,13 @@ def get_options(args=None):
 
 def main(test_args=None):
     args = get_options(test_args)
-    input_path = Path(args.input)
-    font_list = fontSorter.sort_fonts(
-        get_font_paths(input_path), alternate_italics=True)
+    font_list = []
+    for item in args.input:
+        # could be individual fonts or folder of fonts.
+        ip = Path(item)
+        # sort them one-by-one
+        font_list.extend(
+            fontSorter.sort_fonts(get_font_paths(ip), alternate_italics=True))
 
     if font_list:
         al3_words = collect_al3_words()
@@ -243,7 +253,7 @@ def main(test_args=None):
         for font_path in font_list:
             make_pages(content, font_path)
 
-        output_name = make_output_name(input_path, font_list)
+        output_name = make_output_name(font_list)
         output_path = Path(f'~/Desktop/{output_name}.pdf').expanduser()
 
         db.saveImage(output_path)

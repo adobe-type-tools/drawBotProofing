@@ -6,15 +6,18 @@
 # it.
 
 '''
-Create lines for a string of characters, set in all fonts that support it.
+Create samples for a string of characters, set in all fonts that support it.
 The choice of fonts is either all installed fonts (no argument), or all fonts
 in a given folder tree. The font list can be filtered by supplying a regular
 expression.
 
-This proof helps solving the question:
+This proof helps solving the question
 “How do other fonts deal with this weird glyph?”
 
-Slow.
+Input:
+1. sample characters
+2. folder containing font files
+   (or no argument, which means parsing all installed fonts)
 
 '''
 
@@ -217,7 +220,8 @@ def collect_font_objects(args):
                 supports_chars, zip(available_fonts, repeat(args.chars)))
             filtered_fonts = [
                 ffi for (ffi, support) in support_map if support is True]
-            print(f'Found {len(filtered_fonts)} fonts supporting "{args.chars}"')
+            print(
+                f'Found {len(filtered_fonts)} fonts supporting "{args.chars}"')
         except Exception as e:
             print(f'Error checking character support: {e}')
             return []
@@ -295,7 +299,6 @@ def get_options(args=None):
         metavar='',
         nargs='?',
         action='store',
-        default='abc123',
         help='characters to sample')
 
     parser.add_argument(
@@ -341,28 +344,31 @@ def get_options(args=None):
 
 def main(test_args=None):
     args = get_options(test_args)
-    font_objects = collect_font_objects(args)
+    if not args.chars:
+        print('Please specify sample characters.')
+    else:
+        font_objects = collect_font_objects(args)
 
-    all_paths = [str(ffi.path) for ffi in font_objects]
-    overlap_index = get_overlap_index(all_paths)
-    formatted_strings = []
+        all_paths = [str(ffi.path) for ffi in font_objects]
+        overlap_index = get_overlap_index(all_paths)
+        sample_strings = []
 
-    used_ps_names = []
-    for ffi in font_objects:
-        if ffi.ps_name not in used_ps_names:
-            formatted_strings.append(make_line(args, ffi))
-            used_ps_names.append(ffi.ps_name)
-            print(str(ffi.path)[overlap_index:])
+        used_ps_names = []
+        for ffi in font_objects:
+            if ffi.ps_name not in used_ps_names:
+                sample_strings.append(make_line(args, ffi))
+                used_ps_names.append(ffi.ps_name)
+                print(str(ffi.path)[overlap_index:])
 
-    if formatted_strings:
-        output_path = make_document(args, formatted_strings)
+        if sample_strings:
+            output_path = make_document(args, sample_strings)
 
-    if not args.headless:
-        if output_path.exists():
-            print(output_path)
-            subprocess.call(['open', output_path])
-        else:
-            print('No fonts found.')
+        if not args.headless:
+            if output_path.exists():
+                print(output_path)
+                subprocess.call(['open', output_path])
+            else:
+                print('No fonts found.')
 
 
 if __name__ == '__main__':

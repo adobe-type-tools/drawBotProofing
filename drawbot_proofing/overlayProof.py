@@ -1,3 +1,24 @@
+# Copyright 2025 Adobe
+# All Rights Reserved.
+
+# NOTICE: Adobe permits you to use, modify, and distribute this file in
+# accordance with the terms of the Adobe license agreement accompanying
+# it.
+
+'''
+In-process proofing tool overlaying releated fonts on top of each other.
+
+To-Do:
+- do not rely on built-in line spacing and hhea ascender
+- make font pairing smarter
+- allow overlaying static and VF
+
+Input (pick one):
+* folder(s) containing files
+* individual font files
+
+'''
+
 from fontTools.ttLib import TTFont
 from pathlib import Path
 from random import choice
@@ -213,7 +234,7 @@ def main():
             print(f'\t{font_b.name}')
             print()
 
-        pdf_name = f'overlay_fonts {" vs ".join(p.name for p in paths)}.pdf'
+        pdf_name = f'overlay {" vs ".join(p.name for p in paths)}.pdf'
 
         for font_pair in fonts:
             temp_fonts = [
@@ -224,9 +245,9 @@ def main():
         fonts = paths
         ps_names = [get_ps_name(f) for f in fonts]
         if len(set(ps_names)) == 1:
-            pdf_name = f'overlay_fonts {ps_names[0]}.pdf'
+            pdf_name = f'overlay {ps_names[0]}.pdf'
         else:
-            pdf_name = f'overlay_fonts {" vs ".join(ps_names)}.pdf'
+            pdf_name = f'overlay {" vs ".join(ps_names)}.pdf'
 
         ps_names = [get_ps_name(f) for f in fonts]
         temp_fonts = [

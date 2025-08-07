@@ -17,7 +17,7 @@ Other modes include
 Input (pick one):
 * folder(s) containing UFO files or font files
 * individual UFO- or font files
-* designspace file (UFO sources)
+* designspace file (for proofing UFO sources)
 
 In the input filtering process, UFO files are preferred to fonts, OTFs to TTFs.
 If results are unexpected, it helps to specify input files one-by-one.
@@ -923,7 +923,8 @@ def make_stroke_colors(font_list, args):
             stroke_colors.append(colorsys.hls_to_rgb(hue, 0.5, 1))
     else:
         # all strokes are black
-        stroke_colors = [(0, 0, 0, 1) for f in font_list]
+        # stroke_colors = [(0, 0, 0, 1) for f in font_list]
+        stroke_colors = [(1, 1, 1, 1) for f in font_list]
 
     return stroke_colors
 
@@ -978,11 +979,10 @@ def get_options(args=None):
         help='do not automatically open PDF files')
 
     parser.add_argument(
-        'd',
-        action='store',
-        metavar='FOLDER',
+        'input',
+        metavar='INPUT',
         nargs='+',
-        help='folder to crawl')
+        help='file(s) or folder(s)')
 
     return parser.parse_args(args)
 
@@ -1053,13 +1053,13 @@ def make_proof(proofing_fonts, args):
 
 def main(test_args=None):
     args = get_options(test_args)
-    proofing_fonts = build_proofing_fonts(args.d)
+    proofing_fonts = build_proofing_fonts(args.input)
     if proofing_fonts:
         for pf in proofing_fonts:
             print(pf.family_name, pf.style_name)
         make_proof(proofing_fonts, args)
     else:
-        print(f'no fonts or UFOs found in {args.d}')
+        print(f'no fonts or UFOs found in {args.input}')
 
 
 if __name__ == '__main__':

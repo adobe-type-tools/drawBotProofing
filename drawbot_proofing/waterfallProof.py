@@ -31,16 +31,10 @@ def get_options():
         description=__doc__)
 
     parser.add_argument(
-        'd',
+        'input',
         action='store',
         metavar='FOLDER',
         help='folder to crawl')
-
-    parser.add_argument(
-        '--date',
-        default=False,
-        action='store_true',
-        help='date proof file')
 
     parser.add_argument(
         '--pointsize', '-p',
@@ -70,24 +64,18 @@ def get_options():
     return parser.parse_args()
 
 
-def main():
-    args = get_options()
-    input_dir = Path(args.d)
+def make_proof(input_dir, args):
     content_dir = Path(__file__).parent / '_content'
-
-    if input_dir.is_dir():
-        font_paths = get_font_paths(input_dir)
-        fonts = fontSorter.sort_fonts(font_paths, alternate_italics=True)
-    else:
-        sys.exit(f'{args.d} is not a directory')
-
-    db.newDrawing()
-    PT_SIZE = args.pointsize
-    LEADING = PT_SIZE * 1.2
-    MARGIN = 48
-
     v_content = read_text_file(content_dir / 'waterfall_vertical.txt')
     h_content = read_text_file(content_dir / 'waterfall_horizontal.txt')
+
+    font_paths = get_font_paths(input_dir)
+    fonts = fontSorter.sort_fonts(font_paths, alternate_italics=True)
+
+    db.newDrawing()
+    pt_size = args.pointsize
+    leading = pt_size * 1.2
+    margin = 48
 
     # create a new page for each word in the vertical content text file:
     for line in v_content.split('\n'):
@@ -99,33 +87,30 @@ def main():
         }
 
         db.newPage('Legal')
-        top_line = db.height() - PT_SIZE - MARGIN
+        top_line = db.height() - pt_size - margin
         offset = top_line
         for f_index, font in enumerate(fonts):
-            offset = top_line - f_index * LEADING
+            offset = top_line - f_index * leading
             fs = db.FormattedString(
                 line,
                 font=font,
-                fontSize=PT_SIZE,
+                fontSize=pt_size,
                 openTypeFeatures=feature_dict,
             )
-
-            db.text(fs, (MARGIN, offset))
+            db.text(fs, (margin, offset))
 
     # Create a page with horizontal waterfall content:
     db.newPage('LegalLandscape')
-    top_line = db.height() - PT_SIZE - MARGIN
+    top_line = db.height() - pt_size - margin
 
     for word_index, word in enumerate(h_content.split('\n')):
-        offset = top_line - word_index * LEADING
+        offset = top_line - word_index * leading
 
-        fs = db.FormattedString(
-            fontSize=PT_SIZE,
-        )
+        fs = db.FormattedString(fontSize=pt_size)
         for font in fonts:
             fs.append(word, font=font)
 
-        db.text(fs, (MARGIN, offset))
+        db.text(fs, (margin, offset))
 
     output_path = Path(
         f'~/Desktop/waterfallProof ({input_dir.name}).pdf').expanduser()
@@ -133,6 +118,16 @@ def main():
     db.endDrawing()
     print(f'saved to {output_path}')
     subprocess.call(['open', output_path])
+
+
+def main():
+    args = get_options()
+    input_dir = Path(args.input)
+
+    if input_dir.is_dir():
+        make_proof(input_dir, args)
+    else:
+        print(f'{args.input} is not a directory')
 
 
 if __name__ == '__main__':
