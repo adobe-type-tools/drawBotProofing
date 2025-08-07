@@ -27,7 +27,7 @@ pip install .
 
 ## Requirements
 
-- Python 3.8 or higher
+- Python 3.11 or higher
 - macOS (required for DrawBot)
 
 ## Dependencies
