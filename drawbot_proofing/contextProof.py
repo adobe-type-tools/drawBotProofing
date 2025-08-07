@@ -11,7 +11,8 @@ Creates example pages for usage of a specific letter or letter combination.
 Needs a word list as an input file, such as the word lists available at
 https://github.com/hermitdave/FrequencyWords/tree/master/content/2016
 
-Input: font file(s) or folder of fonts.
+Input:
+font file(s) or folder(s) containing font files.
 
 '''
 

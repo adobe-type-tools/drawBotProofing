@@ -15,7 +15,7 @@ use `-r ".*dieresis"` to show all glyphs whose names end with -dieresis).
 Input (pick one):
 * folder(s) containing UFO files or font files
 * individual UFO- or font files
-* designspace file (UFO sources)
+* designspace file (for proofing UFO sources)
 
 '''
 
@@ -44,6 +44,7 @@ def get_args(args=None):
     parser.add_argument(
         'input',
         nargs='+',
+        metavar='INPUT',
         help='file(s) or folder(s)')
 
     parser.add_argument(

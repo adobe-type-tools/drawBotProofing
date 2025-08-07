@@ -14,8 +14,10 @@ Creates example pages for:
 
 Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
 (`all`). Writing systems supported are `lat`, `grk`, `cyr`, and `figures`.
+Kerning can be toggled off.
 
-Input: one or more font files.
+Input:
+font file(s) or folder(s) containing font files.
 
 '''
 
@@ -75,19 +77,15 @@ def get_options():
         help='switch off kerning')
 
     parser.add_argument(
-        '-d', '--date',
-        action='store_true',
-        help='date proof document')
-
-    parser.add_argument(
         '-t', '--text',
         action='store',
         help='read custom file')
 
     parser.add_argument(
         'input',
+        metavar='INPUT',
         nargs='+',
-        help='input font file(s)')
+        help='font file(s) or folder(s)')
 
     return parser.parse_args()
 
@@ -240,11 +238,8 @@ def make_pdf_name(args, fonts):
     if len(font_name_string) > 255:
         font_name_string = 'comparison of many fonts'
 
-    name_chunks = [font_name_string, args.mode, args.writing_system]
-    if args.date:
-        name_chunks.insert(0, timestamp())
-
-    return ' '.join(name_chunks) + '.pdf'
+    pdf_name = f'{font_name_string} ({args.mode}) {args.writing_system}.pdf'
+    return pdf_name
 
 
 def main():

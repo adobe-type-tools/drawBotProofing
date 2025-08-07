@@ -50,7 +50,7 @@ vertical-metrics-comparison-proof = "drawbot_proofing.verticalMetricsComparisonP
 waterfall-proof = "drawbot_proofing.waterfallProof:main"
 accent-proof = "drawbot_proofing.accentProof:main"
 figure-spacing-proof = "drawbot_proofing.figureSpacingProof:main"
-overlay-font-proof = "drawbot_proofing.overlayFontProof:main"
+overlay-proof = "drawbot_proofing.overlayProof:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
