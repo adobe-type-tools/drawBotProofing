@@ -923,8 +923,7 @@ def make_stroke_colors(font_list, args):
             stroke_colors.append(colorsys.hls_to_rgb(hue, 0.5, 1))
     else:
         # all strokes are black
-        # stroke_colors = [(0, 0, 0, 1) for f in font_list]
-        stroke_colors = [(1, 1, 1, 1) for f in font_list]
+        stroke_colors = [(0, 0, 0, 1) for f in font_list]
 
     return stroke_colors
 
