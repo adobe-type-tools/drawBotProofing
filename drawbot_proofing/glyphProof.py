@@ -45,7 +45,7 @@ from .proofing_helpers.files import get_ufo_paths, get_font_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.stamps import timestamp
-from .proofing_helpers.names import get_name_overlap
+from .proofing_helpers.names import get_name_overlap, get_path_overlap
 
 
 # general measurements
@@ -439,7 +439,6 @@ def get_global_family_name(proofing_fonts):
     family_names = [pf.family_name for pf in proofing_fonts]
     unique_family_names = sorted(set(family_names), key=family_names.index)
     style_names = [pf.style_name for pf in proofing_fonts]
-    overlap = get_name_overlap(unique_family_names)
 
     if len(unique_family_names) == 1:
         global_fn = unique_family_names[0]
@@ -448,10 +447,22 @@ def get_global_family_name(proofing_fonts):
         global_fn = ' & '.join(unique_family_names)
 
     else:
+        overlap = get_name_overlap(unique_family_names)
         if overlap and len(overlap) > 3:
+            # there’s family name overlap, and the resulting
+            # name isn’t too short
             global_fn = overlap
         else:
-            global_fn = ', '.join(unique_family_names[:2]) + ', etc'
+            if len(unique_family_names) < 5:
+                # no family name overlap, but less than 5 unique families
+                global_fn = ', '.join(unique_family_names[:2]) + ', etc'
+            else:
+                # many fonts, just return the name of the shared path
+                global_fn = get_path_overlap(
+                    [pf.file for pf in proofing_fonts])
+
+    # some family names contain trailing punctuation
+    global_fn = global_fn.rstrip(' .,-')
 
     if 'It' not in global_fn and all(['Italic' in sn for sn in style_names]):
         global_fn += ' Italic'
@@ -488,8 +499,9 @@ def make_single_glyph_page(glyph_name, pf, page_size, args):
     x_offset = (db.width() - glyph.width * scale_factor) // 2
     y_offset = 250
 
+    caption = f'{pf.family_name} {pf.style_name} | {glyph_name}'
     footer = db.FormattedString(
-        txt=f'{pf.style_name} – {glyph_name}',
+        txt=caption,
         font=FONT_MONO,
         fontSize=20,
         align='center')
@@ -534,8 +546,13 @@ def make_overlay_glyph_page(glyph_name, proofing_fonts, stroke_colors, page_size
                     if anchors:
                         draw_anchors(glyph, anchors)
 
+    global_family_name = get_global_family_name(proofing_fonts)
+    caption = f'{global_family_name} | {glyph_name}'
     footer = db.FormattedString(
-        txt=glyph_name, font=FONT_MONO, fontSize=20, align='center')
+        txt=caption,
+        font=FONT_MONO,
+        fontSize=20,
+        align='center')
     db.textBox(footer, (0, 0, db.width(), 100))
 
 
@@ -802,7 +819,10 @@ def make_output_path(family_name, output_mode, matches=[]):
     '''
     if family_name is None:
         family_name = 'no family name'
-    name_chunks = [output_mode, family_name]
+
+    # cannot write a / into a file name
+    safe_family_name = re.sub(r'(:|/)', '_', family_name)
+    name_chunks = [output_mode, safe_family_name]
 
     if matches:
         rep_start = matches[0]

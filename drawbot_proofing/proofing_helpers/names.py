@@ -76,3 +76,22 @@ def get_name_overlap(list_of_strings):
     '''
     overlap_index = get_overlap_index(list_of_strings)
     return list_of_strings[0][:overlap_index].strip('-')
+
+
+def get_path_overlap(list_of_paths):
+    '''
+    from a list of pathlib.paths, return the name of the shared parent folder
+    '''
+
+    shortest = min([len(p.parents) for p in list_of_paths])
+    reverse_parents = [list(reversed(p.parents)) for p in list_of_paths]
+
+    for i in range(shortest):
+        shared_parents = [parent[i] for parent in reverse_parents]
+        if len(set(shared_parents)) > 1:
+            break
+
+    shared_parent = shared_parents[0].name
+    if shared_parent == '/':
+        return 'various'
+    return shared_parent
