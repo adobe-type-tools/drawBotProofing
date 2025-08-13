@@ -5,16 +5,16 @@
 # accordance with the terms of the Adobe license agreement accompanying
 # it.
 
-import os
+from pathlib import Path
 import sys
 
-mod_dir = os.path.join(os.path.dirname(__file__), '..')
+mod_dir = str(Path(__file__).parents[1])
 if mod_dir not in sys.path:
     sys.path.append(mod_dir)
 
 from proofing_helpers.charsets import *
 from proofing_helpers.files import chain_charset_texts
-from proofing_helpers.helpers import list_uni_names
+from proofing_helpers.helpers import uni_names
 
 
 cyr_addl_codepoints = [
@@ -34,6 +34,8 @@ space_codepoints = [
 
 cyr_addl_chars = ''.join([chr(i) for i in cyr_addl_codepoints])
 space_chars = ''.join([chr(i) for i in space_codepoints])
+
+REPORT = ['# charset support report\n']
 
 
 def get_dbl_mapped_for_charset(charset):
@@ -77,14 +79,19 @@ def filter_by_charset(charset, content):
 def categorize_lines(cs_prefix, cs_index=5):
     raw_content = chain_charset_texts(cs_prefix, cs_index)
     content_list = list(set(raw_content.split('\n')))
-    content_dir = os.path.dirname(__file__)
+    content_dir = Path(__file__).parent
     exceeding = content_list
+
     for i in range(cs_index + 1):
         if i == 0:
-            charset_name = 'ascii'
+            if cs_prefix == 'AL':
+                charset_name = 'ascii'
+            else:
+                continue
         else:
             charset_name = f'{cs_prefix.lower()}{i}'
-        cs_file = os.path.join(content_dir, charset_name.upper() + '.txt')
+
+        cs_file = content_dir / f'{charset_name.upper()}.txt'
         charset = set(eval(charset_name))
         charset.update(set(space_chars))
 
@@ -96,7 +103,7 @@ def categorize_lines(cs_prefix, cs_index=5):
         dbl_mapped_in_this_charset = get_dbl_mapped_for_charset(charset)
         charset.update(dbl_mapped_in_this_charset)
         contained, exceeding = filter_by_charset(charset, exceeding)
-
+        # update charset file
         with open(cs_file, 'w') as f:
             f.write('\n'.join(sorted(contained)) + '\n')
 
@@ -104,17 +111,18 @@ def categorize_lines(cs_prefix, cs_index=5):
         # This will potentially write duplicate lines, but probably
         # it’s not very urgent to fix this.
         # They will be de-duplicated if added to one of the source text files.
-        print(
+        REPORT.append(
             f'lines exceeding largest {cs_prefix} charset '
             f'({cs_prefix}{cs_index}):')
         for line in exceeding:
-            print(line)
+            REPORT.append(line)
             beyond = set(line) - set(charset)
-            list_uni_names(sorted(beyond))
-            print()
-        ex_file = os.path.join(
-            content_dir, 'beyond_' + charset_name.upper() + '.txt')
-        if os.path.exists(ex_file):
+            REPORT.append('```')
+            REPORT.extend(uni_names(sorted(beyond)))
+            REPORT.append('```')
+            REPORT.append('')
+        ex_file = content_dir / f'beyond_{charset_name.upper()}.txt'
+        if ex_file.exists():
             # append to existing file
             write_mode = 'a'
         else:
@@ -147,22 +155,26 @@ def check_text_file(cs_prefix, cs_index=5):
     all_chars.update(dbl_mapped_in_this_charset)
     missing = set(charset) - set(raw_content) - dbl_mapped_in_this_charset
 
+    REPORT.append(f'## {charset_name}')
     if missing:
-        print(
-            'Characters missing from source text '
-            f'{charset_file_name} ({len(missing)}):'
+        REPORT.append(
+            'characters missing from source text '
+            f'{charset_file_name} ({len(missing)}):\n'
         )
-        list_uni_names(sorted(missing))
-        print()
+        REPORT.append('```')
+        REPORT.extend(uni_names(sorted(missing)))
+        REPORT.append('```')
+        REPORT.append('')
     else:
-        print(
-            f'Source text {charset_file_name} supports all of {charset_name}.')
-        print()
+        REPORT.append(
+            f'source text {charset_file_name} '
+            f'supports all of {charset_name}.\n')
+    REPORT.append(f'----')
 
 
 def content_stats(cs_prefix, cs_index, show_max=3):
     '''
-    Show list of characters with low occurrence.
+    Show list of characters with low frequency.
     '''
     raw_content = chain_charset_texts(cs_prefix, cs_index)
     content_list = raw_content.split('\n')
@@ -171,18 +183,21 @@ def content_stats(cs_prefix, cs_index, show_max=3):
         for char in line:
             content_dict.setdefault(char, 0)
             content_dict[char] += 1
-    occurence = {}
+    frequency = {}
     for character, count in sorted(
         content_dict.items(),
         key=lambda item: item[1],
     ):
 
-        occurence.setdefault(count, []).append(character)
+        frequency.setdefault(count, []).append(character)
     if show_max is None:
-        show_max = len(occurence)
-    for count, charlist in sorted(occurence.items(), reverse=True)[-show_max:]:
-        print(f'\t{count}: {"".join(sorted(charlist))} ({len(charlist)})')
-    print()
+        show_max = len(frequency)
+    if frequency:
+        REPORT.append('')
+    for count, charlist in sorted(frequency.items(), reverse=True)[-show_max:]:
+        REPORT.append(
+            f'\t{count}: {"".join(sorted(charlist))} ({len(charlist)})')
+    REPORT.append('')
 
 
 if __name__ == '__main__':
@@ -197,5 +212,11 @@ if __name__ == '__main__':
         categorize_lines(cs_tag, cs_level)
         for i in range(cs_level + 1):
             check_text_file(cs_tag, i)
-        print('low occurrence:')
+        REPORT.append(f'lowest character frequency in {cs_tag}{cs_level}.txt:')
         content_stats(cs_tag, cs_level)
+
+    report_file = 'CHARSET REPORT.md'
+    with open(report_file, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(REPORT))
+
+    print(f'output written to {report_file}')

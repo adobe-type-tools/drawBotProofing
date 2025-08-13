@@ -93,24 +93,22 @@ def chain_charset_texts(cs_prefix='AL', cs_level=3):
     '''
     max_charset_level = int(cs_level)
     raw_content = ''
-    content_dir = Path(__file__).parents[1].joinpath('_content')
+    content_dir = Path(__file__).parents[1] / '_content'
+    content_dir = content_dir.resolve()
+    ascii_file = content_dir / 'ASCII.txt'
+    # abc_file = content_dir / 'ABC.txt'
 
+    text_files = []
     for level in (range(max_charset_level, -1, -1)):
-        if level == 0:
-            if cs_prefix == 'AL':
-                text_file_name = f'{content_dir}/ASCII.txt'
-            else:
-                # do not add ASCII to Cyrillic or Greek
-                pass
-        else:
-            text_file_name = f'{content_dir}/{cs_prefix.upper()}{level}.txt'
+        text_files.extend(content_dir.glob(f'{cs_prefix}{level}.txt'))
+    if cs_prefix == 'AL':
+        text_files.append(ascii_file)
 
-        try:
-            with open(text_file_name, 'r', encoding='utf-8') as f:
-                raw_content += f.read()
-        except FileNotFoundError:
-            print(f'file not found: {text_file_name}')
-            continue
+    raw_content = ''
+    for text_file in text_files:
+        with open(text_file, 'r', encoding='utf-8') as f:
+            raw_content += f.read()
+
     return raw_content
 
 
