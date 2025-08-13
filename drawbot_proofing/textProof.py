@@ -45,7 +45,7 @@ from .proofing_helpers import charsets as cs
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK, ADOBE_NOTDEF
 from .proofing_helpers.fonts import get_default_instance
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
-from .proofing_helpers.helpers import list_uni_names
+from .proofing_helpers.helpers import uni_names
 from .proofing_helpers.files import (
     get_font_paths, chain_charset_texts, read_text_file, make_temp_font)
 from .proofing_helpers.stamps import timestamp
@@ -71,13 +71,14 @@ def get_options():
     charset_choices = [name for name in dir(cs) if not name.startswith('_')]
 
     parser.add_argument(
-        '-f', '--fonts',
+        # '-f', '--fonts',
+        'fonts',
         nargs='+',
-        required=True,
+        # required=True,
         metavar='FONT',
         help='font file or folder')
 
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group(required=False)
 
     # either choose a charset, or reproduce a text file
     group.add_argument(
@@ -93,6 +94,7 @@ def get_options():
         action='store',
         metavar='TXT',
         help='text file (for predictable text)')
+    # ----------- end of group
 
     parser.add_argument(
         '--filter',
@@ -198,7 +200,7 @@ def analyze_missing(content_pick, content_list, charset_name):
         print(
             f'missing {charset_name.upper()} characters '
             f'in source text ({len(missing_cset_source)}):')
-        list_uni_names(missing_cset_source)
+        print('\n'.join(uni_names(missing_cset_source)))
 
 
 def make_proof(content, fonts_a, fonts_b, args, output_name):
@@ -393,9 +395,11 @@ def get_content_from_charset(charset_name):
         raw_content = chain_charset_texts(charset_prefix, max_charset_level)
 
     else:
-        # abc charset, does not have a level
-        text_file_name = f'_content/{charset_name.upper()}.txt'
-        raw_content = read_text_file(text_file_name)
+        # abc or ascii charset, does not have a level
+        content_dir = Path(__file__).parent / '_content/'
+        text_file_name = f'{charset_name.upper()}.txt'
+        text_file_path = content_dir / text_file_name
+        raw_content = read_text_file(text_file_path)
 
     content_list = raw_content.split('\n')
     random.shuffle(content_list)
