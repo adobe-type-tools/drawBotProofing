@@ -12,13 +12,13 @@ fashion (both vertically and horizontally).
 The proof text comes from the waterfall_horizontal and waterfall_vertical text
 files found in the `_content` folder.
 
-Input: folder containing font files.
+Input:
+* folder containing font files
 
 '''
 
 import argparse
 import subprocess
-import sys
 import drawBot as db
 from pathlib import Path
 

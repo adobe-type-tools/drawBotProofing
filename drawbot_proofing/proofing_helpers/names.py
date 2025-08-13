@@ -83,15 +83,15 @@ def get_path_overlap(list_of_paths):
     from a list of pathlib.paths, return the name of the shared parent folder
     '''
 
-    shortest = min([len(p.parents) for p in list_of_paths])
-    reverse_parents = [list(reversed(p.parents)) for p in list_of_paths]
-
-    for i in range(shortest):
-        shared_parents = [parent[i] for parent in reverse_parents]
-        if len(set(shared_parents)) > 1:
+    all_parents = [list(reversed(p.parents)) for p in list_of_paths]
+    shortest_parent = min([len(pl) for pl in all_parents])
+    for i in range(shortest_parent):
+        current_parents = [pl[i] for pl in all_parents]
+        if len(set(current_parents)) == 1:
+            shared_parent = current_parents[0]
+        else:
             break
 
-    shared_parent = shared_parents[0].name
-    if shared_parent == '/':
+    if shared_parent == '/':  # root
         return 'various'
-    return shared_parent
+    return shared_parent.name

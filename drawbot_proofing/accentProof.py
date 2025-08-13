@@ -14,7 +14,7 @@ This script is currently limited to AL-3, an extension to AL-4 and beyond is
 thinkable.
 
 Input:
-font file(s) or folder(s) containing font files.
+* font file(s), or folder(s) containing font files
 
 '''
 

@@ -22,7 +22,7 @@ mean that lines exceed the right edge of the page). A double-line break in the
 text file translates to a new page in the proof.
 
 Input:
-font file(s) or folder(s) containing font files.
+* font file(s), or folder(s) containing font files
 
 '''
 
