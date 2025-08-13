@@ -31,7 +31,8 @@ from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_ufo_paths, get_font_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
-from .proofing_helpers.names import get_ps_name
+from .proofing_helpers.names import (
+    get_ps_name, get_name_overlap, get_path_overlap)
 from .proofing_helpers.stamps import timestamp
 
 
@@ -87,8 +88,7 @@ def draw_glyph_box(g, origin, box_width, box_height, upm, scale=1):
         draw_glyph(g)
 
 
-def draw_glyphset_page(f, glyph_list, columns=12, stroke=False):
-
+def draw_glyphset_page(f, glyph_list, caption, columns=12, stroke=False):
     doc_width = db.sizes()['TabloidLandscape'][0]
     margin = 10
 
@@ -141,7 +141,7 @@ def draw_glyphset_page(f, glyph_list, columns=12, stroke=False):
     db.newPage(doc_width, doc_height)
 
     time_stamp = db.FormattedString(
-        '{}'.format(timestamp(readable=True)),
+        caption,
         font=FONT_MONO,
         fontSize=10,
         align='right')
@@ -184,20 +184,27 @@ def filter_glyph_list(regex_string, glyph_list):
     return glyph_list
 
 
-def make_output_name(input_file, args):
-    name = ['glyphsetProof']
+def make_output_name(input_list, args):
+    output_name = ['glyphsetProof']
 
     if args.regex:
-        name.insert(0, 'filtered')
+        output_name.insert(0, 'filtered')
 
-    name.append(get_ps_name(input_file))
-    name.append(f'({input_file.suffix.lstrip(".").upper()})')
+    if len(input_list) == 1:
+        input_font = input_list[0]
+        output_name.append(get_ps_name(input_font[0]))
+        output_name.append(f'({input_font.suffix.lstrip(".").upper()})')
+    else:
+        overlap = get_name_overlap([get_ps_name(f) for f in input_list])
+        if not overlap:
+            # at least the fonts must have a shared path
+            overlap = get_path_overlap([f for f in input_list])
+        output_name.append(overlap)
 
-    return ' '.join(name) + '.pdf'
+    return ' '.join(output_name) + '.pdf'
 
 
-def make_glyphset_pdf(args, input_file):
-    db.newDrawing()
+def make_glyphset_page(args, input_file):
     if input_file.suffix == '.ufo':
         f = defcon.Font(input_file)
         glyph_order = f.glyphOrder
@@ -219,13 +226,9 @@ def make_glyphset_pdf(args, input_file):
     else:
         glyph_list = complete_glyph_order
 
-    output_name = make_output_name(input_file, args)
-    output_path = Path(f'~/Desktop/{output_name}').expanduser()
-
-    draw_glyphset_page(f, glyph_list, args.columns, args.stroke)
-    db.saveImage(output_path)
-    db.endDrawing()
-    subprocess.call(['open', output_path])
+    time_stamp = timestamp(readable=True)
+    caption = f'{input_file.name} | {time_stamp}'.format()
+    draw_glyphset_page(f, glyph_list, caption, args.columns, args.stroke)
 
 
 def main(test_args=None):
@@ -237,8 +240,15 @@ def main(test_args=None):
         input_list.extend(get_ufo_paths(input_path))
         input_list.extend(get_font_paths(input_path))
 
+    db.newDrawing()
     for input_file in input_list:
-        make_glyphset_pdf(args, input_file)
+        make_glyphset_page(args, input_file)
+
+    output_name = make_output_name(input_list, args)
+    output_path = Path(f'~/Desktop/{output_name}').expanduser()
+    db.saveImage(output_path)
+    subprocess.call(['open', output_path])
+    db.endDrawing()
 
 
 if __name__ == '__main__':
