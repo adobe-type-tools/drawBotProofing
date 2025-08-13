@@ -8,10 +8,12 @@
 import unicodedata
 
 
-def list_uni_names(characters):
+def uni_names(characters):
+    output = []
     for char in sorted(characters):
         try:
             uni_name = unicodedata.name(char)
         except ValueError:
             uni_name = 'XXXX'
-        print(f'\t{char} U+{ord(char):04X} {uni_name}')
+        output.append(f'{char} U+{ord(char):04X} {uni_name}')
+    return output
