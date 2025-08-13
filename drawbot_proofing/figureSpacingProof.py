@@ -90,7 +90,7 @@ def make_proof_pages(args, input_file):
     suffixes = get_figure_suffixes(all_glyphs, args.suffixes)
     for suffix in suffixes:
         proof_text = make_proof_text(glyph_order, suffix)
-        all_gnames = set([gn for line in proof_text for gn in line])
+        all_gnames = [gn for line in proof_text for gn in line]
 
         if set(all_gnames) <= set(glyph_order):
             db.newPage('A4Landscape')
@@ -121,24 +121,33 @@ def make_proof_pages(args, input_file):
                 x_offset = MARGIN
                 y_offset -= line_space
         else:
-            not_supported = sorted(set(all_gnames) - set(glyph_order))
-            print(
-                f'{", ".join(sorted(not_supported))}\n'
-                f'not in {font_path.name}')
+            unsupported = sorted(set(all_gnames) - set(glyph_order))
+            us_report = ", ".join(sorted(unsupported, key=all_gnames.index))
+            print(f'{font_path.name} does not support {us_report}')
 
 
 def make_proof_text(available_gnames, suffix=''):
     spacer = 'zero' + suffix
+    if spacer not in available_gnames:
+        spacer = 'zero'
+
     basic_figures = 'zero one two three four five six seven eight nine'.split()
-    figures = [figure + suffix for figure in basic_figures]
-    output = []
+    # some figures may not be necessary for all sets, e.g. a rounded zero
+    # will likely be the same as a default zero. Therefore, if a given
+    # suffixed figure does not exist, fall back to the default figure.
+    suffixed_figures = [
+        figure + suffix if
+        figure + suffix in available_gnames else
+        figure for figure in basic_figures]
 
+    # one of both slashed zeros might exist
     if 'zero.slash' + suffix in available_gnames:
-        figures.insert(0, 'zero.slash' + suffix)
+        suffixed_figures.insert(0, 'zero.slash' + suffix)
     elif 'zero' + suffix + '.slash' in available_gnames:
-        figures.insert(0, 'zero' + suffix + '.slash')
+        suffixed_figures.insert(0, 'zero' + suffix + '.slash')
 
-    for line in chunks(figures, 4):
+    output = []
+    for line in chunks(suffixed_figures, 4):
         joined_line = [spacer] + list(joinit(line, spacer)) + [spacer]
         output.append(joined_line)
     return output
