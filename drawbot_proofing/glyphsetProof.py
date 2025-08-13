@@ -192,13 +192,13 @@ def make_output_name(input_list, args):
 
     if len(input_list) == 1:
         input_font = input_list[0]
-        output_name.append(get_ps_name(input_font[0]))
+        output_name.append(get_ps_name(input_font))
         output_name.append(f'({input_font.suffix.lstrip(".").upper()})')
     else:
         overlap = get_name_overlap([get_ps_name(f) for f in input_list])
         if not overlap:
             # at least the fonts must have a shared path
-            overlap = get_path_overlap([f for f in input_list])
+            overlap = get_path_overlap(input_list)
         output_name.append(overlap)
 
     return ' '.join(output_name) + '.pdf'

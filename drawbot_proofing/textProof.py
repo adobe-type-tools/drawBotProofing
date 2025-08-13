@@ -12,7 +12,7 @@ Default mode is creating single-page PDF with a random subset of the requested
 charset. Optionally, a full charset can be consumed systematically, to show
 as many characters as possible.
 The alternative mode is using a text file as input, to achieve more predictable
-(and comparable) output. In text-mode, the output still is limited to a single
+(and comparable) output. In text-mode, the output is limited to a single
 page (no matter how long the text file may be).
 
 Known bug:
@@ -21,9 +21,11 @@ character support is requested (this is a macOS limitation caused by the
 vertical metrics in a given fallback font).
 
 Input:
-* choice of text file or charset name
-* single font file, or folder containing fonts
-* optional secondary font(s) (for mixing Roman/Italic, for example)
+* font file(s), or folder(s) containing font files
+
+Optional input:
+* choice of text file (`-t`) or charset name (`-c`)
+* secondary font(s) (`-s`) (for mixing Roman/Italic, for example)
 
 '''
 

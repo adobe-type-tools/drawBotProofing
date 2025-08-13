@@ -33,7 +33,7 @@ This script is currently limited to AL-3, an extension to AL-4 and beyond is
 thinkable.
 
 Input:
-font file(s) or folder(s) containing font files.
+* font file(s), or folder(s) containing font files
 
 ![accentProof.py](_images/accentProof.png)
 
@@ -57,7 +57,7 @@ mean that lines exceed the right edge of the page). A double-line break in the
 text file translates to a new page in the proof.
 
 Input:
-font file(s) or folder(s) containing font files.
+* font file(s), or folder(s) containing font files
 
 ![alphabetProof.py](_images/alphabetProof_1.png)
 
@@ -80,7 +80,7 @@ More information on Adobe’s character sets:
 - [Greek](https://github.com/adobe-type-tools/adobe-greek-charsets)
 
 Input:
-font file(s) or folder(s) containing font files.
+* font file(s), or folder(s) containing font files
 
 ![charsetProof.py](_images/charsetProof_1.png)
 
@@ -98,7 +98,7 @@ Needs a word list as an input file, such as the word lists available at
 https://github.com/hermitdave/FrequencyWords/tree/master/content/2016
 
 Input:
-font file(s) or folder(s) containing font files.
+* font file(s), or folder(s) containing font files
 
 ![contextProof.py](_images/contextProof_1.png)
 
@@ -179,7 +179,7 @@ To-Do:
 - allow overlaying static and VF
 
 Input (pick one):
-* folder(s) containing files
+* folder(s) containing font files
 * individual font files
 
 ![overlayProof.py](_images/overlayProof.png)
@@ -217,7 +217,7 @@ Default mode is creating single-page PDF with a random subset of the requested
 charset. Optionally, a full charset can be consumed systematically, to show
 as many characters as possible.
 The alternative mode is using a text file as input, to achieve more predictable
-(and comparable) output. In text-mode, the output still is limited to a single
+(and comparable) output. In text-mode, the output is limited to a single
 page (no matter how long the text file may be).
 
 Known bug:
@@ -226,9 +226,11 @@ character support is requested (this is a macOS limitation caused by the
 vertical metrics in a given fallback font).
 
 Input:
-* choice of text file or charset name
-* single font file, or folder containing fonts
-* optional secondary font(s) (for mixing Roman/Italic, for example)
+* font file(s), or folder(s) containing font files
+
+Optional input:
+* choice of text file (`-t`) or charset name (`-c`)
+* secondary font(s) (`-s`) (for mixing Roman/Italic, for example)
 
 ![textProof.py](_images/textProof_1.png)
 
@@ -263,7 +265,7 @@ of vertical metrics across a typeface family.
 Input (pick one):
 * folder(s) containing UFO files or font files
 * individual UFO- or font files
-* designspace file (UFO sources)
+* designspace file (for proofing UFO sources)
 
 ![verticalMetricsComparisonProof.py](_images/verticalMetricsComparisonProof.png)
 
@@ -276,7 +278,8 @@ set in the font metadata. Additionally, tallest and lowest glyphs are shown.
 
 Using the -n option, the number of extreme glyphs can be increased.
 
-Input: font file
+Input:
+* font file(s), or folder(s) containing font files
 
 ![verticalMetricsProof.py](_images/verticalMetricsProof_1.png)
 
@@ -294,7 +297,8 @@ fashion (both vertically and horizontally).
 The proof text comes from the waterfall_horizontal and waterfall_vertical text
 files found in the `_content` folder.
 
-Input: folder containing font files.
+Input:
+* folder containing font files
 
 ![waterfallProof.py](_images/waterfallProof_1.png)
 

@@ -12,7 +12,7 @@ Needs a word list as an input file, such as the word lists available at
 https://github.com/hermitdave/FrequencyWords/tree/master/content/2016
 
 Input:
-font file(s) or folder(s) containing font files.
+* font file(s), or folder(s) containing font files
 
 '''
 

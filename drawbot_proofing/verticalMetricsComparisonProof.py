@@ -12,7 +12,7 @@ of vertical metrics across a typeface family.
 Input (pick one):
 * folder(s) containing UFO files or font files
 * individual UFO- or font files
-* designspace file (UFO sources)
+* designspace file (for proofing UFO sources)
 
 '''
 
@@ -198,8 +198,11 @@ def process_ufo_paths(ufo_paths, args):
 
 def main():
     args = get_options(description=__doc__)
-    font_paths = get_font_paths(args.input_dir)
-    ufo_paths = get_ufo_paths(args.input_dir)
+    font_paths = []
+    ufo_paths = []
+    for p in args.input:
+        ufo_paths.extend(get_ufo_paths(p))
+        font_paths.extend(get_font_paths(p))
 
     if ufo_paths:
         process_ufo_paths(ufo_paths, args)

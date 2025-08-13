@@ -11,7 +11,8 @@ set in the font metadata. Additionally, tallest and lowest glyphs are shown.
 
 Using the -n option, the number of extreme glyphs can be increased.
 
-Input: font file
+Input:
+* font file(s), or folder(s) containing font files
 
 '''
 
@@ -24,12 +25,13 @@ import drawBot as db
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools import ttLib
 
+from .proofing_helpers import fontSorter
 from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_font_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
-from .proofing_helpers.fontSorter import sort_fonts
-from .proofing_helpers.names import get_ps_name, get_name_overlap
+from .proofing_helpers.names import (
+    get_name_overlap, get_path_overlap, get_ps_name)
 
 IN_UI = 'drawBot.ui' in sys.modules
 
@@ -50,11 +52,11 @@ def get_options(args=None, description=__doc__):
     )
 
     parser.add_argument(
-        'input_dir',
-        action='store',
-        metavar='FOLDER',
-        help='folder to crawl')
-
+        'input',
+        metavar='INPUT',
+        nargs='+',
+        help='font file(s) or folder(s)',
+    )
     parser.add_argument(
         '-o', '--output_file_name',
         action='store',
@@ -352,17 +354,30 @@ def main():
     else:
         args = get_options()
 
-    font_paths = get_font_paths(args.input_dir)
-    if font_paths:
-        sorted_font_paths = sort_fonts(font_paths)
+    font_paths = []
+    for item in args.input:
+        # could be individual fonts or folder of fonts.
+        ip = Path(item)
+        fonts = get_font_paths(ip)
+        # sort them one-by-one
+        font_paths.extend(
+            fontSorter.sort_fonts(fonts, alternate_italics=False))
 
-        for font_path in sorted_font_paths:
+    if font_paths:
+        for font_path in font_paths:
             process_font_path(font_path, args)
 
         if args.output_file_name:
             doc_name = args.output_file_name
         else:
-            doc_name = get_name_overlap([p.name for p in sorted_font_paths])
+            name_overlap = get_name_overlap(
+                [get_ps_name(f) for f in font_paths])
+
+            if name_overlap and len(name_overlap) > 3:
+                doc_name = name_overlap
+            else:
+                doc_name = get_path_overlap(font_paths)
+            print(doc_name)
 
         if not IN_UI:
             finish_drawing(doc_name)

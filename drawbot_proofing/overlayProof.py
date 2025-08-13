@@ -14,7 +14,7 @@ To-Do:
 - allow overlaying static and VF
 
 Input (pick one):
-* folder(s) containing files
+* folder(s) containing font files
 * individual font files
 
 '''

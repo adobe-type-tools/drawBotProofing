@@ -17,7 +17,7 @@ More information on Adobe’s character sets:
 - [Greek](https://github.com/adobe-type-tools/adobe-greek-charsets)
 
 Input:
-font file(s) or folder(s) containing font files.
+* font file(s), or folder(s) containing font files
 
 '''
 
