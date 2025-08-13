@@ -49,7 +49,12 @@ Creates example pages for:
 
 Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
 (`all`). Writing systems supported are `lat`, `grk`, `cyr`, and `figures`.
-Kerning can be toggled off.
+Kerning can be toggled off (`-k`).
+
+Optionally, a sample string (`-s`), or an input text file file (`-t`) can be
+specified. When using an input a text file, there will be no reflow (which may
+mean that lines exceed the right edge of the page). A double-line break in the
+text file translates to a new page in the proof.
 
 Input:
 font file(s) or folder(s) containing font files.

@@ -14,7 +14,12 @@ Creates example pages for:
 
 Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
 (`all`). Writing systems supported are `lat`, `grk`, `cyr`, and `figures`.
-Kerning can be toggled off.
+Kerning can be toggled off (`-k`).
+
+Optionally, a sample string (`-s`), or an input text file file (`-t`) can be
+specified. When using an input a text file, there will be no reflow (which may
+mean that lines exceed the right edge of the page). A double-line break in the
+text file translates to a new page in the proof.
 
 Input:
 font file(s) or folder(s) containing font files.
@@ -30,6 +35,8 @@ from pathlib import Path
 from .proofing_helpers.files import get_font_paths, make_temp_font
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
+from .proofing_helpers.names import (
+    get_name_overlap, get_path_overlap, get_ps_name)
 from .proofing_helpers.stamps import timestamp
 
 
@@ -79,7 +86,7 @@ def get_options():
     parser.add_argument(
         '-t', '--text',
         action='store',
-        help='read custom file')
+        help='read custom text file')
 
     parser.add_argument(
         'input',
@@ -143,6 +150,8 @@ def make_proof(args, fonts, output_path):
         text_path = Path(args.text)
         if text_path.exists():
             proof_text = read_text_file(text_path)
+        else:
+            print(f'{text_path} is not a valid path.')
 
     else:
         mode = args.mode.lower()
@@ -155,15 +164,12 @@ def make_proof(args, fonts, output_path):
     MARGIN = 30
     line_space = args.point_size * 1.2
 
-    if len(fonts) == 1:
-        tmp_fonts = fonts
-    else:
-        tmp_fonts = [
-            make_temp_font(i, font) for (i, font) in enumerate(fonts)]
-
+    # avoid PS name clash
+    tmp_fonts = [make_temp_font(i, font) for (i, font) in enumerate(fonts)]
     for page in proof_text:
 
         feature_dict = {'kern': not args.kerning_off}
+
         # undocumented feature -- it is possible to add feature tags
         # to the input text files. Not sure how useful.
         #
@@ -232,13 +238,19 @@ def make_pdf_name(args, fonts):
     Try to make a sensible filename for the PDF proof created.
 
     '''
-    all_font_names = [font.name for font in fonts]
-    font_name_string = ' vs '.join(all_font_names)
+    all_font_names = [get_ps_name(font) for font in fonts]
+    family_name = get_name_overlap(all_font_names)
+    if not family_name:
+        family_name = get_path_overlap(fonts)
 
-    if len(font_name_string) > 255:
-        font_name_string = 'comparison of many fonts'
+    if args.mode == 'proof':
+        proof_name = 'alphabet proof'
+    elif args.mode == 'all':
+        proof_name = 'full proof'
+    else:
+        proof_name = f'{args.mode} proof'
 
-    pdf_name = f'{font_name_string} ({args.mode}) {args.writing_system}.pdf'
+    pdf_name = f'{proof_name} {family_name} ({args.writing_system}).pdf'
     return pdf_name
 
 
@@ -247,12 +259,16 @@ def main():
 
     fonts = []
     for item in args.input:
-        fonts.extend(get_font_paths(item))
+        if Path(item).exists():
+            fonts.extend(get_font_paths(item))
+        else:
+            print(f'{item} is not a valid path')
 
-    output_pdf_name = make_pdf_name(args, fonts)
-    output_path = Path(f'~/Desktop/{output_pdf_name}').expanduser()
-    make_proof(args, fonts, output_path)
-    subprocess.call(['open', output_path])
+    if fonts:
+        output_pdf_name = make_pdf_name(args, fonts)
+        output_path = Path(f'~/Desktop/{output_pdf_name}').expanduser()
+        make_proof(args, fonts, output_path)
+        subprocess.call(['open', output_path])
 
 
 if __name__ == '__main__':
