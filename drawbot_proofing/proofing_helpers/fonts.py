@@ -5,22 +5,17 @@
 # accordance with the terms of the Adobe license agreement accompanying
 # it.
 
-import tempfile
-import os
 from fontTools import ttLib
 from pathlib import Path
-
-
-def get_temp_file_path(extension=None):
-    file_descriptor, path = tempfile.mkstemp(suffix=extension)
-    os.close(file_descriptor)
-    return path
+from .files import get_temp_file_path
 
 
 def make_temp_font(file_index, font_file):
     '''
-    Make a temporary font file with unique PS name, because the same PS name
-    implies that the same font outlines will be seen throughout the PDF.
+    Make a temporary font file with a unique PS name, so two versions of the
+    same design can be embedded into the same PDF.
+    If PS names clash, the implication is that the same font outlines will be
+    seen throughout the whole document.
     '''
     font = ttLib.TTFont(font_file)
     file_extension = '.otf' if font.sfntVersion == 'OTTO' else '.ttf'

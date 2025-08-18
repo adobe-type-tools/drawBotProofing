@@ -32,7 +32,8 @@ import subprocess
 import drawBot as db
 from pathlib import Path
 
-from .proofing_helpers.files import get_font_paths, make_temp_font
+from .proofing_helpers.files import get_font_paths
+from .proofing_helpers.fonts import make_temp_font
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
 from .proofing_helpers.names import (
@@ -256,7 +257,6 @@ def make_pdf_name(args, fonts):
 
 def main():
     args = get_options()
-
     fonts = []
     for item in args.input:
         if Path(item).exists():
