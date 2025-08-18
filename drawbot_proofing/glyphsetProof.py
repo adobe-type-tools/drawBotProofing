@@ -28,7 +28,7 @@ import subprocess
 from fontTools.ttLib import TTFont
 from pathlib import Path
 from .proofing_helpers.drawing import draw_glyph
-from .proofing_helpers.files import get_ufo_paths, get_font_paths
+from .proofing_helpers.files import get_font_paths, get_ufo_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.names import (

@@ -26,7 +26,7 @@ import subprocess
 import drawBot as db
 
 from pathlib import Path
-from .proofing_helpers import fontSorter, charsets
+from .proofing_helpers import charsets, fontSorter
 from .proofing_helpers.files import get_font_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import ADOBE_NOTDEF

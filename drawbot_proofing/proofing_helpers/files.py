@@ -8,7 +8,6 @@
 import os
 import tempfile
 
-from fontTools import ttLib
 from fontTools.designspaceLib import DesignSpaceDocument
 from pathlib import Path
 
@@ -116,26 +115,3 @@ def get_temp_file_path(extension=None):
     file_descriptor, path = tempfile.mkstemp(suffix=extension)
     os.close(file_descriptor)
     return path
-
-
-def make_temp_font(file_index, font_file):
-    '''
-    Make a temporary font file with a unique PS name, so two versions of the
-    same design can be embedded into the same PDF.
-    If PS names clash, the implication is that the same font outlines will be
-    seen throughout the whole document.
-    '''
-    font = ttLib.TTFont(font_file)
-    file_extension = '.otf' if font.sfntVersion == 'OTTO' else '.ttf'
-    tmp_font_file = get_temp_file_path(file_extension)
-    tmp_ps_name = f'{Path(font_file).stem}_{file_index}'
-    for name_entry in font['name'].names:
-        if name_entry.nameID == 6:
-            font['name'].setName(
-                tmp_ps_name,
-                nameID=6,
-                platformID=name_entry.platformID,
-                platEncID=name_entry.platEncID,
-                langID=name_entry.langID)
-    font.save(tmp_font_file)
-    return(tmp_font_file)
