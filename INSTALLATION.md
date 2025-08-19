@@ -43,23 +43,25 @@ The package will automatically install the following dependencies:
 
 After installation, the following commands will be available:
 
-### Core Proofing Tools
-- `text-proof` - Create example paragraphs for character sets
-- `alphabet-proof` - Create alphabet proofs for different writing systems
-- `charset-proof` - Generate character set proofs
-- `context-proof` - Create contextual proofs for specific characters
-- `reference-proof` - Compare multiple fonts side by side
+### Proofing Tools accepting fonts and UFOs:
+- `glyph-proof` - compare glyphs
+- `glyphset-proof` - the whole glyphset on one page
+- `figure-spacing-proof` - compare figure spacing proofs
+- `vertical-metrics-comparison-proof` - compare vertical metrics across fonts
 
-### Advanced Tools
-- `glyph-proof` - Generate various glyph proofs
-- `glyphset-proof` - Create comprehensive glyphset proofs
-- `unicode-chart-proof` - Generate Unicode character charts
-- `vertical-metrics-proof` - Analyze vertical metrics
-- `vertical-metrics-comparison-proof` - Compare vertical metrics across fonts
-- `waterfall-proof` - Create waterfall proofs
-- `accent-proof` - Generate accent proofs
-- `figure-spacing-proof` - Create figure spacing proofs
-- `overlay-font-proof` - Create overlay comparisons between fonts
+### Proofing Tools accepting fonts:
+- `accent-proof` - check accents and their use accent proofs
+- `alphabet-proof` - various basic proofs for different writing systems
+- `charset-proof` - check for a given charset on one page
+- `context-proof` - see characters in context
+- `text-proof` - pages with example paragraphs
+- `unicode-chart-proof` - generate Unicode character charts
+- `vertical-metrics-proof` - visualize vertical metrics
+- `waterfall-proof` - create various waterfalls
+
+### Other Proofing Tools:
+- `overlay-font-proof` - overlay two fonts
+- `reference-proof` - compare multiple fonts side by side
 
 ## Quick Start
 
