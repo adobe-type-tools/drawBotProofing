@@ -13,7 +13,11 @@ Creates example pages for:
 - some sample words
 
 Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
-(`all`). Writing systems supported are `lat`, `grk`, `cyr`, and `figures`.
+(`all`).
+
+Writing systems supported are `lat`, `grk`, `cyr`, and `figures`. By default,
+supported writing systems are automatically chosen on a per-font basis.
+
 Kerning can be toggled off (`-k`).
 
 Optionally, a sample string (`-s`), or an input text file file (`-t`) can be
@@ -30,10 +34,14 @@ import argparse
 import subprocess
 
 import drawBot as db
+
+from fontTools.ttLib import TTFont
 from pathlib import Path
 
+from .proofing_helpers import fonts as fonts_helper
+from .proofing_helpers import fontSorter
 from .proofing_helpers.files import get_font_paths
-from .proofing_helpers.fonts import make_temp_font
+from .proofing_helpers.fonts import make_temp_font, supports_text
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
 from .proofing_helpers.names import (
@@ -44,7 +52,7 @@ from .proofing_helpers.stamps import timestamp
 def get_options():
 
     mode_choices = ['proof', 'spacing', 'sample', 'all']
-    ws_choices = ['lat', 'grk', 'cyr', 'figures', 'all']
+    ws_choices = ['lat', 'grk', 'cyr', 'figures', 'auto']
 
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -61,7 +69,7 @@ def get_options():
     parser.add_argument(
         '-w', '--writing_system',
         action='store',
-        default='lat',
+        default='auto',
         choices=ws_choices,
         help='writing system')
 
@@ -145,6 +153,28 @@ def read_sample_text(kind='sample', w_system='lat'):
             print(text_path, 'does not exist')
 
 
+def get_supported_writing_systems(font_file):
+    f = TTFont(font_file)
+    cmap = f['cmap']
+    supported = []
+    for ws_name in 'lat', 'grk', 'cyr':
+        if getattr(fonts_helper, f'supports_{ws_name}')(cmap):
+            supported.append(ws_name)
+    return supported
+
+
+def get_all_supported_writing_systems(font_files):
+    '''
+    collect all supported writing systems
+    '''
+    all_wss = []
+    for ff in font_files:
+        wss = get_supported_writing_systems(ff)
+        new_wss = [ws for ws in wss if ws not in all_wss]
+        all_wss.extend(new_wss)
+    return all_wss
+
+
 def make_proof(args, fonts, output_path):
 
     if args.text:
@@ -157,92 +187,85 @@ def make_proof(args, fonts, output_path):
     else:
         mode = args.mode.lower()
         custom_string = args.string
-        writing_system = args.writing_system.lower()
-        proof_text = make_proof_text(mode, writing_system, custom_string)
 
-    db.newDrawing()
+        if args.writing_system.lower() == 'auto':
+            writing_systems = get_all_supported_writing_systems(fonts)
+        else:
+            writing_systems = [args.writing_system]
+
+        proof_text = make_proof_text(mode, writing_systems, custom_string)
 
     MARGIN = 30
     line_space = args.point_size * 1.2
+    feature_dict = {'kern': not args.kerning_off}
 
-    # avoid PS name clash
+    # avoid PS name clash, and avoid making too many temp fonts
     tmp_fonts = [make_temp_font(i, font) for (i, font) in enumerate(fonts)]
+
     for page in proof_text:
-
-        feature_dict = {'kern': not args.kerning_off}
-
-        # undocumented feature -- it is possible to add feature tags
-        # to the input text files. Not sure how useful.
-        #
-        # if page.startswith('#'):  # features
-        #     page_lines = page.splitlines()
-        #     feature_line = page_lines[0].strip('#').strip()
-        #     feature_dict = {
-        #         feature_name: True for feature_name in feature_line.split()}
-        #     page = '\n'.join(page_lines[1:])
-
         for font_index, font in enumerate(fonts):
-            tmp_font = tmp_fonts[font_index]
-            font_path = Path(font)
-            db.newPage('LetterLandscape')
 
-            fs_stamp = db.FormattedString(
-                f'{font_path.name}',
-                font=FONT_MONO,
-                fontSize=10,
-                align='right')
-            if args.kerning_off:
-                fs_stamp += ' | no kerning'
-            fs_stamp += f' | {timestamp(readable=True)}'
+            # check if more than 50% of the required text per page is supported
+            if supports_text(font, page, 50):
 
-            db.textBox(fs_stamp, (0, MARGIN, db.width() - MARGIN, 20))
-            y_offset = db.height() - MARGIN - args.point_size
-            for line in page.split('\n'):
+                tmp_font = tmp_fonts[font_index]
+                font_path = Path(font)
+                db.newPage('LetterLandscape')
 
-                fs = db.FormattedString(
-                    line,
-                    font=tmp_font,
-                    fontSize=args.point_size,
-                    fallbackFont=ADOBE_BLANK,
-                    openTypeFeatures=feature_dict,
-                )
-                db.text(fs, (MARGIN, y_offset))
+                caption = db.FormattedString(
+                    f'{font_path.name}',
+                    font=FONT_MONO,
+                    fontSize=10,
+                    align='right')
+                if args.kerning_off:
+                    caption += ' | no kerning'
+                caption += f' | {timestamp(readable=True)}'
 
-                if len(line) == 0:
-                    y_offset -= line_space / 2
-                else:
-                    y_offset -= line_space
+                db.textBox(caption, (0, MARGIN, db.width() - MARGIN, 20))
+                y_offset = db.height() - MARGIN - args.point_size
+                for line in page.split('\n'):
+
+                    fs = db.FormattedString(
+                        line,
+                        font=tmp_font,
+                        fontSize=args.point_size,
+                        fallbackFont=ADOBE_BLANK,
+                        openTypeFeatures=feature_dict,
+                    )
+                    db.text(fs, (MARGIN, y_offset))
+
+                    if len(line) == 0:
+                        y_offset -= line_space / 2
+                    else:
+                        y_offset -= line_space
 
     db.saveImage(output_path)
     db.endDrawing()
 
 
-def make_proof_text(mode, writing_system, custom_string=None):
+def make_proof_text(mode, writing_systems, custom_string=None):
 
     proof_text = []
 
+    if 'figures' not in writing_systems:
+        # figures are always proofed, but not twice
+        writing_systems.append('figures')
+
     if custom_string:
         proof_text.extend([custom_string])
-        proof_text.extend(read_sample_text(mode, 'lat'))
 
-    else:
-        proof_text.extend(read_sample_text(mode, writing_system))
+    for ws in writing_systems:
+        proof_text.extend(read_sample_text(mode, ws))
 
-    if writing_system not in ['all', 'figures']:
-        # add the figures for good measure
-        proof_text.extend(read_sample_text(mode, 'figures'))
     return proof_text
 
 
 def make_pdf_name(args, fonts):
     '''
-    Try to make a sensible filename for the PDF proof created.
+    Make a sensible filename for the PDF proof created.
 
     '''
-    all_font_names = [get_ps_name(font) for font in fonts]
-    family_name = get_name_overlap(all_font_names)
-    if not family_name:
-        family_name = get_path_overlap(fonts)
+    chunks = []
 
     if args.mode == 'proof':
         proof_name = 'alphabet proof'
@@ -250,8 +273,18 @@ def make_pdf_name(args, fonts):
         proof_name = 'full proof'
     else:
         proof_name = f'{args.mode} proof'
+    chunks.append(proof_name)
 
-    pdf_name = f'{proof_name} {family_name} ({args.writing_system}).pdf'
+    all_font_names = [get_ps_name(font) for font in fonts]
+    family_name = get_name_overlap(all_font_names)
+    if not family_name:
+        family_name = get_path_overlap(fonts)
+    chunks.append(family_name)
+
+    if args.writing_system != 'auto':
+        chunks.append(f'({args.writing_system})')
+
+    pdf_name = ' '.join(chunks) + '.pdf'
     return pdf_name
 
 
@@ -265,9 +298,10 @@ def main():
             print(f'{item} is not a valid path')
 
     if fonts:
-        output_pdf_name = make_pdf_name(args, fonts)
+        sorted_fonts = fontSorter.sort_fonts(fonts)
+        output_pdf_name = make_pdf_name(args, sorted_fonts)
         output_path = Path(f'~/Desktop/{output_pdf_name}').expanduser()
-        make_proof(args, fonts, output_path)
+        make_proof(args, sorted_fonts, output_path)
         subprocess.call(['open', output_path])
 
 
