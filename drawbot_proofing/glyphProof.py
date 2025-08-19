@@ -899,19 +899,25 @@ def build_proofing_fonts(input_paths):
     * if fonts are found, return a list of ttFont objects
     '''
 
-    if len(input_paths) == 1:
-        ufo_paths = get_ufo_paths(input_paths[0])
-        font_paths = get_font_paths(input_paths[0])
+    ufo_paths = []
+    font_paths = []
 
-        if ufo_paths:
-            input_files = fontSorter.sort_fonts(ufo_paths)
-        elif font_paths:
-            input_files = fontSorter.sort_fonts(font_paths)
-        else:
-            input_files = []
+    for ip in input_paths:
+        if Path(ip).exists():
+            # for each folder passed, sort the fonts.
+            # this seems to be the most logical approach, rather than
+            # sorting everything
+            ufos_found = get_ufo_paths(ip)
+            fonts_found = get_font_paths(ip)
+            ufo_paths.extend(fontSorter.sort_fonts(ufos_found))
+            font_paths.extend(fontSorter.sort_fonts(fonts_found))
+
+    if ufo_paths:
+        input_files = ufo_paths
+    elif font_paths:
+        input_files = font_paths
     else:
-        # no sorting, just passing single files
-        input_files = [Path(p) for p in input_paths]
+        input_files = []
 
     proofing_fonts = list(map(ProofingFont, input_files))
     return proofing_fonts
