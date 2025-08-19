@@ -909,8 +909,14 @@ def build_proofing_fonts(input_paths):
             # sorting everything
             ufos_found = get_ufo_paths(ip)
             fonts_found = get_font_paths(ip)
-            ufo_paths.extend(fontSorter.sort_fonts(ufos_found))
-            font_paths.extend(fontSorter.sort_fonts(fonts_found))
+
+            if Path(ip).is_dir():
+                # do not sort .designspace input
+                ufos_found = fontSorter.sort_fonts(ufos_found)
+                fonts_found = fontSorter.sort_fonts(fonts_found)
+
+            ufo_paths.extend(ufos_found)
+            font_paths.extend(fonts_found)
 
     if ufo_paths:
         input_files = ufo_paths
