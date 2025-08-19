@@ -44,3 +44,34 @@ def get_default_instance(font_file):
 
     else:
         return
+
+
+def supports_charset(cmap, charset):
+    cmap_dict = cmap.getBestCmap()
+    to_support = set(charset) | set(charset.upper())
+    supported_chars = set([chr(cp) for cp in cmap_dict.keys()])
+    return to_support <= supported_chars
+
+
+def supports_lat(cmap):
+    return supports_charset(cmap, 'abcdefghijklmnopqrstuvwxyz')
+
+
+def supports_cyr(cmap):
+    return supports_charset(cmap, 'абвгдежзийклмнопрстуфхцчшщъыьэюя')
+
+
+def supports_grk(cmap):
+    return supports_charset(cmap, 'αβγδεζηθικλμνξοπρστυφχψως')
+
+
+def supports_text(font_file, text, min_percentage=80):
+    ttFont = ttLib.TTFont(font_file)
+    cmap_dict = ttFont['cmap'].getBestCmap()
+    to_support = set(text)
+    supported_chars = set([chr(cp) for cp in cmap_dict.keys()])
+    leftover = to_support - supported_chars
+    support_percentage = (1 - (len(leftover) / len(to_support))) * 100
+    if support_percentage > min_percentage:
+        return True
+    return False
