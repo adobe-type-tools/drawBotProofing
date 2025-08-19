@@ -79,7 +79,7 @@ def find_longest_match(attr_list, match_indices):
 def make_psname_dict(font_files):
     '''
     Dictionary of PS names to font files that have them.
-    The dict values are lists, because multiple fonts might have the
+    The dict values are lists, as multiple fonts might have the
     same PS name.
     '''
     psname_dict = {}
@@ -218,23 +218,40 @@ def sort_ps_names(ps_name_list, alternate_italics=False, debug=False):
     # score_dict = {min(score_list): f for f, score_list in matches.items()}
 
     sorted_name_lists = [f for _, f in sorted(matches.items())]
-    sorted_names = list(chain.from_iterable(sorted_name_lists))
+    sorted_ps_names = list(chain.from_iterable(sorted_name_lists))
 
-    return sorted_names
+    return sorted_ps_names
+
+
+def make_family_dict(psname_dict):
+    all_families = {}
+    for ps_name, font_paths in psname_dict.items():
+        family_name = ps_name.split('-')[0]
+        family_dict = all_families.setdefault(family_name, {})
+        family_dict[ps_name] = font_paths
+    return all_families
 
 
 def sort_fonts(font_files, alternate_italics=False, debug=False):
     if len(font_files) <= 1:
         return font_files
 
-    psname_dict = make_psname_dict(font_files)
-    sorted_names = sort_ps_names(
-        psname_dict.keys(), alternate_italics, debug)
-    sorted_files = []
-    for ps_name in sorted_names:
-        sorted_files.extend(psname_dict.get(ps_name))
+    sorted_font_files = []
 
-    return sorted_files
+    # all ps names to matching font files
+    full_psname_dict = make_psname_dict(font_files)
+
+    # psname dicts split into family names
+    family_dict = make_family_dict(full_psname_dict)
+
+    for family_name in sorted(family_dict.keys()):
+        psname_dict = family_dict.get(family_name)
+        sorted_ps_names = sort_ps_names(
+            psname_dict.keys(), alternate_italics, debug)
+        for ps_name in sorted_ps_names:
+            sorted_font_files.extend(psname_dict.get(ps_name))
+
+    return sorted_font_files
 
 
 def get_font_paths(directory):
@@ -257,11 +274,12 @@ def get_args(args=None):
         description='Font Sorting Test')
 
     parser.add_argument(
-        'input_dir',
+        'input',
         action='store',
         metavar='FOLDER',
+        nargs='+',
         help=(
-            'Directory which may contain (in order of preference) '
+            'Folder(s) which may contain (in order of preference) '
             'UFOs, OTFs, or TTFs.'))
 
     parser.add_argument(
@@ -284,18 +302,20 @@ def main(test_args=None):
     A test to sort the fonts
     '''
     args = get_args(test_args)
-    input_dir = Path(args.input_dir)
-    print(input_dir)
-    if input_dir.exists():
-        fonts_unsorted = get_font_paths(input_dir)
-        fonts_sorted = sort_fonts(
-            fonts_unsorted,
-            args.alternate_italics,
-            args.debug
-        )
-        print(f'{"unsorted":<36} sorted')
-        for left, right in zip(fonts_unsorted, fonts_sorted):
-            print(f'{get_ps_name(left):<36} {get_ps_name(right)}')
+    fonts_unsorted = []
+    for input_dir in args.input:
+        input_path = Path(input_dir)
+        if input_path.exists():
+            fonts_unsorted.extend(get_font_paths(input_path))
+
+    fonts_sorted = sort_fonts(
+        fonts_unsorted,
+        args.alternate_italics,
+        args.debug
+    )
+    print(f'{"unsorted":<36} sorted')
+    for left, right in zip(fonts_unsorted, fonts_sorted):
+        print(f'{get_ps_name(left):<36} {get_ps_name(right)}')
 
 
 if __name__ == '__main__':
