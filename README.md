@@ -25,12 +25,9 @@ You’re now ready to start proofing!
 
 ### `accent-proof`
 
-Proof of all accents with a representation of all glyphs using that accent,
-and example words for each accent (both upper- and lowercase).
-Additionally, words with “merged” non-abc glyphs (such as æðøß) will be shown.
-
-This script is currently limited to AL-3, an extension to AL-4 and beyond is
-thinkable.
+Proof of all Latin accents supported by a given font, with example words for
+each accent (both upper- and lowercase). Additionally, words with “atomic”
+Latin base glyphs (such as æðøß) will be shown.
 
 Input:
 * font file(s), or folder(s) containing font files
@@ -48,7 +45,11 @@ Creates example pages for:
 - some sample words
 
 Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
-(`all`). Writing systems supported are `lat`, `grk`, `cyr`, and `figures`.
+(`all`).
+
+Writing systems supported are `lat`, `grk`, `cyr`, and `figures`. By default,
+supported writing systems are automatically chosen on a per-font basis.
+
 Kerning can be toggled off (`-k`).
 
 Optionally, a sample string (`-s`), or an input text file file (`-t`) can be
