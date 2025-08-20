@@ -45,11 +45,11 @@ from pathlib import Path
 from .proofing_helpers import fontSorter
 from .proofing_helpers import charsets as cs
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK, ADOBE_NOTDEF
-from .proofing_helpers.fonts import get_default_instance
+from .proofing_helpers.fonts import get_default_instance, make_temp_font
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.helpers import uni_names
 from .proofing_helpers.files import (
-    get_font_paths, chain_charset_texts, read_text_file, make_temp_font)
+    chain_charset_texts, get_font_paths, read_text_file)
 from .proofing_helpers.stamps import timestamp
 
 
