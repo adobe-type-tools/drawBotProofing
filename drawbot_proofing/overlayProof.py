@@ -6,10 +6,10 @@
 # it.
 
 '''
-In-process proofing tool overlaying releated fonts on top of each other.
+Proofing tool for overlaying releated fonts on top of each other.
+Some smartness is used to make sure fonts end up on the same baseline.
 
 To-Do:
-- do not rely on built-in line spacing and hhea ascender
 - make font pairing smarter
 - allow overlaying static and VF
 
@@ -25,12 +25,14 @@ from random import choice
 
 import drawBot as db
 import argparse
+import math
 import subprocess
 
 from .proofing_helpers import fontSorter
-from .proofing_helpers.files import make_temp_font
+from .proofing_helpers.fonts import make_temp_font
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
+from .proofing_helpers.names import get_ps_name
 
 
 def get_args(default_args=None):
@@ -46,6 +48,12 @@ def get_args(default_args=None):
         'ff_b',
         help='font or folder b')
 
+    parser.add_argument(
+        '-p', '--pt_size',
+        default=16,
+        type=int,
+        help='point size')
+
     return parser.parse_args(default_args)
 
 
@@ -60,10 +68,6 @@ def get_text(length=2000):
         txt += choice(lines) + ' '
 
     return txt
-
-
-def get_ps_name(font):
-    return TTFont(font)['name'].getDebugName(6)
 
 
 def footer(name, color):
@@ -83,42 +87,117 @@ def footer_vs(name_a, name_b, color_a, color_b):
     return fs_color_a + fs_black + fs_color_b
 
 
-def content(font, txt, color):
-    fs = db.FormattedString(
-        txt,
-        font=font,
-        fontSize=16,
-        fill=color,
-    )
-    return fs
+def calc_baseline_offset(f_a, f_b):
+    '''
+    unreliable. not used.
+    '''
+    upm_a = f_a['head'].unitsPerEm
+    upm_b = f_b['head'].unitsPerEm
+
+    fs_sel_a = f"{f_a['OS/2'].fsSelection:016b}"
+    fs_sel_b = f"{f_b['OS/2'].fsSelection:016b}"
+
+    use_typo_metrics_a = fs_sel_a[-7]
+    use_typo_metrics_b = fs_sel_b[-7]
+
+    if use_typo_metrics_a:
+        asc_a = f_a['OS/2'].sTypoAscender
+    else:
+        asc_a = f_a['hhea'].ascender
+
+    if use_typo_metrics_b:
+        asc_b = f_b['OS/2'].sTypoAscender
+    else:
+        asc_b = f_b['hhea'].ascender
+
+    asc_a = f_a['hhea'].ascender
+    asc_b = f_b['hhea'].ascender
+
+    norm_asc_a = asc_a / upm_a * 1000
+    norm_asc_b = asc_b / upm_b * 1000
+
+    get_caps_y_origin = norm_asc_b - norm_asc_a
+    return get_caps_y_origin
 
 
-def make_overlay_page(txt, font_a, font_b):
+def make_page(txt, font_a, font_b, color_a, color_b, pt_size):
     '''
     single page:
     font_a and font_b overlaid, setting the same text.
     '''
     margin = 20
-    color_a = (0, 0, 1, 1)
-    color_b = (1, 0, 0, 1)
+    line_height = pt_size * 1.4
 
     db.newPage('A4')
-    text_box_bounds = (
-        margin, 2 * margin, db.width() - 2 * margin, db.height() - 3 * margin)
-
     db.blendMode('multiply')
-    uname_a = TTFont(font_a)['name'].getDebugName(3)
-    uname_b = TTFont(font_b)['name'].getDebugName(3)
 
-    content_a = content(font_a, txt, color_a)
-    content_b = content(font_b, txt, color_b)
+    f_a = TTFont(font_a)
+    f_b = TTFont(font_b)
+    uname_a = f_a['name'].getDebugName(3)
+    uname_b = f_b['name'].getDebugName(3)
 
-    db.textBox(content_a, text_box_bounds)
-    db.textBox(content_b, text_box_bounds)
+    content = db.FormattedString(
+        txt, font=font_a, fontSize=pt_size, fill=color_a)
+
+    baseline_offset_a = get_baseline_offset(font_a, pt_size)
+    baseline_offset_b = get_baseline_offset(font_b, pt_size)
+    offset_difference = baseline_offset_b - baseline_offset_a
+
+    y = db.height() - margin
+    num_lines = math.floor((db.height() - 3 * margin) / line_height)
+
+    for i in range(num_lines):
+        y -= line_height
+        text_box_bounds = (
+            margin, y, db.width() - 2 * margin, line_height)
+
+        with db.savedState():
+            db.translate(0, -offset_difference)
+            db.textBox(
+                # draw the background text
+                db.FormattedString(
+                    str(content), font=font_b,
+                    fontSize=pt_size, fill=color_b,), text_box_bounds)
+
+        # draw the foreground text
+        content = db.textBox(content, text_box_bounds)
+
     db.text(footer_vs(uname_a, uname_b, color_a, color_b), (margin, margin))
 
 
-def make_comparison_pages(txt, fonts):
+def get_caps_y_origin(font, pt_size):
+    '''
+    Return the bottom y coordinate of the bounding box of H.
+    For most fonts, this should be 0, but a shaded font may be negative.
+    '''
+    bp = db.BezierPath()
+    bp.text('H', font=font, fontSize=pt_size)
+    return bp.bounds()[1]
+
+
+def get_baseline_offset(font, pt_size):
+    '''
+    Return the offset of the first baseline in respect to
+    the top of a DrawBot textBox.
+
+    I tried to calculate this for point size 1000 and scale later,
+    but it seems like the scaling makes the result inaccurate.
+
+    Also, just using the hhea ascender does not seem to work.
+    '''
+    width = height = 2000
+    text_area = 0, 0, width, height
+    bp = db.BezierPath()
+    sample = db.FormattedString('H', font=font, fontSize=pt_size)
+    bp.textBox(sample, text_area)
+    bottom_bounds = bp.bounds()[1]
+    baseline_zero_offset = get_caps_y_origin(font, pt_size)
+    baseline_offset = bottom_bounds - height - baseline_zero_offset
+
+    return baseline_offset
+
+
+def make_pages(txt, fonts, pt_size):
     '''
     three pages, all setting the same text:
     font_a
@@ -126,28 +205,14 @@ def make_comparison_pages(txt, fonts):
     font_a + font_b (overlaid)
     '''
     font_a, font_b = fonts
-    margin = 20
 
-    uname_a = TTFont(font_a)['name'].getDebugName(3)
-    uname_b = TTFont(font_b)['name'].getDebugName(3)
+    black = (0)
+    color_a = (0, 0, 1, 1)
+    color_b = (1, 0, 0, 1)
 
-    db.newPage('A4')
-
-    text_box_bounds = (
-        margin, 2 * margin, db.width() - 2 * margin, db.height() - 3 * margin)
-
-    content_page_1 = content(font_a, txt, 0)
-    footer_page_1 = footer(uname_a, 0)
-    db.textBox(content_page_1, text_box_bounds)
-    db.text(footer_page_1, (margin, margin))
-
-    db.newPage('A4')
-    content_page_2 = content(font_b, txt, 0)
-    footer_page_2 = footer(uname_b, 0)
-    db.textBox(content_page_2, text_box_bounds)
-    db.text(footer_page_2, (margin, margin))
-
-    make_overlay_page(txt, font_a, font_b)
+    make_page(txt, font_a, font_b, black, None, pt_size)
+    make_page(txt, font_a, font_b, None, black, pt_size)
+    make_page(txt, font_a, font_b, color_a, color_b, pt_size)
 
 
 def collect_fonts(paths):
@@ -196,7 +261,8 @@ def get_style_name(font_path):
 
 def collect_font_pairs(paths):
     '''
-    may drop fonts if a style name only exists on one side
+    Find font pairs sharing style name.
+    May drop fonts if a style name only exists on one side
     '''
     fonts_a = paths[0].rglob('*.[ot]tf')
     fonts_b = list(paths[1].rglob('*.[ot]tf'))
@@ -225,13 +291,14 @@ def main():
     if all([p.is_dir() for p in paths]):
         font_pairs = collect_font_pairs(paths)
         fonts = font_pairs.values()
+        color_a = (0, 0, 1, 1)
+        color_b = (1, 0, 0, 1)
 
         print('font pairs found:')
         for style_name, font_pair in font_pairs.items():
             font_a, font_b = font_pair
-            print(style_name)
-            print(f'\t{font_a.name}')
-            print(f'\t{font_b.name}')
+            print(f'{font_a.name}')
+            print(f'{font_b.name}')
             print()
 
         pdf_name = f'overlay {" vs ".join(p.name for p in paths)}.pdf'
@@ -239,7 +306,8 @@ def main():
         for font_pair in fonts:
             temp_fonts = [
                 make_temp_font(fi, f) for fi, f in enumerate(font_pair)]
-            make_overlay_page(txt, *temp_fonts)
+            tf_a, tf_b = temp_fonts
+            make_page(txt, tf_a, tf_b, color_a, color_b, args.pt_size)
 
     elif all([p.is_file() for p in paths]):
         fonts = paths
@@ -252,7 +320,7 @@ def main():
         ps_names = [get_ps_name(f) for f in fonts]
         temp_fonts = [
             make_temp_font(fi, f) for fi, f in enumerate(fonts)]
-        make_comparison_pages(txt, temp_fonts)
+        make_pages(txt, temp_fonts, args.pt_size)
 
     else:
         fonts = []
