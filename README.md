@@ -172,10 +172,10 @@ Input (pick one):
 
 ### `overlay-proof`
 
-In-process proofing tool overlaying releated fonts on top of each other.
+Proofing tool for overlaying releated fonts on top of each other.
+Some smartness is used to make sure fonts end up on the same baseline.
 
 To-Do:
-- do not rely on built-in line spacing and hhea ascender
 - make font pairing smarter
 - allow overlaying static and VF
 
