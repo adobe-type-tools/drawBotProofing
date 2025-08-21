@@ -9,7 +9,7 @@
 Creates simple view which illustrates all vertical metrics
 set in the font metadata. Additionally, tallest and lowest glyphs are shown.
 
-Using the -n option, the number of extreme glyphs can be increased.
+Using the -e option, the number of reported extreme glyphs can be modified.
 
 Input:
 * font file(s), or folder(s) containing font files
@@ -43,12 +43,10 @@ MARGIN = 20
 MARGIN_L = 6 * MARGIN
 
 
-def get_args(args=None, description=__doc__):
+def get_args():
 
     parser = argparse.ArgumentParser(
-        # this is a deliberate construction,
-        # so the description can be overridden on import
-        description=description,
+        description=__doc__,
         formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
@@ -64,9 +62,10 @@ def get_args(args=None, description=__doc__):
         help='output file name')
 
     parser.add_argument(
-        '-n', '--num_extremes',
+        '-e', '--extremes',
         type=int,
         default=1,
+        metavar='INT',
         help='number of extreme glyphs')
 
     parser.add_argument(
@@ -81,7 +80,7 @@ def get_args(args=None, description=__doc__):
         default='Hxbpg',
         help='sample string')
 
-    return parser.parse_args(args)
+    return parser.parse_args()
 
 
 class FontInfo(object):
@@ -98,7 +97,10 @@ class FontInfo(object):
         self.sample_string = args.sample_string
         self.parse_cmap()
         self.extract_vertical_metrics()
-        self.extract_extreme_n_glyphs(n=args.num_extremes)
+        if hasattr(args, 'extremes'):
+            # comparison proof does not need extremes
+            self.extract_extreme_n_glyphs(n=args.extremes)
+
         self.extract_names()
         self.extract_widths()
         self.extract_upm()
@@ -328,9 +330,10 @@ def process_font_path(font_path, args):
         fi.capHeight,
         fi.ascender))
 
-    if args.num_extremes > 1:
-        print(f'{"":20s} lo {args.num_extremes}: {" ".join(fi.g_ymin)}')
-        print(f'{"":20s} hi {args.num_extremes}: {" ".join(fi.g_ymax)}')
+    extremes = args.extremes
+    if extremes > 1:
+        print(f'{"":20s} lo {extremes}: {" ".join(fi.g_ymin)}')
+        print(f'{"":20s} hi {extremes}: {" ".join(fi.g_ymax)}')
 
     draw_metrics_page(fi, args.normalize_upm)
 
