@@ -1,12 +1,12 @@
 """
 DrawBot Proofing Tools
 
-A collection of font proofing tools using DrawBot for type designers and developers.
+A collection of font proofing tools for type designers and font developers.
 """
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 __author__ = "Adobe"
 __email__ = "opensource@adobe.com"
 
-# Import key modules for easier access
+
 from . import proofing_helpers
