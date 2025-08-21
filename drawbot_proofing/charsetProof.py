@@ -43,33 +43,32 @@ def get_args(args=None):
         formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
-        'input',
-        metavar='INPUT',
-        nargs='+',
-        help='font file(s) or folder(s)'
-    )
-    parser.add_argument(
         '-p', '--pointsize',
         metavar='PT',
         action='store',
         default=40,
         type=int,
-        help='point size for sample'
-    )
+        help='point size for sample')
+
     parser.add_argument(
         '-s', '--spacer',
         action='store',
         metavar='CHR',
         default='',
-        help=r'spacing character (may need to be escaped with \)'
-    )
+        help=r'spacing character (may need to be escaped with \)')
+
     parser.add_argument(
         '-c', '--charset',
         action='store',
         default='AL3',
         # choices=available_charsets,  # ugly
-        help=f'character set ({", ".join(available_charsets)})',
-    )
+        help=f'character set ({", ".join(available_charsets)})',)
+
+    parser.add_argument(
+        'input',
+        metavar='INPUT',
+        nargs='+',
+        help='font file(s) or folder(s)')
 
     return parser.parse_args(args)
 

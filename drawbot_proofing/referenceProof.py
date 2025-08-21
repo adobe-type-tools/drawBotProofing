@@ -84,7 +84,7 @@ def get_args(args=None):
         help='do not open result PDF after generating')
 
     parser.add_argument(
-        '-d', '--input_path',
+        '-d', '--directory',
         action='store',
         metavar='FOLDER',
         help='folder to crawl (default is using all installed fonts)')
@@ -220,14 +220,14 @@ def get_available_fonts(args):
     and a font number (if applicable).
     '''
     available_fonts = []
-    if args.input_path:
-        input_path = Path(args.input_path)
-        if input_path.is_dir():  # find fonts in input_path
+    if args.directory:
+        directory = Path(args.directory)
+        if directory.is_dir():  # find fonts in directory
             font_paths = (
-                list(input_path.rglob('*.otf')) +
-                list(input_path.rglob('*.OTF')) +
-                list(input_path.rglob('*.tt[fc]')) +
-                list(input_path.rglob('*.TT[FC]')))
+                list(directory.rglob('*.otf')) +
+                list(directory.rglob('*.OTF')) +
+                list(directory.rglob('*.tt[fc]')) +
+                list(directory.rglob('*.TT[FC]')))
 
             for font_path in font_paths:
                 if (
@@ -237,10 +237,10 @@ def get_available_fonts(args):
                 ):
                     available_fonts.extend(font_path_to_ffi(font_path))
 
-        elif input_path.is_file():
-            available_fonts.extend(font_path_to_ffi(input_path))
+        elif directory.is_file():
+            available_fonts.extend(font_path_to_ffi(directory))
         else:
-            print(f'{args.input_path} seems to be invalid.')
+            print(f'{args.directory} seems to be invalid.')
 
     else:  # use installed fonts
         installed_fonts = db.installedFonts()
@@ -289,8 +289,8 @@ def collect_font_objects(args):
 def make_pdf_name(args):
     chars_safe = args.chars.replace('/', '_')  # remove slash from path
 
-    if args.input_path:
-        short_dir = Path(args.input_path).name
+    if args.directory:
+        short_dir = Path(args.directory).name
         pdf_name = f'comparisonProof {chars_safe} ({short_dir}).pdf'
 
     else:

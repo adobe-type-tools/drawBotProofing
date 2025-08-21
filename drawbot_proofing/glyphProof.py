@@ -15,7 +15,7 @@ Other modes include
 * `overlay` (superimposed outline view)
 
 Input (pick one):
-* folder(s) containing UFO files or font files
+* folder(s) containing UFO- or font files
 * individual UFO- or font files
 * designspace file (for proofing UFO sources)
 
@@ -52,6 +52,64 @@ from .proofing_helpers.names import get_name_overlap, get_path_overlap
 BOX_WIDTH = 200
 BOX_HEIGHT = BOX_WIDTH * 1.5
 MARGIN = BOX_HEIGHT * 0.1
+
+
+def get_args(args=None):
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter)
+
+    parser.add_argument(
+        '-m', '--mode',
+        choices=['default', 'single', 'overlay', 'gradient'],
+        default='default',
+        required=False,
+        help='output mode')
+
+    parser.add_argument(
+        '-a', '--anchors',
+        default=False,
+        action='store_true',
+        help='draw anchors')
+
+    parser.add_argument(
+        '-o', '--outlines',
+        default=False,
+        action='store_true',
+        help='only proof glyphs with outlines')
+
+    parser.add_argument(
+        '-r', '--regex',
+        action='store',
+        metavar='REGEX',
+        type=str,
+        help='filter glyph list with regular expression')
+
+    parser.add_argument(
+        '-s', '--stroke_colors',
+        action='store_true',
+        default=False,
+        help='color strokes in overlay mode')
+
+    parser.add_argument(
+        '-c', '--columns',
+        required=False,
+        type=int,
+        help='override column calculation in default mode')
+
+    parser.add_argument(
+        '--headless',
+        action='store_true',
+        help='do not automatically open PDF files')
+
+    parser.add_argument(
+        'input',
+        metavar='INPUT',
+        nargs='+',
+        help='file(s) or folder(s)')
+
+    return parser.parse_args(args)
 
 
 class FontContainer(object):
@@ -960,67 +1018,9 @@ def make_stroke_colors(font_list, args):
     return stroke_colors
 
 
-def get_args(args=None):
-
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter)
-
-    parser.add_argument(
-        '-a', '--anchors',
-        default=False,
-        action='store_true',
-        help='draw anchors')
-
-    parser.add_argument(
-        '-c', '--contours',
-        default=False,
-        action='store_true',
-        help='only draw glyphs with contours')
-
-    parser.add_argument(
-        '-r', '--regex',
-        action='store',
-        metavar='REGEX',
-        type=str,
-        help='regular expression to filter glyph list')
-
-    parser.add_argument(
-        '-m', '--mode',
-        choices=['single', 'overlay', 'gradient'],
-        default='default',
-        required=False,
-        help='alternate output modes')
-
-    parser.add_argument(
-        '-s', '--stroke_colors',
-        action='store_true',
-        default=False,
-        help='color strokes in overlay mode')
-
-    parser.add_argument(
-        '-l', '--columns',
-        required=False,
-        type=int,
-        help='override automatic number of columns')
-
-    parser.add_argument(
-        '--headless',
-        action='store_true',
-        help='do not automatically open PDF files')
-
-    parser.add_argument(
-        'input',
-        metavar='INPUT',
-        nargs='+',
-        help='file(s) or folder(s)')
-
-    return parser.parse_args(args)
-
-
 def make_proof(proofing_fonts, args):
 
-    glyph_list = get_glyph_names(proofing_fonts, args.contours)
+    glyph_list = get_glyph_names(proofing_fonts, args.outlines)
     if args.regex:
         glyph_list = filter_glyph_names(glyph_list, args.regex)
 

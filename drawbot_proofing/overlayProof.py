@@ -42,18 +42,16 @@ def get_args(default_args=None):
         formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
-        'ff_a',
-        help='font or folder a')
-
-    parser.add_argument(
-        'ff_b',
-        help='font or folder b')
-
-    parser.add_argument(
         '-p', '--pt_size',
         default=16,
         type=int,
         help='point size')
+
+    parser.add_argument(
+        'input',
+        nargs=2,
+        metavar='INPUT',
+        help='two font files or folders')
 
     return parser.parse_args(default_args)
 
@@ -287,7 +285,7 @@ def collect_font_pairs(paths):
 
 def main():
     args = get_args()
-    paths = [Path(i) for i in [args.ff_a, args.ff_b]]
+    paths = [Path(i) for i in args.input]
     txt = get_text()
 
     if all([p.is_dir() for p in paths]):

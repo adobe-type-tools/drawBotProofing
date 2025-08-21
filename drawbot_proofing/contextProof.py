@@ -85,6 +85,7 @@ def get_args():
 
     parser.add_argument(
         'input',
+        metavar='INPUT',
         nargs='+',
         help='input font file(s)')
 

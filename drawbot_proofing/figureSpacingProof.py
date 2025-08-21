@@ -10,7 +10,7 @@ Simple script to check figure spacing in fonts or UFOs (without kerning).
 For each figure suffix found (such as .tosf), a new spacing page is made.
 
 Input (pick one):
-* folder(s) containing UFO files or font files
+* folder(s) containing UFO- or font files
 * individual UFO- or font files
 * designspace file (for proofing UFO sources)
 
@@ -29,6 +29,7 @@ from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_font_paths, get_ufo_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
+from .proofing_helpers.names import get_ps_name, get_name_overlap, get_path_overlap
 from .proofing_helpers.stamps import timestamp
 
 
@@ -43,19 +44,19 @@ def get_args():
         default=100,
         action='store',
         type=int,
-        help='font size',
-    )
+        help='font size')
 
     parser.add_argument(
         '-s', '--suffixes',
         action='store',
         help='suffixes',
-        nargs='*',
-    )
+        nargs='*')
 
     parser.add_argument(
-        'path',
-        help='folder containing UFO or font files')
+        'input',
+        nargs='+',
+        metavar='INPUT',
+        help='input file(s) or folder(s)')
 
     return parser.parse_args()
 
@@ -209,16 +210,34 @@ def get_figure_suffixes(gnames, custom_suffixes, report=False):
     return suffixes
 
 
+def make_output_name(paths):
+    '''
+    Make a sensible filename for the PDF proof created.
+
+    '''
+    chunks = ['figure spacing']
+
+    all_font_names = [get_ps_name(font) for font in paths]
+    family_name = get_name_overlap(all_font_names)
+    if not family_name:
+        family_name = get_path_overlap(paths)
+    chunks.append(family_name)
+
+    pdf_name = ' '.join(chunks) + '.pdf'
+    return pdf_name
+
+
 def main():
     args = get_args()
 
-    input_path = Path(args.path)
+    input_paths = [Path(i) for i in args.input]
     input_list = []
-    input_list.extend(get_ufo_paths(input_path))
-    input_list.extend(get_font_paths(input_path))
+    for input_path in input_paths:
+        input_list.extend(get_ufo_paths(input_path))
+        input_list.extend(get_font_paths(input_path))
 
-    output_pdf = f'figure spacing {input_path.name}.pdf'
-    output_path = Path(f'~/Desktop/{output_pdf}').expanduser()
+    output_name = make_output_name(input_list)
+    output_path = Path(f'~/Desktop/{output_name}').expanduser()
 
     db.newDrawing()
     for input_file in input_list:

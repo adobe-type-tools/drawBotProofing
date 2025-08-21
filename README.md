@@ -113,7 +113,7 @@ Simple script to check figure spacing in fonts or UFOs (without kerning).
 For each figure suffix found (such as .tosf), a new spacing page is made.
 
 Input (pick one):
-* folder(s) containing UFO files or font files
+* folder(s) containing UFO- or font files
 * individual UFO- or font files
 * designspace file (for proofing UFO sources)
 
@@ -132,7 +132,7 @@ Other modes include
 * `overlay` (superimposed outline view)
 
 Input (pick one):
-* folder(s) containing UFO files or font files
+* folder(s) containing UFO- or font files
 * individual UFO- or font files
 * designspace file (for proofing UFO sources)
 
@@ -158,7 +158,7 @@ The glyphset can be filtered with a regular expression (for example,
 use `-r ".*dieresis"` to show all glyphs whose names end with -dieresis).
 
 Input (pick one):
-* folder(s) containing UFO files or font files
+* folder(s) containing UFO- or font files
 * individual UFO- or font files
 * designspace file (for proofing UFO sources)
 
@@ -277,7 +277,7 @@ Input (pick one):
 Creates simple view which illustrates all vertical metrics
 set in the font metadata. Additionally, tallest and lowest glyphs are shown.
 
-Using the -n option, the number of extreme glyphs can be increased.
+Using the -e option, the number of reported extreme glyphs can be modified.
 
 Input:
 * font file(s), or folder(s) containing font files
