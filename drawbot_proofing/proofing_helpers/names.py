@@ -9,25 +9,26 @@ import plistlib
 from fontTools import ttLib
 
 
+def get_fi_dict(ufo_file):
+    fontinfo_path = ufo_file.joinpath('fontinfo.plist')
+    with open(fontinfo_path, 'rb') as fi_blob:
+        fi_dict = plistlib.load(fi_blob)
+    return fi_dict
+
+
 def get_ps_name(input_file):
     '''
     Return the PS name for a font or UFO.
     If the UFO PS name is not filled in, synthesize it.
     '''
-    if input_file.suffix == '.ufo':
-
-        fontinfo_path = input_file.joinpath('fontinfo.plist')
-        with open(fontinfo_path, 'rb') as fi_blob:
-            fi_dict = plistlib.load(fi_blob)
-
+    if input_file.suffix.lower() == '.ufo':
+        fi_dict = get_fi_dict(input_file)
         ps_name = fi_dict.get('postscriptFontName', None)
         if not ps_name:
             family_name = fi_dict.get('familyName', 'Family Name')
             style_name = fi_dict.get('styleName', 'Style Name')
-            ps_name = '-'.join([
-                family_name.replace(' ', ''),
-                style_name.replace(' ', '')
-            ])
+            joined_name = f'{family_name}-{style_name}'
+            ps_name = joined_name.replace(' ', '')
 
     else:
         f = ttLib.TTFont(input_file)
@@ -39,10 +40,62 @@ def get_ps_name(input_file):
     return ps_name
 
 
-def get_unique_name(font_file):
-    f = ttLib.TTFont(font_file)
-    name_table = f.get('name')
-    return name_table.getDebugName(3)
+def get_family_name(input_file):
+
+    if input_file.suffix.lower() == '.ufo':
+        fi_dict = get_fi_dict(input_file)
+        family_name = fi_dict.get('familyName')
+
+    else:
+        f = ttLib.TTFont(input_file)
+        name_table = f.get('name')
+        family_name = name_table.getDebugName(16)
+        if not family_name:
+            family_name = name_table.getDebugName(1)
+
+    if not family_name:
+        family_name = '[no family name]'
+
+    return family_name
+
+
+def get_style_name(input_file):
+
+    if input_file.suffix.lower() == '.ufo':
+        fi_dict = get_fi_dict(input_file)
+        style_name = fi_dict.get('styleName')
+
+    else:
+        f = ttLib.TTFont(input_file)
+        name_table = f.get('name')
+        style_name = name_table.getDebugName(17)
+        if not style_name:
+            style_name = name_table.getDebugName(2)
+
+    if not style_name:
+        style_name = '[no style name]'
+
+    return style_name
+
+
+def get_unique_name(input_file):
+
+    if input_file.suffix.lower() == '.ufo':
+        fi_dict = get_fi_dict(input_file)
+        version_maj = fi_dict.get('versionMajor', 0)
+        version_min = fi_dict.get('versionMinor', 0)
+        manufacturer = fi_dict.get('openTypeNameManufacturer', 'NONE')
+
+        version_str = f'{version_maj}.{version_min:>03}'
+        ps_name = get_ps_name(input_file)
+        unique_name = f'{version_str};{manufacturer};{ps_name};'
+
+    else:
+        f = ttLib.TTFont(input_file)
+        name_table = f.get('name')
+        unique_name = name_table.getDebugName(3)
+
+    return unique_name
 
 
 def get_overlap_index(list_of_strings, start_char=0):
