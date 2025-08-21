@@ -291,10 +291,10 @@ def make_pdf_name(args):
 
     if args.directory:
         short_dir = Path(args.directory).name
-        pdf_name = f'comparisonProof {chars_safe} ({short_dir}).pdf'
+        pdf_name = f'reference proof {chars_safe} ({short_dir}).pdf'
 
     else:
-        pdf_name = f'comparisonProof {chars_safe} (installed fonts).pdf'
+        pdf_name = f'reference proof {chars_safe} (installed fonts).pdf'
 
     return pdf_name
 
