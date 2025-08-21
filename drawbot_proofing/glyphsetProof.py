@@ -13,7 +13,7 @@ The glyphset can be filtered with a regular expression (for example,
 use `-r ".*dieresis"` to show all glyphs whose names end with -dieresis).
 
 Input (pick one):
-* folder(s) containing UFO files or font files
+* folder(s) containing UFO- or font files
 * individual UFO- or font files
 * designspace file (for proofing UFO sources)
 
@@ -43,12 +43,6 @@ def get_args(args=None):
         formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
-        'input',
-        nargs='+',
-        metavar='INPUT',
-        help='file(s) or folder(s)')
-
-    parser.add_argument(
         '-r', '--regex',
         action='store',
         default='',
@@ -66,6 +60,12 @@ def get_args(args=None):
         action='store_true',
         default=False,
         help='draw a stroke around glyph boxes')
+
+    parser.add_argument(
+        'input',
+        nargs='+',
+        metavar='INPUT',
+        help='file(s) or folder(s)')
 
     return parser.parse_args(args)
 

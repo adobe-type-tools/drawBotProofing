@@ -62,11 +62,9 @@ def get_args():
         formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
-        # '-f', '--fonts',
         'fonts',
         nargs='+',
-        # required=True,
-        metavar='FONT',
+        metavar='INPUT',
         help='font file or folder')
 
     group = parser.add_mutually_exclusive_group(required=False)
@@ -123,9 +121,9 @@ def get_args():
         help='report information about the characters used')
 
     parser.add_argument(
-        '-s', '--secondary_fonts',
+        '-s', '--secondary_font',
         nargs='+',
-        metavar='FONT',
+        metavar='INPUT',
         default=[],
         help='secondary font file or folder')
 
@@ -508,7 +506,7 @@ def main():
     args = get_args()
 
     fonts_a = get_fonts(args.fonts)
-    fonts_b = get_fonts(args.secondary_fonts)
+    fonts_b = get_fonts(args.secondary_font)
 
     gpp_count = 0
     for i, font in enumerate(fonts_a + fonts_b):
@@ -523,7 +521,7 @@ def main():
     if args.text_file:
         content_list = get_content_from_text_file(args.text_file)
         output_name = make_output_name(
-            args.fonts, args.secondary_fonts,
+            args.fonts, args.secondary_font,
             'text file', args.pt_size, args.full)
         formatted_content = format_content(content_list, len_limit, False)
 
@@ -532,7 +530,7 @@ def main():
         charset = validate_charset(charset_name)
         content_list = get_content_from_charset(charset_name)
         output_name = make_output_name(
-            args.fonts, args.secondary_fonts,
+            args.fonts, args.secondary_font,
             charset_name, args.pt_size, args.full)
         formatted_content = make_formatted_content(
             content_list, charset,

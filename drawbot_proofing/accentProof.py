@@ -33,6 +33,27 @@ from .proofing_helpers.stamps import timestamp
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
 
 
+def get_args(args=None):
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter)
+
+    parser.add_argument(
+        '--headless',
+        default=False,
+        action='store_true',
+        help='do not open result PDF after generating')
+
+    parser.add_argument(
+        'input',
+        metavar='INPUT',
+        nargs='+',
+        help='font file(s) or folder(s)')
+
+    return parser.parse_args(args)
+
+
 def get_supported_chars(font):
     '''
     characters supported by a font
@@ -283,27 +304,6 @@ def get_atomic_latin(start=0):
 
     atomic += atomic_latin_other
     return sorted(atomic)
-
-
-def get_args(args=None):
-
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter)
-
-    parser.add_argument(
-        'input',
-        metavar='INPUT',
-        nargs='+',
-        help='font file(s) or folder(s)',
-    )
-    parser.add_argument(
-        '--headless',
-        default=False,
-        action='store_true',
-        help='do not open result PDF after generating',
-    )
-    return parser.parse_args(args)
 
 
 def main(test_args=None):
