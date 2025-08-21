@@ -43,13 +43,13 @@ MARGIN = 20
 MARGIN_L = 6 * MARGIN
 
 
-def get_options(args=None, description=__doc__):
+def get_args(args=None, description=__doc__):
+
     parser = argparse.ArgumentParser(
         # this is a deliberate construction,
         # so the description can be overridden on import
         description=description,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         'input',
@@ -349,10 +349,10 @@ def main():
         file_or_folder = getFileOrFolder(allowsMultipleSelection=False)
         input_dir = str(file_or_folder[0])
         # would like to get # extremes and sample string here somehow...
-        args = get_options([input_dir])
+        args = get_args([input_dir])
 
     else:
-        args = get_options()
+        args = get_args()
 
     font_paths = []
     for item in args.input:

@@ -285,11 +285,12 @@ def get_atomic_latin(start=0):
     return sorted(atomic)
 
 
-def get_options(args=None):
+def get_args(args=None):
+
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
+
     parser.add_argument(
         'input',
         metavar='INPUT',
@@ -306,7 +307,7 @@ def get_options(args=None):
 
 
 def main(test_args=None):
-    args = get_options(test_args)
+    args = get_args(test_args)
     accents_dict = get_cmb_accents_dict()
     atomic = get_atomic_latin(start=ord('ß'))
     atomic_dict = {cp: chr(cp) for cp in atomic}

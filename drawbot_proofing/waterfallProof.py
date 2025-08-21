@@ -24,11 +24,14 @@ from pathlib import Path
 
 from .proofing_helpers import fontSorter
 from .proofing_helpers.files import get_font_paths, read_text_file
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 
 
-def get_options():
+def get_args():
+
     parser = argparse.ArgumentParser(
-        description=__doc__)
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         'input',
@@ -121,7 +124,7 @@ def make_proof(input_dir, args):
 
 
 def main():
-    args = get_options()
+    args = get_args()
     input_dir = Path(args.input)
 
     if input_dir.is_dir():

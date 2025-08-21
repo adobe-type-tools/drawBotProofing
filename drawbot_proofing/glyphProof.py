@@ -960,11 +960,11 @@ def make_stroke_colors(font_list, args):
     return stroke_colors
 
 
-def get_options(args=None):
+def get_args(args=None):
+
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         '-a', '--anchors',
@@ -1083,7 +1083,7 @@ def make_proof(proofing_fonts, args):
 
 
 def main(test_args=None):
-    args = get_options(test_args)
+    args = get_args(test_args)
     proofing_fonts = build_proofing_fonts(args.input)
     if proofing_fonts:
         for pf in proofing_fonts:

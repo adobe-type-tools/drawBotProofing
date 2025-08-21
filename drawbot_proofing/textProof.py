@@ -53,24 +53,13 @@ from .proofing_helpers.files import (
 from .proofing_helpers.stamps import timestamp
 
 
-DOC_SIZE = 'Letter'
-MARGIN = 12
-
-
-class TextContainer(object):
-    def __init__(self, text, italic=False, paragraph=False):
-        self.text = text.strip()
-        self.italic = italic
-        self.paragraph = paragraph
-
-
-def get_options():
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
+def get_args():
 
     charset_choices = [name for name in dir(cs) if not name.startswith('_')]
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         # '-f', '--fonts',
@@ -141,6 +130,17 @@ def get_options():
         help='secondary font file or folder')
 
     return parser.parse_args()
+
+
+DOC_SIZE = 'Letter'
+MARGIN = 12
+
+
+class TextContainer(object):
+    def __init__(self, text, italic=False, paragraph=False):
+        self.text = text.strip()
+        self.italic = italic
+        self.paragraph = paragraph
 
 
 def merge_chunks(chunks, chunk_length=5):
@@ -505,7 +505,7 @@ def get_fonts(input_paths):
 
 
 def main():
-    args = get_options()
+    args = get_args()
 
     fonts_a = get_fonts(args.fonts)
     fonts_b = get_fonts(args.secondary_fonts)

@@ -32,6 +32,34 @@ from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.stamps import timestamp
 
 
+def get_args():
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter)
+
+    parser.add_argument(
+        '--point_size',
+        default=100,
+        action='store',
+        type=int,
+        help='font size',
+    )
+
+    parser.add_argument(
+        '-s', '--suffixes',
+        action='store',
+        help='suffixes',
+        nargs='*',
+    )
+
+    parser.add_argument(
+        'path',
+        help='folder containing UFO or font files')
+
+    return parser.parse_args()
+
+
 def joinit(iterable, delimiter):
     '''
     https://stackoverflow.com/a/5656097
@@ -181,36 +209,8 @@ def get_figure_suffixes(gnames, custom_suffixes, report=False):
     return suffixes
 
 
-def get_options():
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
-
-    parser.add_argument(
-        '--point_size',
-        default=100,
-        action='store',
-        type=int,
-        help='font size',
-    )
-
-    parser.add_argument(
-        '-s', '--suffixes',
-        action='store',
-        help='suffixes',
-        nargs='*',
-    )
-
-    parser.add_argument(
-        'path',
-        help='folder containing UFO or font files')
-
-    return parser.parse_args()
-
-
 def main():
-    args = get_options()
+    args = get_args()
 
     input_path = Path(args.path)
     input_list = []
