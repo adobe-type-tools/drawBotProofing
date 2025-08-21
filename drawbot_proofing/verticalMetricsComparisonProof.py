@@ -27,6 +27,7 @@ from .proofing_helpers.files import get_font_paths, get_ufo_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.globals import FONT_MONO
+from .proofing_helpers.names import get_style_name
 
 
 def get_args():
@@ -111,7 +112,7 @@ def draw_metrics_page_ufo(
                         (glyph.width / 2, y_value + 2 / scale_factor),
                         align='center')
                 db.text(
-                    font.info.styleName,
+                    get_style_name(font.path),
                     (glyph.width / 2, -baseline + 4 / scale_factor),
                     align='center')
 
@@ -169,7 +170,7 @@ def draw_metrics_page_font(
                         (glyph_width / 2, y_value + 2 / scale_factor),
                         align='center')
                 db.text(
-                    f_info.styleName,
+                    get_style_name(f_info.path),
                     (glyph_width / 2, - baseline + 4 / scale_factor),
                     align='center')
 
