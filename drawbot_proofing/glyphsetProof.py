@@ -37,10 +37,10 @@ from .proofing_helpers.stamps import timestamp
 
 
 def get_args(args=None):
+
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         'input',

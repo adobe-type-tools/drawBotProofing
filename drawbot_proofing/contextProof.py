@@ -33,11 +33,11 @@ from .proofing_helpers.stamps import timestamp
 default_wl = Path(__file__).parent / "_content" / "en_10k.txt"
 
 
-def get_options():
+def get_args():
+
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         '-p', '--point_size',
@@ -191,7 +191,7 @@ def make_output_path(args):
 
 
 def main():
-    args = get_options()
+    args = get_args()
     wordlist_path = Path(args.wordlist)
     output_path = make_output_path(args)
 

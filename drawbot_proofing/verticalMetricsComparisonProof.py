@@ -22,7 +22,7 @@ import drawBot as db
 from .verticalMetricsProof import (
     MARGIN, PT_SIZE,
     FontInfo,
-    finish_drawing, get_options)
+    finish_drawing, get_args)
 
 from .proofing_helpers import fontSorter
 from .proofing_helpers.files import get_font_paths, get_ufo_paths
@@ -197,7 +197,7 @@ def process_ufo_paths(ufo_paths, args):
 
 
 def main():
-    args = get_options(description=__doc__)
+    args = get_args(description=__doc__)
     font_paths = []
     ufo_paths = []
     for p in args.input:

@@ -34,13 +34,13 @@ from .proofing_helpers.names import get_name_overlap
 
 
 def get_args(args=None):
+
     available_charsets = [
         cs.upper() for cs in dir(charsets) if not cs.startswith('_')]
 
     parser = argparse.ArgumentParser(
         description=(__doc__),
-        formatter_class=RawDescriptionAndDefaultsFormatter,
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         'input',

@@ -43,11 +43,10 @@ if IN_UI:
     from vanilla.dialogs import getFileOrFolder  # noqa: F401
 
 
-def get_options(args=None, description=__doc__):
+def get_args(args=None, description=__doc__):
     parser = argparse.ArgumentParser(
         description=description,
-        formatter_class=RawDescriptionAndDefaultsFormatter,
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         'input_dir',
@@ -340,10 +339,10 @@ def main():
     if IN_UI:
         file_or_folder = getFileOrFolder(allowsMultipleSelection=False)
         input_dir = str(file_or_folder[0])
-        args = get_options([input_dir])
+        args = get_args([input_dir])
 
     else:
-        args = get_options()
+        args = get_args()
 
     font_paths = get_font_paths(args.input_dir)
     sorted_font_paths = sort_fonts(font_paths)

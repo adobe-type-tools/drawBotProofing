@@ -50,6 +50,60 @@ EXCLUDE_FONTS = [
 ]
 
 
+def get_args(args=None):
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter)
+
+    parser.add_argument(
+        'chars',
+        metavar='',
+        nargs='?',
+        action='store',
+        help='characters to sample')
+
+    parser.add_argument(
+        '-r', '--regex',
+        action='store',
+        metavar='REGEX',
+        type=str,
+        help='regular expression to filter font list')
+
+    parser.add_argument(
+        '--pt',
+        action='store',
+        metavar='POINTS',
+        default=30,
+        help='point size')
+
+    parser.add_argument(
+        '--headless',
+        default=False,
+        action='store_true',
+        help='do not open result PDF after generating')
+
+    parser.add_argument(
+        '-d', '--input_path',
+        action='store',
+        metavar='FOLDER',
+        help='folder to crawl (default is using all installed fonts)')
+
+    parser.add_argument(
+        '--pagesize',
+        choices=[size for size in db.sizes() if "Landscape" not in size],
+        default="Letter",
+        help='page size')
+
+    parser.add_argument(
+        '--landscape',
+        default=False,
+        action='store_true',
+        help='landscape orientation (default is portrait)')
+
+    return parser.parse_args(args)
+
+
 class FontFileInfo(object):
     def __init__(self, font_path, ps_name, font_number=0):
         self.path = font_path
@@ -288,62 +342,8 @@ def make_document(args, formatted_strings):
     return output_path
 
 
-def get_options(args=None):
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
-
-    parser.add_argument(
-        'chars',
-        metavar='',
-        nargs='?',
-        action='store',
-        help='characters to sample')
-
-    parser.add_argument(
-        '-r', '--regex',
-        action='store',
-        metavar='REGEX',
-        type=str,
-        help='regular expression to filter font list')
-
-    parser.add_argument(
-        '--pt',
-        action='store',
-        metavar='POINTS',
-        default=30,
-        help='point size')
-
-    parser.add_argument(
-        '--headless',
-        default=False,
-        action='store_true',
-        help='do not open result PDF after generating')
-
-    parser.add_argument(
-        '-d', '--input_path',
-        action='store',
-        metavar='FOLDER',
-        help='folder to crawl (default is using all installed fonts)')
-
-    parser.add_argument(
-        '--pagesize',
-        choices=[size for size in db.sizes() if "Landscape" not in size],
-        default="Letter",
-        help='page size')
-
-    parser.add_argument(
-        '--landscape',
-        default=False,
-        action='store_true',
-        help='landscape orientation (default is portrait)')
-
-    return parser.parse_args(args)
-
-
 def main(test_args=None):
-    args = get_options(test_args)
+    args = get_args(test_args)
     if not args.chars:
         print('Please specify sample characters.')
     else:

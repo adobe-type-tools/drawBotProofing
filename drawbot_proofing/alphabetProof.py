@@ -49,15 +49,14 @@ from .proofing_helpers.names import (
 from .proofing_helpers.stamps import timestamp
 
 
-def get_options():
+def get_args():
 
     mode_choices = ['proof', 'spacing', 'sample', 'all']
     ws_choices = ['lat', 'grk', 'cyr', 'figures', 'auto']
 
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
 
     parser.add_argument(
         '-m', '--mode',
@@ -290,7 +289,7 @@ def make_pdf_name(args, fonts):
 
 
 def main():
-    args = get_options()
+    args = get_args()
     fonts = []
     for item in args.input:
         if Path(item).exists():

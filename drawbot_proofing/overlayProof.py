@@ -36,10 +36,11 @@ from .proofing_helpers.names import get_ps_name, get_unique_name
 
 
 def get_args(default_args=None):
+
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=RawDescriptionAndDefaultsFormatter
-    )
+        formatter_class=RawDescriptionAndDefaultsFormatter)
+
     parser.add_argument(
         'ff_a',
         help='font or folder a')
