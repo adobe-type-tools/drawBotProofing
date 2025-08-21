@@ -130,9 +130,6 @@ def make_page(txt, font_a, font_b, color_a, color_b, pt_size):
     db.newPage('A4')
     db.blendMode('multiply')
 
-    f_a = TTFont(font_a)
-    f_b = TTFont(font_b)
-
     uname_a = get_unique_name(font_a)
     uname_b = get_unique_name(font_b)
 
@@ -319,7 +316,7 @@ def main():
 
         ps_names = [get_ps_name(f) for f in fonts]
         temp_fonts = [
-            make_temp_font(fi, f) for fi, f in enumerate(fonts)]
+            Path(make_temp_font(fi, f)) for fi, f in enumerate(fonts)]
         make_pages(txt, temp_fonts, args.pt_size)
 
     else:
