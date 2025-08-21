@@ -32,7 +32,7 @@ from .proofing_helpers import fontSorter
 from .proofing_helpers.fonts import make_temp_font
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
-from .proofing_helpers.names import get_ps_name
+from .proofing_helpers.names import get_ps_name, get_unique_name
 
 
 def get_args(default_args=None):
@@ -133,8 +133,9 @@ def make_page(txt, font_a, font_b, color_a, color_b, pt_size):
 
     f_a = TTFont(font_a)
     f_b = TTFont(font_b)
-    uname_a = f_a['name'].getDebugName(3)
-    uname_b = f_b['name'].getDebugName(3)
+
+    uname_a = get_unique_name(font_a)
+    uname_b = get_unique_name(font_b)
 
     content = db.FormattedString(
         txt, font=font_a, fontSize=pt_size, fill=color_a)

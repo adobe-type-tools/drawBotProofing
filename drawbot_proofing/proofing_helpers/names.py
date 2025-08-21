@@ -30,13 +30,19 @@ def get_ps_name(input_file):
             ])
 
     else:
-        ttf = ttLib.TTFont(input_file.resolve())
-        name_table = ttf.get('name')
+        f = ttLib.TTFont(input_file)
+        name_table = f.get('name')
         ps_name = name_table.getDebugName(6)
         if not ps_name:
             ps_name = ''
 
     return ps_name
+
+
+def get_unique_name(font_file):
+    f = ttLib.TTFont(font_file)
+    name_table = f.get('name')
+    return name_table.getDebugName(3)
 
 
 def get_overlap_index(list_of_strings, start_char=0):

@@ -45,7 +45,7 @@ from .proofing_helpers.fonts import make_temp_font, supports_text
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
 from .proofing_helpers.names import (
-    get_name_overlap, get_path_overlap, get_ps_name)
+    get_name_overlap, get_path_overlap, get_ps_name, get_unique_name)
 from .proofing_helpers.stamps import timestamp
 
 
@@ -217,6 +217,7 @@ def make_proof(args, fonts, output_path):
                     font=FONT_MONO,
                     fontSize=10,
                     align='right')
+                caption += f' | {get_unique_name(font)}'
                 if args.kerning_off:
                     caption += ' | no kerning'
                 caption += f' | {timestamp(readable=True)}'
