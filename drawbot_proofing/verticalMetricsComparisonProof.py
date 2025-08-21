@@ -16,30 +16,62 @@ Input (pick one):
 
 '''
 
+import argparse
 import defcon
 import drawBot as db
 
-from .verticalMetricsProof import (
-    MARGIN, PT_SIZE,
-    FontInfo,
-    finish_drawing, get_args)
+from .verticalMetricsProof import MARGIN, PT_SIZE, FontInfo, finish_drawing
 
 from .proofing_helpers import fontSorter
 from .proofing_helpers.files import get_font_paths, get_ufo_paths
+from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.globals import FONT_MONO
 
 
-EXAMPLE_CHARS = list('Hnxphlg')
+def get_args():
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=RawDescriptionAndDefaultsFormatter)
+
+    parser.add_argument(
+        'input',
+        metavar='INPUT',
+        nargs='+',
+        help='input file(s) or folder(s)',
+    )
+    parser.add_argument(
+        '-o', '--output_file_name',
+        action='store',
+        metavar='PDF',
+        help='output file name')
+
+    parser.add_argument(
+        '-u', '--normalize_upm',
+        action='store_true',
+        default=False,
+        help='convert label values to 1000 UPM-equivalent')
+
+    parser.add_argument(
+        '-s', '--sample_string',
+        type=str,
+        default='Hnxphlg',
+        help='sample string')
+
+    return parser.parse_args()
 
 
-def draw_metrics_page_ufo(character, fo_list, cmap_list, page_width=1000):
+def draw_metrics_page_ufo(
+    character, fo_list, cmap_list, page_width=1000, normalize_upm=False
+):
 
     db.newPage(page_width, 250)
     x_offset = MARGIN
 
     for i, font in enumerate(fo_list):
-        scale_factor = PT_SIZE / font.info.unitsPerEm
+        upm = font.info.unitsPerEm
+        scale_factor = PT_SIZE / upm
         baseline = db.height() / 3 / scale_factor
         line_y = (
             font.info.descender if font.info.descender else -250,
@@ -63,13 +95,19 @@ def draw_metrics_page_ufo(character, fo_list, cmap_list, page_width=1000):
                     db.strokeWidth(1)
                     db.line((0, y_value), (glyph.width, y_value))
             with db.savedState():
+                if normalize_upm and upm != 1000:
+                    conversion_factor = 1000 / upm
+                    label_value = f'{y_value * conversion_factor:.0f}'
+                else:
+                    label_value = str(y_value)
+
                 for y_value in [v for v in line_y if v != 0]:
                     db.font(FONT_MONO)
                     db.fontSize(6 / scale_factor)
                     # db.fill(0, 0.981, 0.574)  # Sea Foam
                     db.fill(1, 0.186, 0.573)  # Strawberry
                     db.text(
-                        str(y_value),
+                        label_value,
                         (glyph.width / 2, y_value + 2 / scale_factor),
                         align='center')
                 db.text(
@@ -78,7 +116,9 @@ def draw_metrics_page_ufo(character, fo_list, cmap_list, page_width=1000):
                     align='center')
 
 
-def draw_metrics_page_font(character, font_info_list, page_width=1000):
+def draw_metrics_page_font(
+    character, font_info_list, page_width=1000, normalize_upm=False
+):
 
     db.newPage(page_width, 250)
     x_offset = MARGIN
@@ -114,12 +154,18 @@ def draw_metrics_page_font(character, font_info_list, page_width=1000):
                     db.line((0, y_value), (glyph_width, y_value))
             with db.savedState():
                 for y_value in [v for v in line_y if v != 0]:
+                    if normalize_upm and upm != 1000:
+                        conversion_factor = 1000 / upm
+                        label_value = f'{y_value * conversion_factor:.0f}'
+                    else:
+                        label_value = str(y_value)
+
                     db.font(FONT_MONO)
                     db.fontSize(6 / scale_factor)
                     # db.fill(0, 0.981, 0.574)  # Sea Foam
                     db.fill(1, 0.186, 0.573)  # Strawberry
                     db.text(
-                        str(y_value),
+                        label_value,
                         (glyph_width / 2, y_value + 2 / scale_factor),
                         align='center')
                 db.text(
@@ -150,8 +196,9 @@ def process_font_paths(font_paths, args):
             f_info.capHeight,
             f_info.ascender))
 
-    for char in EXAMPLE_CHARS:
-        draw_metrics_page_font(char, font_info_list, page_width)
+    for char in args.sample_string:
+        draw_metrics_page_font(
+            char, font_info_list, page_width, args.normalize_upm)
 
     finish_drawing(doc_name)
 
@@ -190,14 +237,15 @@ def process_ufo_paths(ufo_paths, args):
             format_dict.get('capHeight'),
             format_dict.get('ascender')))
 
-    for char in EXAMPLE_CHARS:
-        draw_metrics_page_ufo(char, fo_list, cmap_list, page_width)
+    for char in args.sample_string:
+        draw_metrics_page_ufo(
+            char, fo_list, cmap_list, page_width, args.normalize_upm)
 
     finish_drawing(doc_name)
 
 
 def main():
-    args = get_args(description=__doc__)
+    args = get_args()
     font_paths = []
     ufo_paths = []
     for p in args.input:
