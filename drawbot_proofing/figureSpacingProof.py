@@ -29,7 +29,7 @@ from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.files import get_font_paths, get_ufo_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
-from .proofing_helpers.names import get_ps_name, get_name_overlap, get_path_overlap
+from .proofing_helpers.names import get_family_name, get_name_overlap
 from .proofing_helpers.stamps import timestamp
 
 
@@ -217,11 +217,18 @@ def make_output_name(paths):
     '''
     chunks = ['figure spacing']
 
-    all_font_names = [get_ps_name(font) for font in paths]
-    family_name = get_name_overlap(all_font_names)
-    if not family_name:
-        family_name = get_path_overlap(paths)
-    chunks.append(family_name)
+    all_family_names = sorted(set([get_family_name(font) for font in paths]))
+    family_name_overlap = get_name_overlap(all_family_names)
+
+    if family_name_overlap:
+        chunks.append(family_name_overlap)
+    else:
+        if len(all_family_names) == 1:
+            chunks.append(all_family_names[0])
+        elif len(all_family_names) == 2:
+            chunks.append(', '.join(all_family_names))
+        else:
+            chunks.append(', '.join(all_family_names[:2]) + ' etc')
 
     pdf_name = ' '.join(chunks) + '.pdf'
     return pdf_name
