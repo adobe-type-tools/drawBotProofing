@@ -25,6 +25,7 @@ from pathlib import Path
 from .proofing_helpers import fontSorter
 from .proofing_helpers.files import get_font_paths, read_text_file
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
+from .proofing_helpers.names import get_family_name, get_name_overlap
 
 
 def get_args():
@@ -36,8 +37,9 @@ def get_args():
     parser.add_argument(
         'input',
         action='store',
-        metavar='FOLDER',
-        help='folder to crawl')
+        metavar='INPUT',
+        nargs='+',
+        help='font file(s) or folder(s)')
 
     parser.add_argument(
         '--pointsize', '-p',
@@ -67,13 +69,34 @@ def get_args():
     return parser.parse_args()
 
 
-def make_proof(input_dir, args):
+def make_output_name(fonts):
+    '''
+    Make a sensible filename for the PDF proof created.
+
+    '''
+    chunks = ['waterfall proof']
+    all_family_names = sorted(set([get_family_name(font) for font in fonts]))
+
+    family_name_overlap = get_name_overlap(all_family_names)
+
+    if family_name_overlap:
+        chunks.append(family_name_overlap)
+    else:
+        if len(all_family_names) == 1:
+            chunks.append(all_family_names[0])
+        elif len(all_family_names) == 2:
+            chunks.append(', '.join(all_family_names))
+        else:
+            chunks.append(', '.join(all_family_names[:2]) + ' etc')
+
+    pdf_name = ' '.join(chunks) + '.pdf'
+    return pdf_name
+
+
+def make_proof(fonts, args):
     content_dir = Path(__file__).parent / '_content'
     v_content = read_text_file(content_dir / 'waterfall_vertical.txt')
     h_content = read_text_file(content_dir / 'waterfall_horizontal.txt')
-
-    font_paths = get_font_paths(input_dir)
-    fonts = fontSorter.sort_fonts(font_paths, alternate_italics=True)
 
     db.newDrawing()
     pt_size = args.pointsize
@@ -115,22 +138,40 @@ def make_proof(input_dir, args):
 
         db.text(fs, (margin, offset))
 
-    output_path = Path(
-        f'~/Desktop/waterfallProof ({input_dir.name}).pdf').expanduser()
+    output_name = make_output_name(fonts)
+    output_path = Path(f'~/Desktop/{output_name}').expanduser()
     db.saveImage(output_path)
     db.endDrawing()
     print(f'saved to {output_path}')
     subprocess.call(['open', output_path])
 
 
+def collect_fonts(inputs):
+
+    fonts = []
+    input_paths = [Path(i) for i in inputs]
+    if all([p.exists() for p in input_paths]):
+        if all([ip.is_file() for ip in input_paths]):
+            # all font files. no sorting
+            for ip in input_paths:
+                fonts.extend(get_font_paths(ip))
+        else:
+            # at least some folders. sort per folder
+            for ip in input_paths:
+                sorted_fonts = fontSorter.sort_fonts(
+                    get_font_paths(ip), alternate_italics=True)
+                fonts.extend(sorted_fonts)
+
+    return fonts
+
+
 def main():
     args = get_args()
-    input_dir = Path(args.input)
-
-    if input_dir.is_dir():
-        make_proof(input_dir, args)
+    fonts = collect_fonts(args.input)
+    if fonts:
+        make_proof(fonts, args)
     else:
-        print(f'{args.input} is not a directory')
+        print(f'could not find any fonts')
 
 
 if __name__ == '__main__':
