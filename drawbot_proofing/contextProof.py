@@ -53,12 +53,6 @@ def get_args():
         help='wordlist file')
 
     parser.add_argument(
-        '-d', '--date',
-        default=False,
-        action='store_true',
-        help='date output file')
-
-    parser.add_argument(
         '-a', '--word_amount',
         default=300,
         action='store',
@@ -181,12 +175,9 @@ def make_output_path(args):
             flag = 'letters'
         else:
             flag = 'letter'
-        output_name = f'contextProof ({flag} {args.letters})'
+        output_name = f'context proof ({flag} {args.letters})'
     else:
-        output_name = f'contextProof (combination {args.combination})'
-
-    if args.date:
-        output_name = f'{timestamp()} ' + output_name
+        output_name = f'context proof (combination {args.combination})'
 
     return Path(f'~/Desktop/{output_name}.pdf').expanduser()
 
