@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "drawbot-proofing"
-version = "1.0.4"
+version = "1.0.5"
 description = "A collection of font proofing tools using DrawBot"
 readme = "README.md"
 requires-python = ">=3.11"
