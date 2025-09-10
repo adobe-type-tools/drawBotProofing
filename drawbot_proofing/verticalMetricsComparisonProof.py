@@ -95,14 +95,16 @@ def draw_metrics_page_ufo(
                     db.stroke(0)
                     db.strokeWidth(1)
                     db.line((0, y_value), (glyph.width, y_value))
-            with db.savedState():
-                if normalize_upm and upm != 1000:
-                    conversion_factor = 1000 / upm
-                    label_value = f'{y_value * conversion_factor:.0f}'
-                else:
-                    label_value = str(y_value)
 
+            with db.savedState():
                 for y_value in [v for v in line_y if v != 0]:
+
+                    if normalize_upm and upm != 1000:
+                        conversion_factor = 1000 / upm
+                        label_value = f'{y_value * conversion_factor:.0f}'
+                    else:
+                        label_value = str(y_value)
+
                     db.font(FONT_MONO)
                     db.fontSize(6 / scale_factor)
                     # db.fill(0, 0.981, 0.574)  # Sea Foam
