@@ -63,17 +63,35 @@ def get_args():
     return parser.parse_args()
 
 
-def draw_metrics_page_ufo(
-    character, fo_list, cmap_list, page_width=1000, normalize_upm=False
-):
+def draw_metrics_page_ufo(character, fo_list, cmap_list, normalize_upm=False):
 
-    db.newPage(page_width, 250)
+    upm_list = [f.info.unitsPerEm for f in fo_list]
+    height_list = [f.info.ascender - f.info.descender for f in fo_list]
+    descender_list = [f.info.descender for f in fo_list]
+    gnames_H = [cmap.get(ord('H')) for cmap in cmap_list]
+
+    # get combined width of Hs – no matter which glyph name or UPM they have
+    page_width = sum([
+        fo[gnames_H[i]].width * PT_SIZE / upm_list[i]
+        for i, fo in enumerate(fo_list)]
+    ) + 2 * MARGIN
+    heights = [
+        height_list[i] * PT_SIZE / upm_list[i]
+        for i, fo in enumerate(fo_list)]
+    descenders = [
+        descender_list[i] * PT_SIZE / upm_list[i]
+        for i, fo in enumerate(fo_list)]
+
+    lowest_descender = min(descenders)
+    page_height = max(heights) + 2 * MARGIN
+
+    db.newPage(page_width, page_height)
     x_offset = MARGIN
 
     for i, font in enumerate(fo_list):
         upm = font.info.unitsPerEm
         scale_factor = PT_SIZE / upm
-        baseline = db.height() / 3 / scale_factor
+        baseline = (abs(lowest_descender) + MARGIN) / scale_factor
         line_y = (
             font.info.descender if font.info.descender else -250,
             0,
@@ -115,28 +133,41 @@ def draw_metrics_page_ufo(
                         align='center')
                 db.text(
                     get_style_name(font.path),
-                    (glyph.width / 2, -baseline + 4 / scale_factor),
+                    (glyph.width / 2, -baseline + (MARGIN / 2) / scale_factor),
                     align='center')
 
 
 def draw_metrics_page_font(
-    character, font_info_list, page_width=1000, normalize_upm=False
+    character, font_info_list, normalize_upm=False
 ):
+    # Calculate the width and the height of the page.
+    # We need to use local UPM values here, as fonts of different UPMs might
+    # occur on the same line.
+    # For the page width, let’s assume the widest page contains HHHH
+    page_width = sum(
+        [fi.cap_H_width * PT_SIZE / fi.upm for fi in font_info_list]
+    ) + 2 * MARGIN
 
-    db.newPage(page_width, 250)
+    heights = [
+        (fi.ascender - fi.descender) * PT_SIZE / fi.upm
+        for fi in font_info_list]
+    descenders = [
+        fi.descender * PT_SIZE / fi.upm for fi in font_info_list]
+
+    lowest_descender = min(descenders)
+    page_height = max(heights) + 2 * MARGIN
+
+    db.newPage(page_width, page_height)
     x_offset = MARGIN
 
     for f_info in font_info_list:
         upm = f_info.upm
         scale_factor = PT_SIZE / upm
-        baseline = db.height() / 3 / scale_factor
+        baseline = (abs(lowest_descender) + MARGIN) / scale_factor
 
         line_y = (
-            f_info.descender,
-            0,
-            f_info.xHeight,
-            f_info.capHeight,
-            f_info.ascender
+            f_info.descender, 0, f_info.xHeight,
+            f_info.capHeight, f_info.ascender
         )
         glyph_name = f_info.char_map.get(ord(character))
         with db.savedState():
@@ -173,7 +204,7 @@ def draw_metrics_page_font(
                         align='center')
                 db.text(
                     get_style_name(f_info.path),
-                    (glyph_width / 2, - baseline + 4 / scale_factor),
+                    (glyph_width / 2, -baseline + (MARGIN / 2) / scale_factor),
                     align='center')
 
 
@@ -187,10 +218,6 @@ def process_font_paths(font_paths, args):
     else:
         doc_name = f'comparison {family_name} ({extension[1:]})'
 
-    page_width = sum(
-        [fi.cap_H_width * PT_SIZE / fi.upm for fi in font_info_list]
-    ) + 2 * MARGIN
-
     for f_info in font_info_list:
         print('{:20s} {:>3d} 0 {:>3d} {:>3d} {:>3d}'.format(
             f_info.styleName,
@@ -201,7 +228,7 @@ def process_font_paths(font_paths, args):
 
     for char in args.sample_string:
         draw_metrics_page_font(
-            char, font_info_list, page_width, args.normalize_upm)
+            char, font_info_list, args.normalize_upm)
 
     finish_drawing(doc_name)
 
@@ -209,19 +236,13 @@ def process_font_paths(font_paths, args):
 def process_ufo_paths(ufo_paths, args):
     font_list = fontSorter.sort_fonts(ufo_paths)
     fo_list = [defcon.Font(f) for f in font_list]
-    upm_list = [f.info.unitsPerEm for f in fo_list]
     cmap_list = [{g.unicode: g.name for g in f if g.unicode} for f in fo_list]
-    gnames_H = [cmap.get(ord('H')) for cmap in cmap_list]
 
     family_name = fo_list[0].info.familyName
     if args.output_file_name:
         doc_name = f'comparison {args.output_file_name}'
     else:
         doc_name = f'comparison {family_name} (UFO)'
-    # get combined width of Hs – no matter which glyph name or UPM they have
-    page_width = sum(
-        [fo[gnames_H[i]].width * PT_SIZE / upm_list[i] for i, fo in enumerate(fo_list)]
-    ) + 2 * MARGIN
 
     for fo in fo_list:
         # terminal feedback
@@ -242,7 +263,7 @@ def process_ufo_paths(ufo_paths, args):
 
     for char in args.sample_string:
         draw_metrics_page_ufo(
-            char, fo_list, cmap_list, page_width, args.normalize_upm)
+            char, fo_list, cmap_list, args.normalize_upm)
 
     finish_drawing(doc_name)
 

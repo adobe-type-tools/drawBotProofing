@@ -213,18 +213,17 @@ def get_string_bounds(f_info, glyph_names):
     return min(x_extent), min(y_extent), max(x_extent), max(y_extent)
 
 
-def draw_metrics_page(f_info, normalize_upm=False):
+def draw_metrics_page(
+    f_info, page_width, page_height, descender_global, normalize_upm=False
+):
+
     upm = f_info.upm
     glyph_names = get_glyph_names(f_info)
     scale_factor = PT_SIZE / upm
     x_offset = MARGIN_L / scale_factor
 
     x_min, y_min, x_max, y_max = get_string_bounds(f_info, glyph_names)
-    line_height = sum([abs(y_min), y_max])
-    baseline = abs(y_min) + 2 * MARGIN / scale_factor
-
-    page_width = x_max * PT_SIZE / f_info.upm + MARGIN_L + MARGIN
-    page_height = line_height * scale_factor + 4 * MARGIN
+    baseline = -descender_global / scale_factor + MARGIN / scale_factor
     db.newPage(page_width, page_height)
 
     line_labels = (
@@ -320,8 +319,7 @@ def draw_metrics_page(f_info, normalize_upm=False):
                 align='left')
 
 
-def process_font_path(font_path, args):
-    fi = FontInfo(font_path, args)
+def report_metrics(fi, args):
 
     print('{:20s} {:>3d} 0 {:>3d} {:>3d} {:>3d}'.format(
         fi.styleName,
@@ -335,8 +333,6 @@ def process_font_path(font_path, args):
         print(f'{"":20s} lo {extremes}: {" ".join(fi.g_ymin)}')
         print(f'{"":20s} hi {extremes}: {" ".join(fi.g_ymax)}')
 
-    draw_metrics_page(fi, args.normalize_upm)
-
 
 def finish_drawing(doc_name):
     output_path = Path(
@@ -345,6 +341,36 @@ def finish_drawing(doc_name):
     print('saved PDF to', output_path)
     subprocess.call(['open', output_path])
     db.endDrawing()
+
+
+def get_global_metrics(fi_objects):
+    '''
+    measure all the FontInfo objects to see which one is the widest and
+    tallest, from there deduce the dimensions of the page, and a global
+    baseline
+    '''
+    string_heights = []
+    descenders = []
+    x_max_values = []
+    for fi in fi_objects:
+        glyph_names = get_glyph_names(fi)
+        upm = fi.upm
+        scale_factor = PT_SIZE / upm
+
+        x_min, y_min, x_max, y_max = get_string_bounds(fi, glyph_names)
+        x_max_values.append(x_max * scale_factor)
+        string_height = sum([abs(y_min), y_max])
+        string_heights.append(string_height * scale_factor)
+        descender = min(fi.descender, fi.hheaDescender, -fi.winDescent)
+        descenders.append(descender * scale_factor)
+
+    x_max = max(x_max_values)
+    descender = min(descenders)
+    string_height = max(string_heights)
+
+    page_width = x_max + MARGIN_L + MARGIN
+    page_height = string_height + 4 * MARGIN
+    return page_width, page_height, descender
 
 
 def main():
@@ -367,8 +393,12 @@ def main():
             fontSorter.sort_fonts(fonts, alternate_italics=False))
 
     if font_paths:
-        for font_path in font_paths:
-            process_font_path(font_path, args)
+        fi_objects = [FontInfo(fp, args) for fp in font_paths]
+        page_width, page_height, descender_gl = get_global_metrics(fi_objects)
+        for fi in fi_objects:
+            report_metrics(fi, args)
+            draw_metrics_page(
+                fi, page_width, page_height, descender_gl, args.normalize_upm)
 
         if args.output_file_name:
             doc_name = args.output_file_name
