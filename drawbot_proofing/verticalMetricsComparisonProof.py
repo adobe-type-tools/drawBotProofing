@@ -20,14 +20,16 @@ import argparse
 import defcon
 import drawBot as db
 
-from .verticalMetricsProof import MARGIN, PT_SIZE, FontInfo, finish_drawing
+from .verticalMetricsProof import (
+    MARGIN, PT_SIZE, FontInfo, finish_drawing, report_metrics
+)
 
 from .proofing_helpers import fontSorter
 from .proofing_helpers.files import get_font_paths, get_ufo_paths
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.drawing import draw_glyph
 from .proofing_helpers.globals import FONT_MONO
-from .proofing_helpers.names import get_style_name
+from .proofing_helpers.names import get_style_name, get_ps_name
 
 
 def get_args():
@@ -218,18 +220,15 @@ def process_font_paths(font_paths, args):
     font_info_list = [FontInfo(font_path, args) for font_path in font_list]
     extension = font_list[0].suffix.upper()
     family_name = font_info_list[0].familyName
+    name_length = max([len(fi.ps_name) for fi in font_info_list])
+
     if args.output_file_name:
         doc_name = f'comparison {args.output_file_name}'
     else:
         doc_name = f'comparison {family_name} ({extension[1:]})'
 
     for f_info in font_info_list:
-        print('{:20s} {:>3d} 0 {:>3d} {:>3d} {:>3d}'.format(
-            f_info.styleName,
-            f_info.descender,
-            f_info.xHeight,
-            f_info.capHeight,
-            f_info.ascender))
+        report_metrics(f_info, 0, name_length)
 
     for char in args.sample_string:
         draw_metrics_page_font(
@@ -238,9 +237,35 @@ def process_font_paths(font_paths, args):
     finish_drawing(doc_name)
 
 
+def report_ufo_metrics(fo, name_width=20):
+    '''
+    report ps name, descender, baseline, x-height, cap height, ascender,
+    '''
+
+    format_dict = {
+        'styleName': fo.info.styleName,
+        'ps_name': (
+            fo.info.postscriptFontName if fo.info.postscriptFontName else
+            get_ps_name(fo.path)),
+        'descender': fo.info.descender if fo.info.descender else 0,
+        'xHeight': fo.info.xHeight if fo.info.xHeight else 0,
+        'capHeight': fo.info.capHeight if fo.info.capHeight else 0,
+        'ascender': fo.info.ascender if fo.info.ascender else 0,
+    }
+    print(
+        f'{format_dict.get("ps_name"):{name_width}s} '
+        f'{format_dict.get("descender"):>5d} 0 '
+        f'{format_dict.get("xHeight"):>4d} '
+        f'{format_dict.get("capHeight"):>4d} '
+        f'{format_dict.get("ascender"):>4d} '
+    )
+
+
 def process_ufo_paths(ufo_paths, args):
-    font_list = fontSorter.sort_fonts(ufo_paths)
-    fo_list = [defcon.Font(f) for f in font_list]
+    ufo_list = fontSorter.sort_fonts(ufo_paths)
+    name_length = max([len(get_ps_name(f)) for f in ufo_list])
+
+    fo_list = [defcon.Font(f) for f in ufo_list]
     cmap_list = [{g.unicode: g.name for g in f if g.unicode} for f in fo_list]
 
     family_name = fo_list[0].info.familyName
@@ -250,21 +275,7 @@ def process_ufo_paths(ufo_paths, args):
         doc_name = f'comparison {family_name} (UFO)'
 
     for fo in fo_list:
-        # terminal feedback
-        format_dict = {
-            'styleName': fo.info.styleName,
-            'descender': fo.info.descender if fo.info.descender else 0,
-            'xHeight': fo.info.xHeight if fo.info.xHeight else 0,
-            'capHeight': fo.info.capHeight if fo.info.capHeight else 0,
-            'ascender': fo.info.ascender if fo.info.ascender else 0,
-        }
-
-        print('{:20s} {:>3d} 0 {:>3d} {:>3d} {:>3d}'.format(
-            format_dict.get('styleName'),
-            format_dict.get('descender'),
-            format_dict.get('xHeight'),
-            format_dict.get('capHeight'),
-            format_dict.get('ascender')))
+        report_ufo_metrics(fo, name_length)
 
     for char in args.sample_string:
         draw_metrics_page_ufo(

@@ -10,6 +10,9 @@ from fontTools import ttLib
 
 
 def get_fi_dict(ufo_file):
+    '''
+    return fontinfo.plist as a dictionary
+    '''
     fontinfo_path = ufo_file.joinpath('fontinfo.plist')
     with open(fontinfo_path, 'rb') as fi_blob:
         fi_dict = plistlib.load(fi_blob)
@@ -25,8 +28,8 @@ def get_ps_name(input_file):
         fi_dict = get_fi_dict(input_file)
         ps_name = fi_dict.get('postscriptFontName', None)
         if not ps_name:
-            family_name = fi_dict.get('familyName', 'Family Name')
-            style_name = fi_dict.get('styleName', 'Style Name')
+            family_name = fi_dict.get('familyName', 'No Family Name')
+            style_name = fi_dict.get('styleName', 'No Style Name')
             joined_name = f'{family_name}-{style_name}'
             ps_name = joined_name.replace(' ', '')
 
