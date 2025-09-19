@@ -93,7 +93,6 @@ class FontInfo(object):
         self.descender = 0
         self.xHeight = 0
         self.capHeight = 0
-        self.cap_H_width = 0
         self.sample_string = args.sample_string
         self.parse_cmap()
         self.extract_vertical_metrics()
@@ -104,7 +103,6 @@ class FontInfo(object):
         self.extract_names()
         self.extract_widths()
         self.extract_upm()
-        self.extract_cap_H_width()
         # sTypoAscender
         # sTypoDescender
         # sxHeight
@@ -170,12 +168,6 @@ class FontInfo(object):
         self.reverse_char_map = {
             gname: chr(c_index) for c_index, gname in self.char_map.items()
         }
-
-    def extract_cap_H_width(self):
-        # do not assume the glyph name for 'H' to be 'H'
-        cap_H_gname = self.char_map.get(ord('H'), '.notdef')
-        self.cap_H_width = self.advance_widths.get(cap_H_gname)
-
 
 def get_glyph_names(font_info):
     '''
