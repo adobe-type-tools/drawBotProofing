@@ -169,6 +169,7 @@ class FontInfo(object):
             gname: chr(c_index) for c_index, gname in self.char_map.items()
         }
 
+
 def get_glyph_names(font_info):
     '''
     Collect some standard glyphs defining basic metrics,
@@ -308,16 +309,16 @@ def draw_metrics_page(
             db.text(f_info.ps_name, (MARGIN_L, 0 - line_height), align='left')
 
 
-def report_metrics(fi, args):
+def report_metrics(fi, extremes, name_length=20):
+    '''
+    report ps name, descender, baseline, x-height, cap height, ascender,
+    and potentially the most extreme glyphs on each end
+    '''
+    print(
+        f'{fi.ps_name:{name_length}s} {fi.descender:>5d} 0 '
+        f'{fi.xHeight:>4d} {fi.capHeight:>4d} {fi.ascender:>4d} '
+    )
 
-    print('{:20s} {:>3d} 0 {:>3d} {:>3d} {:>3d}'.format(
-        fi.styleName,
-        fi.descender,
-        fi.xHeight,
-        fi.capHeight,
-        fi.ascender))
-
-    extremes = args.extremes
     if extremes > 1:
         print(f'{"":20s} lo {extremes}: {" ".join(fi.g_ymin)}')
         print(f'{"":20s} hi {extremes}: {" ".join(fi.g_ymax)}')
@@ -383,9 +384,11 @@ def main():
 
     if font_paths:
         fi_objects = [FontInfo(fp, args) for fp in font_paths]
+        name_length = max([len(fi.ps_name) for fi in fi_objects])
+
         page_width, page_height, descender_gl = get_global_metrics(fi_objects)
         for fi in fi_objects:
-            report_metrics(fi, args)
+            report_metrics(fi, args.extremes, name_length)
             draw_metrics_page(
                 fi, page_width, page_height, descender_gl, args.normalize_upm)
 
