@@ -210,11 +210,10 @@ def draw_metrics_page(
 ):
 
     upm = f_info.upm
-    glyph_names = get_glyph_names(f_info)
     scale_factor = PT_SIZE / upm
-    x_offset = MARGIN_L / scale_factor
+    ruling_start = MARGIN_L / scale_factor
+    ruling_end = (page_width - MARGIN - MARGIN_L) / scale_factor
 
-    x_min, y_min, x_max, y_max = get_string_bounds(f_info, glyph_names)
     baseline = -descender_global / scale_factor + MARGIN / scale_factor
     db.newPage(page_width, page_height)
 
@@ -235,10 +234,11 @@ def draw_metrics_page(
 
     # sorting the labels according to their value
     line_labels = sorted(line_labels, key=lambda label: label[1])
+    glyph_names = get_glyph_names(f_info)
 
     with db.savedState():
         db.scale(scale_factor)
-        db.translate(x_offset, baseline)
+        db.translate(ruling_start, baseline)
         with db.savedState():
             # draw all the glyphs
             for glyph_name in glyph_names:
@@ -253,7 +253,7 @@ def draw_metrics_page(
             for y_value in set([value for _, value in line_labels]):
                 db.stroke(0)
                 db.strokeWidth(1)
-                db.line((-4 / scale_factor, y_value), (x_max, y_value))
+                db.line((-4 / scale_factor, y_value), (ruling_end, y_value))
 
         with db.savedState():
             line_height = 10 / scale_factor
@@ -305,10 +305,7 @@ def draw_metrics_page(
             db.stroke(None)
 
             # font name below
-            db.text(
-                f_info.ps_name,
-                (MARGIN_L, 0 - line_height),
-                align='left')
+            db.text(f_info.ps_name, (MARGIN_L, 0 - line_height), align='left')
 
 
 def report_metrics(fi, args):
@@ -402,7 +399,6 @@ def main():
                 doc_name = name_overlap
             else:
                 doc_name = get_path_overlap(font_paths)
-            print(doc_name)
 
         if not IN_UI:
             finish_drawing(doc_name)
