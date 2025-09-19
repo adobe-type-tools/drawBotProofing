@@ -68,13 +68,16 @@ def draw_metrics_page_ufo(character, fo_list, cmap_list, normalize_upm=False):
     upm_list = [f.info.unitsPerEm for f in fo_list]
     height_list = [f.info.ascender - f.info.descender for f in fo_list]
     descender_list = [f.info.descender for f in fo_list]
-    gnames_H = [cmap.get(ord('H')) for cmap in cmap_list]
 
-    # get combined width of Hs – no matter which glyph name or UPM they have
-    page_width = sum([
-        fo[gnames_H[i]].width * PT_SIZE / upm_list[i]
-        for i, fo in enumerate(fo_list)]
-    ) + 2 * MARGIN
+    # get combined width of glyphs
+    page_width = 0
+    for i, fo in enumerate(fo_list):
+        char_map = cmap_list[i]
+        char_gname = char_map.get(ord(character), '.notdef')
+        char_width = fo[char_gname].width
+        page_width += char_width * PT_SIZE / fo.info.unitsPerEm
+    page_width += 2 * MARGIN
+
     heights = [
         height_list[i] * PT_SIZE / upm_list[i]
         for i, fo in enumerate(fo_list)]
@@ -140,13 +143,15 @@ def draw_metrics_page_ufo(character, fo_list, cmap_list, normalize_upm=False):
 def draw_metrics_page_font(
     character, font_info_list, normalize_upm=False
 ):
-    # Calculate the width and the height of the page.
-    # We need to use local UPM values here, as fonts of different UPMs might
-    # occur on the same line.
-    # For the page width, let’s assume the widest page contains HHHH
-    page_width = sum(
-        [fi.cap_H_width * PT_SIZE / fi.upm for fi in font_info_list]
-    ) + 2 * MARGIN
+    # Calculate width/height of the page.
+    # Using local UPM values here, supporting different UPMs on the same line
+
+    page_width = 0
+    for fi in font_info_list:
+        char_gname = fi.char_map.get(ord(character), '.notdef')
+        char_width = fi.advance_widths.get(char_gname)
+        page_width += char_width * PT_SIZE / fi.upm
+    page_width += 2 * MARGIN
 
     heights = [
         (fi.ascender - fi.descender) * PT_SIZE / fi.upm
