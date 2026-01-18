@@ -96,7 +96,18 @@ def get_args(args=None):
         '-c', '--columns',
         required=False,
         type=int,
+        metavar='INT',
         help='override column calculation in default mode')
+
+    parser.add_argument(
+        '-x', '--scale',
+        required=False,
+        type=float,
+        metavar='FLOAT',
+        default=1.0,
+        help=(
+            'apply scale factor in default mode '
+            '(to avoid overlapping wide glyphs)'))
 
     parser.add_argument(
         '--headless',
@@ -787,7 +798,7 @@ def make_proof_page(glyph_name, proofing_fonts, args):
 
             with db.savedState():
 
-                scale_factor = BOX_WIDTH / pf.upm
+                scale_factor = BOX_WIDTH / pf.upm * args.scale
                 local_offset = (BOX_WIDTH - glyph.width * scale_factor) // 2
                 db.translate(x_offset + local_offset, y_offset)
                 db.scale(scale_factor)
