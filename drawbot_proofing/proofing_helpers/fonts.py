@@ -53,20 +53,24 @@ def supports_charset(cmap, charset):
     return to_support <= supported_chars
 
 
-def supports_lat(cmap):
-    return supports_charset(cmap, 'abcdefghijklmnopqrstuvwxyz')
+def supports_ara(cmap):
+    return supports_charset(cmap, 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي')
 
 
 def supports_cyr(cmap):
     return supports_charset(cmap, 'абвгдежзийклмнопрстуфхцчшщъыьэюя')
 
 
-def supports_ara(cmap):
-    return supports_charset(cmap, 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي')
-
-
 def supports_grk(cmap):
     return supports_charset(cmap, 'αβγδεζηθικλμνξοπρστυφχψως')
+
+
+def supports_lat(cmap):
+    return supports_charset(cmap, 'abcdefghijklmnopqrstuvwxyz')
+
+
+def supports_tha(cmap):
+    return supports_charset(cmap, 'กขคฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮฯะัาำ')
 
 
 def supports_text(font_file, text, min_percentage=80):
