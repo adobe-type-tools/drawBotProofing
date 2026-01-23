@@ -61,6 +61,10 @@ def supports_cyr(cmap):
     return supports_charset(cmap, 'абвгдежзийклмнопрстуфхцчшщъыьэюя')
 
 
+def supports_ara(cmap):
+    return supports_charset(cmap, 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي')
+
+
 def supports_grk(cmap):
     return supports_charset(cmap, 'αβγδεζηθικλμνξοπρστυφχψως')
 

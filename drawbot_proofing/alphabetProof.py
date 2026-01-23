@@ -43,6 +43,7 @@ from .proofing_helpers import fontSorter
 from .proofing_helpers.files import get_font_paths
 from .proofing_helpers.fonts import make_temp_font, supports_text
 from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
+from .proofing_helpers.helpers import is_rtl
 from .proofing_helpers.globals import FONT_MONO, ADOBE_BLANK
 from .proofing_helpers.names import (
     get_name_overlap, get_path_overlap, get_ps_name, get_unique_name)
@@ -52,7 +53,7 @@ from .proofing_helpers.stamps import timestamp
 def get_args():
 
     mode_choices = ['proof', 'spacing', 'sample', 'all']
-    ws_choices = ['lat', 'grk', 'cyr', 'figures', 'auto']
+    ws_choices = ['lat', 'grk', 'cyr', 'ara', 'figures', 'auto']
 
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -125,7 +126,7 @@ def read_sample_text(kind='sample', w_system='lat'):
 
     if w_system == 'all':
         chunks = []
-        for system in ['lat', 'grk', 'cyr', 'figures']:
+        for system in ['lat', 'grk', 'cyr', 'ara', 'figures']:
             chunks.extend(read_sample_text(kind, system))
         return chunks
 
@@ -150,13 +151,14 @@ def read_sample_text(kind='sample', w_system='lat'):
             return chunks
         else:
             print(text_path, 'does not exist')
+            return []
 
 
 def get_supported_writing_systems(font_file):
     f = TTFont(font_file)
     cmap = f['cmap']
     supported = []
-    for ws_name in 'lat', 'grk', 'cyr':
+    for ws_name in 'lat', 'ara', 'grk', 'cyr':
         if getattr(fonts_helper, f'supports_{ws_name}')(cmap):
             supported.append(ws_name)
     return supported
@@ -221,7 +223,17 @@ def make_proof(args, fonts, output_path):
                     caption += ' | no kerning'
                 caption += f' | {timestamp(readable=True)}'
 
-                db.textBox(caption, (0, MARGIN, db.width() - MARGIN, 20))
+                text_rect = (0, MARGIN, db.width() - MARGIN, 20)
+                db.textBox(caption, text_rect)
+
+                # change the insertion point for RTL writing systems
+                if is_rtl(page):
+                    align = 'right'
+                    text_x = db.width() - MARGIN
+                else:
+                    align = 'left'
+                    text_x = MARGIN
+
                 y_offset = db.height() - MARGIN - args.point_size
                 for line in page.split('\n'):
 
@@ -232,7 +244,7 @@ def make_proof(args, fonts, output_path):
                         fallbackFont=ADOBE_BLANK,
                         openTypeFeatures=feature_dict,
                     )
-                    db.text(fs, (MARGIN, y_offset))
+                    db.text(fs, (text_x, y_offset), align)
 
                     if len(line) == 0:
                         y_offset -= line_space / 2
@@ -255,7 +267,8 @@ def make_proof_text(mode, writing_systems, custom_string=None):
         proof_text.extend([custom_string])
 
     for ws in writing_systems:
-        proof_text.extend(read_sample_text(mode, ws))
+        text_sample = read_sample_text(mode, ws)
+        proof_text.extend(text_sample)
 
     return proof_text
 

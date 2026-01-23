@@ -17,3 +17,19 @@ def uni_names(characters):
             uni_name = 'XXXX'
         output.append(f'{char} U+{ord(char):04X} {uni_name}')
     return output
+
+
+def is_rtl(text):
+    '''
+    check if a given text is RTL or LTR
+    https://www.unicode.org/reports/tr44/tr44-34.html#Bidi_Class_Values
+    '''
+
+    bidi_analysis = [unicodedata.bidirectional(char) for char in text]
+    rtl_count = bidi_analysis.count('R') + bidi_analysis.count('AL')
+    ltr_count = bidi_analysis.count('L')
+
+    if rtl_count > ltr_count:
+        return True
+    else:
+        return False
