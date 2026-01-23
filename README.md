@@ -47,8 +47,8 @@ Creates example pages for:
 Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
 (`all`).
 
-Writing systems supported are `lat`, `grk`, `cyr`, and `figures`. By default,
-supported writing systems are automatically chosen on a per-font basis.
+Writing systems supported are `lat`, `grk`, `cyr`, `ara`, and `figures`.
+By default, supported writing systems are automatically chosen on a per-font basis.
 
 Kerning can be toggled off (`-k`).
 
