@@ -356,9 +356,13 @@ def main(test_args=None):
         used_ps_names = []
         for ffi in font_objects:
             if ffi.ps_name not in used_ps_names:
-                sample_strings.append(make_line(args, ffi))
-                used_ps_names.append(ffi.ps_name)
-                print(str(ffi.path)[overlap_index:])
+                try:
+                    sample_strings.append(make_line(args, ffi))
+                    used_ps_names.append(ffi.ps_name)
+                    print(str(ffi.path)[overlap_index:])
+                except Exception:
+                    # https://github.com/fonttools/fonttools/issues/4021
+                    print('xxxx', str(ffi.path)[overlap_index:])
 
         if sample_strings:
             output_path = make_document(args, sample_strings)
