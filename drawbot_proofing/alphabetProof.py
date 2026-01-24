@@ -15,7 +15,7 @@ Creates example pages for:
 Modes (`proof`, `spacing`, `sample`) can be chosen individually, or all at once
 (`all`).
 
-Writing systems supported are `ara`, `cyr`, `grk`, `lat`, `tha`, and `figures`.
+Writing systems supported are `lat`, `grk`, `cyr`, `ara`, `tha`, and `figures`.
 By default, supported writing systems are automatically chosen on a per-font basis.
 
 Kerning can be toggled off (`-k`).
@@ -53,7 +53,7 @@ from .proofing_helpers.stamps import timestamp
 def get_args():
 
     mode_choices = ['proof', 'spacing', 'sample', 'all']
-    ws_choices = ['ara', 'cyr', 'grk', 'lat', 'tha', 'figures', 'auto']
+    ws_choices = ['lat', 'grk', 'cyr', 'ara', 'tha', 'figures', 'auto']
 
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -126,7 +126,7 @@ def read_sample_text(kind='sample', w_system='lat'):
 
     if w_system == 'all':
         chunks = []
-        for system in ['ara', 'cyr', 'grk', 'lat', 'tha', 'figures']:
+        for system in ['lat', 'grk', 'cyr', 'ara', 'tha', 'figures']:
             chunks.extend(read_sample_text(kind, system))
         return chunks
 
@@ -158,7 +158,7 @@ def get_supported_writing_systems(font_file):
     f = TTFont(font_file)
     cmap = f['cmap']
     supported = []
-    for ws_name in 'ara', 'cyr', 'grk', 'lat', 'tha':
+    for ws_name in 'lat', 'grk', 'cyr', 'ara', 'tha':
         if getattr(fonts_helper, f'supports_{ws_name}')(cmap):
             supported.append(ws_name)
     return supported
