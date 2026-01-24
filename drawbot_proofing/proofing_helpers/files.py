@@ -33,14 +33,17 @@ def get_font_paths(input_path):
         # directory was passed
         otf_paths = list(path.rglob('*.otf')) + list(path.rglob('*.OTF'))
         ttf_paths = list(path.rglob('*.ttf')) + list(path.rglob('*.TTF'))
+        ttc_paths = list(path.rglob('*.ttc')) + list(path.rglob('*.TTC'))
     else:
         # single file was passed
-        if path.suffix.lower() in ['.otf', '.ttf']:
+        if path.suffix.lower() in ['.otf', '.ttf', '.ttc']:
             return [path]
 
     if otf_paths:
         return otf_paths
-    return ttf_paths
+    elif ttf_paths:
+        return ttf_paths
+    return ttc_paths
 
 
 def get_ufo_paths(input_path, filter='font.ufo'):

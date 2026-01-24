@@ -34,7 +34,7 @@ def get_ps_name(input_file):
             ps_name = joined_name.replace(' ', '')
 
     else:
-        f = ttLib.TTFont(input_file)
+        f = ttLib.TTFont(input_file, fontNumber=0)
         name_table = f.get('name')
         ps_name = name_table.getDebugName(6)
         if not ps_name:
@@ -50,7 +50,7 @@ def get_family_name(input_file):
         family_name = fi_dict.get('familyName')
 
     else:
-        f = ttLib.TTFont(input_file)
+        f = ttLib.TTFont(input_file, fontNumber=0)
         name_table = f.get('name')
         family_name = name_table.getDebugName(16)
         if not family_name:
@@ -69,7 +69,7 @@ def get_style_name(input_file):
         style_name = fi_dict.get('styleName')
 
     else:
-        f = ttLib.TTFont(input_file)
+        f = ttLib.TTFont(input_file, fontNumber=0)
         name_table = f.get('name')
         style_name = name_table.getDebugName(17)
         if not style_name:
@@ -94,7 +94,7 @@ def get_unique_name(input_file):
         unique_name = f'{version_str};{manufacturer};{ps_name};'
 
     else:
-        f = ttLib.TTFont(input_file)
+        f = ttLib.TTFont(input_file, fontNumber=0)
         name_table = f.get('name')
         unique_name = name_table.getDebugName(3)
 

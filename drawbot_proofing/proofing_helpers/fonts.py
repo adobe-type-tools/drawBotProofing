@@ -17,7 +17,7 @@ def make_temp_font(file_index, font_file):
     If PS names clash, the implication is that the same font outlines will be
     seen throughout the whole document.
     '''
-    font = ttLib.TTFont(font_file)
+    font = ttLib.TTFont(font_file, fontNumber=0)
     file_extension = '.otf' if font.sfntVersion == 'OTTO' else '.ttf'
     tmp_font_file = get_temp_file_path(file_extension)
     tmp_ps_name = f'{Path(font_file).stem}_{file_index}'
@@ -74,7 +74,7 @@ def supports_tha(cmap):
 
 
 def supports_text(font_file, text, min_percentage=80):
-    ttFont = ttLib.TTFont(font_file)
+    ttFont = ttLib.TTFont(font_file, fontNumber=0)
     cmap_dict = ttFont['cmap'].getBestCmap()
     to_support = set(text)
     supported_chars = set([chr(cp) for cp in cmap_dict.keys()])
