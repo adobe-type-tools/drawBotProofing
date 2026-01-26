@@ -99,7 +99,10 @@ def chain_charset_texts(cs_prefix='AL', cs_level=3):
 
     text_files = []
     for level in (range(max_charset_level, -1, -1)):
-        text_files.extend(content_dir.glob(f'{cs_prefix}{level}.txt'))
+        cs_name = f'{cs_prefix.upper()}{level}'
+        cs_file = content_dir / f'{cs_name}.txt'
+        if cs_file.exists():
+            text_files.append(cs_file)
     if cs_prefix == 'AL':
         text_files.append(ascii_file)
 
