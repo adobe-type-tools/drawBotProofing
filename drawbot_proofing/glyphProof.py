@@ -767,9 +767,8 @@ def make_proof_page(glyph_name, proofing_fonts, args):
             txt=stamp_text, font=FONT_MONO, fontSize=10, align="center"
         )
 
-        rect_size = (MARGIN, page_height - MARGIN, page_width - 2 * MARGIN, MARGIN / 2)
-        db.fill(None)
-        db.textBox(header, (rect_size))
+        header_position = page_width / 2, page_height - MARGIN
+        db.text(header, header_position)
         x_offset = 0
         page_anchors = {}
         max_anchors_per_line = columns
