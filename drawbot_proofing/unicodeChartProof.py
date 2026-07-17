@@ -148,7 +148,7 @@ def draw_gauge(x, y, pct, w=25, h=12):
 def make_chart_doc(font_file, args):
     db.newDrawing()
 
-    set_vf = args.varfont_axes or (lambda: None)
+    set_vf = args.varfont_axes or (lambda: {})
     in_font = TTFont(font_file)
     fontname = in_font['name'].getDebugName(4)
     umap = in_font['cmap'].getBestCmap()
