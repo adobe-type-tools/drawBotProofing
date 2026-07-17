@@ -204,27 +204,37 @@ def make_output_name(input_list, args):
     return ' '.join(output_name) + '.pdf'
 
 
+def get_glyph_order(f):
+    lib_glyph_order = f.glyphOrder
+    all_glyphs = f.keys()
+
+    if set(lib_glyph_order) == set(all_glyphs):
+        glyph_order = lib_glyph_order
+
+    else:
+        # public.glyphOrder is not mandatory, there could be additional cases:
+        # - f.keys() only (in case public.glyphOrder is empty)
+        # - additional glyphs not mentioned in public.glyphOrder
+        # - ufo template glyhphs (in public.glyphOrder, but not in f.keys())
+        additional_glyphs = set(all_glyphs) - set(lib_glyph_order)
+        missing_glyphs = set(lib_glyph_order) - set(all_glyphs)
+        order = lib_glyph_order + sorted(additional_glyphs)
+        glyph_order = [gn for gn in order if gn not in missing_glyphs]
+    return glyph_order
+
+
 def make_glyphset_page(args, input_file):
     if input_file.suffix == '.ufo':
         f = defcon.Font(input_file)
-        glyph_order = f.glyphOrder
-        all_glyphs = f.keys()
-        if set(glyph_order) == set(all_glyphs):
-            complete_glyph_order = glyph_order
-        else:
-            # additional glyphs could be
-            # - all glyphs (in case public.glyphOrder is empty)
-            # - any glyphs not mentioned in public.glyphOrder
-            additional_glyphs = set(all_glyphs) - set(glyph_order)
-            complete_glyph_order = glyph_order + sorted(additional_glyphs)
+        glyph_order = get_glyph_order(f)
     else:
         f = TTFont(input_file)
-        complete_glyph_order = f.getGlyphOrder()
+        glyph_order = f.getGlyphOrder()
 
     if args.regex:
-        glyph_list = filter_glyph_list(args.regex, complete_glyph_order)
+        glyph_list = filter_glyph_list(args.regex, glyph_order)
     else:
-        glyph_list = complete_glyph_order
+        glyph_list = glyph_order
 
     time_stamp = timestamp(readable=True)
     caption = f'{input_file.name} | {time_stamp}'.format()
