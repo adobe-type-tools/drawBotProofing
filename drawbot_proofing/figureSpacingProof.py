@@ -31,6 +31,7 @@ from .proofing_helpers.formatter import RawDescriptionAndDefaultsFormatter
 from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.names import get_family_name, get_name_overlap
 from .proofing_helpers.stamps import timestamp
+from .proofing_helpers.ufo import get_glyph_order
 
 
 def get_args():
@@ -101,7 +102,7 @@ def make_proof_pages(args, input_file):
         all_glyphs = f.keys()
         glyph_container = f
         upm = f.info.unitsPerEm
-        glyph_order = f.glyphOrder
+        glyph_order = get_glyph_order(f)
     else:
         f = TTFont(input_file)
         all_glyphs = f.getGlyphOrder()

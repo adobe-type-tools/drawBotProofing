@@ -34,6 +34,7 @@ from .proofing_helpers.globals import FONT_MONO
 from .proofing_helpers.names import (
     get_ps_name, get_name_overlap, get_path_overlap)
 from .proofing_helpers.stamps import timestamp
+from .proofing_helpers.ufo import get_glyph_order
 
 
 def get_args(args=None):
@@ -202,25 +203,6 @@ def make_output_name(input_list, args):
         output_name.append(overlap)
 
     return ' '.join(output_name) + '.pdf'
-
-
-def get_glyph_order(f):
-    lib_glyph_order = f.glyphOrder
-    all_glyphs = f.keys()
-
-    if set(lib_glyph_order) == set(all_glyphs):
-        glyph_order = lib_glyph_order
-
-    else:
-        # public.glyphOrder is not mandatory, there could be additional cases:
-        # - f.keys() only (in case public.glyphOrder is empty)
-        # - additional glyphs not mentioned in public.glyphOrder
-        # - ufo template glyhphs (in public.glyphOrder, but not in f.keys())
-        additional_glyphs = set(all_glyphs) - set(lib_glyph_order)
-        missing_glyphs = set(lib_glyph_order) - set(all_glyphs)
-        order = lib_glyph_order + sorted(additional_glyphs)
-        glyph_order = [gn for gn in order if gn not in missing_glyphs]
-    return glyph_order
 
 
 def make_glyphset_page(args, input_file):
