@@ -268,6 +268,9 @@ def make_page_content(content, font_a, font_b, pt_size, fea_dict, temp_fonts):
         else:
             tmp_font_a = temp_fonts[font_a]
             instance = get_default_instance(tmp_font_a)
+            if instance is None:
+                instance = {}
+
             fs.append(
                 text_item.text,
                 font=tmp_font_a,
