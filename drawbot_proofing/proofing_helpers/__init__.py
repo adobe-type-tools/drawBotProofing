@@ -13,4 +13,10 @@ from . import fontSorter
 from . import globals
 from . import helpers
 from . import names
-from . import stamps 
+from . import stamps
+from . import ufo
+
+
+import drawBot as db
+warnings = db.misc.warnings
+warnings.shouldShowWarnings = True
