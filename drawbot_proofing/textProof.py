@@ -511,42 +511,43 @@ def main():
     fonts_a = get_fonts(args.fonts)
     fonts_b = get_fonts(args.secondary_font)
 
-    gpp_count = 0
-    for i, font in enumerate(fonts_a + fonts_b):
-        # Make temporary fonts, and calculate how many glyphs of the given
-        # font may fit on a page
-        gpp_count += get_glyphs_per_page(font, args.pt_size)
+    if fonts_a:
+        gpp_count = 0
+        for i, font in enumerate(fonts_a + fonts_b):
+            # Make temporary fonts, and calculate how many glyphs of the given
+            # font may fit on a page
+            gpp_count += get_glyphs_per_page(font, args.pt_size)
 
-    # This is not completely representative of the # of glyphs/page,
-    # but it is a useful approximation.
-    len_limit = gpp_count / (len(fonts_a) + len(fonts_b))
+        # This is not completely representative of the # of glyphs/page,
+        # but it is a useful approximation.
+        len_limit = gpp_count / (len(fonts_a) + len(fonts_b))
 
-    if args.text_file:
-        content_list = get_content_from_text_file(args.text_file)
-        output_name = make_output_name(
-            args.fonts, args.secondary_font,
-            'text file', args.pt_size, args.full)
-        formatted_content = format_content(content_list, len_limit, False)
+        if args.text_file:
+            content_list = get_content_from_text_file(args.text_file)
+            output_name = make_output_name(
+                args.fonts, args.secondary_font,
+                'text file', args.pt_size, args.full)
+            formatted_content = format_content(content_list, len_limit, False)
 
-    elif args.charset:
-        charset_name = args.charset
-        charset = validate_charset(charset_name)
-        content_list = get_content_from_charset(charset_name)
-        output_name = make_output_name(
-            args.fonts, args.secondary_font,
-            charset_name, args.pt_size, args.full)
-        formatted_content = make_formatted_content(
-            content_list, charset,
-            len_limit, args.filter, args.capitalize, args.full)
+        elif args.charset:
+            charset_name = args.charset
+            charset = validate_charset(charset_name)
+            content_list = get_content_from_charset(charset_name)
+            output_name = make_output_name(
+                args.fonts, args.secondary_font,
+                charset_name, args.pt_size, args.full)
+            formatted_content = make_formatted_content(
+                content_list, charset,
+                len_limit, args.filter, args.capitalize, args.full)
 
-    else:
-        pass
+        else:
+            pass
 
-    make_proof(formatted_content, fonts_a, fonts_b, args, output_name)
+        make_proof(formatted_content, fonts_a, fonts_b, args, output_name)
 
-    if args.charset and args.verbose:
-        content_pick = [fc.text for fc in formatted_content]
-        analyze_missing(content_pick, content_list, args.charset)
+        if args.charset and args.verbose:
+            content_pick = [fc.text for fc in formatted_content]
+            analyze_missing(content_pick, content_list, args.charset)
 
 
 if __name__ == '__main__':
