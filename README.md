@@ -34,12 +34,19 @@ After installation, the following commands will be available:
 Once the package is installed, you can start using the tools immediately:
 
 ```bash
-# Create a text proof using a font
-text-proof -f /path/to/your/font.otf -c al3
+# Make an Alphabet Proof
+alphabet-proof /path/to/your/font.otf
+
+# Make an proof to compare glyphs in 2 UFOs
+glyph-proof /path/to/one.ufo /path/to/another.ufo
+
+# Make a text proof using character set AL3
+text-proof -c al3 -f /path/to/your/font.otf 
 
 # Get help for any command
 text-proof --help
 alphabet-proof --help
+
 ```
 
 
