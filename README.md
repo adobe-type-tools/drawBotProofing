@@ -1,27 +1,49 @@
 # DrawBot scripts for proofing fonts and/or UFOs.
 
-## Prerequisites
+## Installation
 
-- we recommend using a Python virtual environment. You can easily create
-and activate one with the following commands in Terminal:
+Read full installation instructions in [INSTALLATION.md](INSTALLATION.md).
+
+
+## Usage
+
+After installation, the following commands will be available:
+
+### Proofing Tools accepting fonts and UFOs:
+- `glyph-proof` - compare glyphs
+- `glyphset-proof` - the whole glyphset on one page
+- `figure-spacing-proof` - compare figure spacing proofs
+- `vertical-metrics-comparison-proof` - compare vertical metrics across fonts
+
+### Proofing Tools accepting fonts:
+- `accent-proof` - check accents and their use accent proofs
+- `alphabet-proof` - various basic proofs for different writing systems
+- `charset-proof` - check for a given charset on one page
+- `context-proof` - see characters in context
+- `text-proof` - pages with example paragraphs
+- `unicode-chart-proof` - generate Unicode character charts
+- `vertical-metrics-proof` - visualize vertical metrics
+- `waterfall-proof` - create various waterfalls
+
+### Other Proofing Tools:
+- `overlay-font-proof` - overlay two fonts
+- `reference-proof` - compare multiple fonts side by side
+
+## Quick Start
+
+Once the package is installed, you can start using the tools immediately:
 
 ```bash
-python3 -m venv my_venv
-source my_venv/bin/activate
+# Create a text proof using a font
+text-proof -f /path/to/your/font.otf -c al3
+
+# Get help for any command
+text-proof --help
+alphabet-proof --help
 ```
 
-- once you have a virtual environment activated, the proofing tools themselves
-can be installed via `pip`:
 
-```bash
-pip install git+https://github.com/adobe-type-tools/drawBotProofing.git
-```
-Further installation instructions can be found in [INSTALLATION.md](INSTALLATION.md).
-
-You’re now ready to start proofing!
-
-----
-
+## Tools
 
 ### `accent-proof`
 

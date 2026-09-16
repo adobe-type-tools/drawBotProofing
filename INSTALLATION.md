@@ -2,6 +2,17 @@
 
 This guide explains how to install the DrawBot Proofing Tools package.
 
+
+## Before Installation
+
+- generally, we recommend using a Python virtual environment. If you’d like to use one, you can easily create and activate one with the following commands in Terminal:
+
+```bash
+python3 -m venv my_venv
+source my_venv/bin/activate
+```
+
+
 ## Installation
 
 ### Option 1: Install from GitHub (Recommended)
@@ -25,10 +36,12 @@ pip install -e .
 pip install .
 ```
 
+
 ## Requirements
 
 - Python 3.11 or higher
 - macOS (required for DrawBot)
+
 
 ## Dependencies
 
@@ -39,42 +52,6 @@ The package will automatically install the following dependencies:
 - `fontParts`
 - `unicodedataplus`
 
-## Available Commands
-
-After installation, the following commands will be available:
-
-### Proofing Tools accepting fonts and UFOs:
-- `glyph-proof` - compare glyphs
-- `glyphset-proof` - the whole glyphset on one page
-- `figure-spacing-proof` - compare figure spacing proofs
-- `vertical-metrics-comparison-proof` - compare vertical metrics across fonts
-
-### Proofing Tools accepting fonts:
-- `accent-proof` - check accents and their use accent proofs
-- `alphabet-proof` - various basic proofs for different writing systems
-- `charset-proof` - check for a given charset on one page
-- `context-proof` - see characters in context
-- `text-proof` - pages with example paragraphs
-- `unicode-chart-proof` - generate Unicode character charts
-- `vertical-metrics-proof` - visualize vertical metrics
-- `waterfall-proof` - create various waterfalls
-
-### Other Proofing Tools:
-- `overlay-font-proof` - overlay two fonts
-- `reference-proof` - compare multiple fonts side by side
-
-## Quick Start
-
-After installation, you can start using the tools immediately:
-
-```bash
-# Create a text proof using a font
-text-proof -f /path/to/your/font.otf -c al3
-
-# Get help for any command
-text-proof --help
-alphabet-proof --help
-```
 
 ## Troubleshooting
 
@@ -104,6 +81,7 @@ python -m pip install --user git+https://github.com/adobe-type-tools/drawBotProo
 
 Then restart your terminal.
 
+
 ## Development Installation
 
 For development work:
@@ -115,6 +93,7 @@ pip install -e .
 ```
 
 This installs the package in "editable" mode, so changes to the source code are immediately reflected.
+
 
 ## Uninstallation
 
