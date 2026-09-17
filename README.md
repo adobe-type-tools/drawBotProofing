@@ -1,5 +1,11 @@
 # DrawBot scripts for proofing fonts and/or UFOs.
 
+This is a collection of scripts to facilitate making proofing PDFs for fonts – proofs are an inherent part of the typeface design process. 
+I found these scripts useful in my day-to-day work, and I figured they may be useful for a bigger audience. Please understand that this collection of scripts grew organically, so they may not all follow the exact same structure – some scripts will accept both font and UFO files, while others will accept only fonts (for details, see the [Usage](#usage) section.)
+
+**NB**: While this repository is called _DrawBot Proofing_, the scripts will not run in the DrawBot desktop application. The _DrawBot_ part comes from the use of the DrawBot Python module. Execute all scripts on the command line (run in Terminal) – see [Quick Start](#quick-start).
+
+
 ## Installation
 
 Read full installation instructions in [INSTALLATION.md](INSTALLATION.md).
