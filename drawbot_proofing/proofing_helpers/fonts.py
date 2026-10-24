@@ -43,7 +43,7 @@ def get_default_instance(font_file):
         return instance
 
     else:
-        return
+        return {}
 
 
 def supports_charset(cmap, charset):
