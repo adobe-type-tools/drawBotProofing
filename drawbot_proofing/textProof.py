@@ -324,6 +324,9 @@ def make_page(fs, font_a, font_b, args):
 
 
 def format_content(content_list, len_limit=None, capitalize=False):
+    '''
+    insert paragraph breaks and italic emphasis into the text.
+    '''
     total_length = 0
     formatted_content = []
     for paragraph in content_list:
@@ -341,6 +344,7 @@ def format_content(content_list, len_limit=None, capitalize=False):
                 t_container.italic = True
             formatted_content.append(t_container)
 
+        print(len_limit)
         if len_limit is not None and total_length >= len_limit:
             return formatted_content
 
@@ -475,18 +479,18 @@ def make_formatted_content(
     if full:
         # Some characters are hard to find, so the source text might not
         # contain all of the characters for the given charset.
-        acceptable_omissions = len(
-            set(charset) - set(''.join(content_list)))
+        acceptable_omissions = set(charset) - set(''.join(content_list))
 
         full_content = []
         remaining_charset = charset
 
-        while len(remaining_charset) > acceptable_omissions:
+        while len(remaining_charset) > len(acceptable_omissions):
             paragraph, remaining_charset = consume_charset(
                 content_list, remaining_charset)
             full_content.append(paragraph)
 
-        formatted_content = format_content(full_content, capitalize)
+        formatted_content = format_content(
+            full_content, len_limit=len_limit, capitalize=capitalize)
 
     else:
         if char_filter:
