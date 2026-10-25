@@ -53,6 +53,17 @@ from .proofing_helpers.files import (
 from .proofing_helpers.stamps import timestamp
 
 
+def check_positive(value):
+    # https://stackoverflow.com/a/64980375
+    try:
+        value = int(value)
+        if value <= 0:
+            raise argparse.ArgumentTypeError(f"{value} is not a positive number")
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{value} is not a number")
+    return value
+
+
 def get_args():
 
     charset_choices = [name for name in dir(cs) if not name.startswith('_')]
@@ -81,7 +92,7 @@ def get_args():
     group.add_argument(
         '-t', '--text_file',
         action='store',
-        metavar='TXT',
+        metavar='FILE',
         help='text file (for predictable text)')
     # ----------- end of group
 
@@ -101,8 +112,17 @@ def get_args():
         '-p', '--pt_size',
         action='store',
         default=10,
-        type=int,
+        type=check_positive,
+        metavar='INT',
         help='point size for sample')
+
+    parser.add_argument(
+        '-l', '--columns',
+        action='store',
+        default=1,
+        type=check_positive,
+        metavar='INT',
+        help='number of columns')
 
     parser.add_argument(
         '-k', '--kerning_off',
@@ -308,16 +328,31 @@ def make_page(fs, font_a, font_b, args):
         fontSize=6,
     )
 
-    fs_overflow = db.textBox(
-        fs, (
-            6 * MARGIN, 5 * MARGIN,
-            db.width() - 9 * MARGIN, db.height() - 7 * MARGIN
-        ))
-    db.textBox(fs_footer, (6 * MARGIN, 0, db.width(), 3 * MARGIN))
+    padding_l = 6 * MARGIN
+    padding_bot = 5 * MARGIN
+    padding_r = 3 * MARGIN
+    padding_top = 2 * MARGIN
+    content_width = db.width() - padding_l - padding_r
+    content_height = db.height() - padding_top - padding_bot
+
+    columns = args.columns
+    gutter = MARGIN
+    column_width = (content_width / columns) - (gutter * (columns - 1))
+    column_height = content_height
+
+    fs_overflow = fs
+    for i in range(columns):
+        column_x = padding_l + i * (column_width + gutter)
+        fs_overflow = db.textBox(
+            fs_overflow, (
+                column_x, padding_bot,
+                column_width, column_height
+            ))
+
+    db.textBox(fs_footer, (padding_l, 0, db.width(), padding_r))
 
     if fs_overflow and args.full:
-        make_page(
-            fs_overflow, font_a, font_b, args)
+        make_page(fs_overflow, font_a, font_b, args)
 
     else:
         return fs_overflow
